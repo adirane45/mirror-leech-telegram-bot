@@ -1,8 +1,8 @@
 # Bot Commands Setup - Modified by: justadi
 from pyrogram.types import BotCommand
 
-from ..core.telegram_manager import TgClient
-from ..helper.telegram_helper.bot_commands import BotCommands
+from ...core.telegram_manager import TgClient
+from ..telegram_helper.bot_commands import BotCommands
 
 
 async def set_bot_commands():
