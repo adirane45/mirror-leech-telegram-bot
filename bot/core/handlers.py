@@ -484,7 +484,8 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(dashboard_callback_handler, filters=regex("^quick"))
-    )    TgClient.bot.add_handler(
+    )
+    TgClient.bot.add_handler(
         MessageHandler(
             compress_file,
             filters=command(BotCommands.ZipCommand, case_sensitive=True)
