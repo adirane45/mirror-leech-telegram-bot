@@ -22,7 +22,7 @@ import logging
 from bot.core.archive_manager import archive_manager
 from bot.helper.ext_utils.bot_utils import new_task, is_premium_user
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
+from bot.helper.telegram_helper.message_utils import send_message, edit_message
 from pyrogram.types import Message
 from pyrogram.filters import command
 
@@ -58,7 +58,7 @@ async def compress_file(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message, "❌ Usage: /zip <source_path> [format] [level]\n\n"
+        await send_message(message, "❌ Usage: /zip <source_path> [format] [level]\n\n"
                          "Formats: zip, tar, tar.gz, tar.bz2, 7z\n"
                          "Levels: 0-9 (0=no compression, 9=max compression)")
         return
@@ -72,23 +72,23 @@ async def compress_file(_, message: Message):
             compression_level = int(parts[3])
             compression_level = max(0, min(9, compression_level))
         except ValueError:
-            await sendMessage(message, "❌ Compression level must be 0-9")
+            await send_message(message, "❌ Compression level must be 0-9")
             return
     
     # Validate source path
     if not os.path.exists(source_path):
-        await sendMessage(message, f"❌ Source not found: {source_path}")
+        await send_message(message, f"❌ Source not found: {source_path}")
         return
     
     # Check if user has permission
     if not await is_premium_user(message.from_user.id):
-        await sendMessage(message, "⚠️ This feature is available for premium users")
+        await send_message(message, "⚠️ This feature is available for premium users")
         return
     
     # Validate format
     if format_type not in archive_manager.SUPPORTED_COMPRESS:
         formats = ", ".join(archive_manager.SUPPORTED_COMPRESS)
-        await sendMessage(message, f"❌ Unsupported format: {format_type}\n\nSupported: {formats}")
+        await send_message(message, f"❌ Unsupported format: {format_type}\n\nSupported: {formats}")
         return
     
     # Determine output filename
@@ -96,7 +96,7 @@ async def compress_file(_, message: Message):
     output_path = f"{source_path}.{format_type.replace('tar.', 't')}"
     
     # Inform user about operation start
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"🔄 Creating {format_type.upper()} archive...\n"
         f"Source: {source_name}\n"
@@ -132,13 +132,13 @@ async def compress_file(_, message: Message):
                 f"📍 <b>Location:</b> <code>{output_path}</code>"
             )
             
-            await editMessage(status_msg, response)
+            await edit_message(status_msg, response)
         else:
-            await editMessage(status_msg, f"❌ Error: {msg}")
+            await edit_message(status_msg, f"❌ Error: {msg}")
     
     except Exception as e:
         LOGGER.error(f"Archive creation error: {e}")
-        await editMessage(status_msg, f"❌ Unexpected error: {str(e)}")
+        await edit_message(status_msg, f"❌ Unexpected error: {str(e)}")
 
 
 @new_task
@@ -164,7 +164,7 @@ async def extract_archive(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message, "❌ Usage: /unzip <archive_path> [destination] [password]")
+        await send_message(message, "❌ Usage: /unzip <archive_path> [destination] [password]")
         return
     
     archive_path = parts[1]
@@ -173,17 +173,17 @@ async def extract_archive(_, message: Message):
     
     # Validate archive path
     if not os.path.exists(archive_path):
-        await sendMessage(message, f"❌ Archive not found: {archive_path}")
+        await send_message(message, f"❌ Archive not found: {archive_path}")
         return
     
     # Check if file is actually an archive
     if not os.path.isfile(archive_path):
-        await sendMessage(message, f"❌ {archive_path} is not a file")
+        await send_message(message, f"❌ {archive_path} is not a file")
         return
     
     # Check permission
     if not await is_premium_user(message.from_user.id):
-        await sendMessage(message, "⚠️ This feature is available for premium users")
+        await send_message(message, "⚠️ This feature is available for premium users")
         return
     
     # Create extraction directory if needed
@@ -191,7 +191,7 @@ async def extract_archive(_, message: Message):
     
     archive_name = os.path.basename(archive_path)
     
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"🔄 Extracting archive...\n"
         f"Archive: {archive_name}\n"
@@ -222,13 +222,13 @@ async def extract_archive(_, message: Message):
                 f"📍 <b>Destination:</b> <code>{extract_to}</code>"
             )
             
-            await editMessage(status_msg, response)
+            await edit_message(status_msg, response)
         else:
-            await editMessage(status_msg, f"❌ Error: {msg}")
+            await edit_message(status_msg, f"❌ Error: {msg}")
     
     except Exception as e:
         LOGGER.error(f"Archive extraction error: {e}")
-        await editMessage(status_msg, f"❌ Unexpected error: {str(e)}")
+        await edit_message(status_msg, f"❌ Unexpected error: {str(e)}")
 
 
 @new_task
@@ -251,18 +251,18 @@ async def list_archive(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message, "❌ Usage: /zipinfo <archive_path>")
+        await send_message(message, "❌ Usage: /zipinfo <archive_path>")
         return
     
     archive_path = parts[1]
     
     if not os.path.exists(archive_path):
-        await sendMessage(message, f"❌ Archive not found: {archive_path}")
+        await send_message(message, f"❌ Archive not found: {archive_path}")
         return
     
     archive_name = os.path.basename(archive_path)
     
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"🔄 Reading archive contents...\n"
         f"Archive: {archive_name}\n\n"
@@ -289,13 +289,13 @@ async def list_archive(_, message: Message):
                 f"<b>Use /unzip to extract this archive</b>"
             )
             
-            await editMessage(status_msg, response)
+            await edit_message(status_msg, response)
         else:
-            await editMessage(status_msg, "❌ Failed to read archive information")
+            await edit_message(status_msg, "❌ Failed to read archive information")
     
     except Exception as e:
         LOGGER.error(f"Archive info error: {e}")
-        await editMessage(status_msg, f"❌ Error: {str(e)}")
+        await edit_message(status_msg, f"❌ Error: {str(e)}")
 
 
 def _format_size(bytes_size: int) -> str:
