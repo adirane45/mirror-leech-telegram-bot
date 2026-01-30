@@ -2,6 +2,7 @@
 # Enhanced with Interactive UI and Queue Manager
 # Modified by: justadi
 
+from collections import deque
 from uvloop import install
 
 install()
@@ -82,3 +83,17 @@ sabnzbd_client = SabnzbdClient(
 )
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)
+
+# UI/UX enhancements: history and settings
+download_history = deque(maxlen=200)
+ui_settings = {
+    "theme": "dark",
+    "notifications": True,
+    "auto_pause": {
+        "enabled": False,
+        "cpu": 90,
+        "ram": 90,
+        "disk": 95,
+        "last_trigger": 0,
+    },
+}

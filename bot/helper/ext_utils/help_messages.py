@@ -425,6 +425,14 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.PriorityCommand} [gid] [priority]: Set task priority (-1/0/1 = low/normal/high).
 /{BotCommands.PauseAllCommand}: Pause all active tasks (Only Owner).
 /{BotCommands.ResumeAllCommand}: Resume all paused tasks (Only Owner).
+/{BotCommands.DashboardCommand}: Show comprehensive dashboard with system stats and active tasks.
+/{BotCommands.TaskDetailsCommand} [gid]: Show detailed information about a specific task.
+/{BotCommands.SearchTasksCommand} [query]: Search tasks by name or GID.
+/{BotCommands.FilterTasksCommand} [status]: Filter tasks by status (download/upload/paused/queued/all).
+/{BotCommands.HistoryCommand}: View download history with success/failure stats.
+/{BotCommands.SettingsUICommand}: Open settings panel for auto-pause configuration.
+/{BotCommands.ViewToggleCommand} [mode]: Toggle view mode (compact/detailed).
+/{BotCommands.SetAlertsCommand} [option]: Configure notification alerts.
 /{BotCommands.PingCommand}: Check how long it takes to Ping the Bot (Only Owner & Sudo).
 /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
 /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).

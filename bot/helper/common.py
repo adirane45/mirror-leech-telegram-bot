@@ -7,6 +7,7 @@ from pyrogram.enums import ChatAction
 from re import sub, I, findall
 from shlex import split
 from collections import Counter
+from time import time
 from copy import deepcopy
 
 from .. import (
@@ -118,6 +119,7 @@ class TaskConfig:
         self.is_rss = False
         self.progress = True
         self.ffmpeg_cmds = None
+        self.created_at = time()
         self.chat_thread_id = None
         self.subproc = None
         self.thumb = None

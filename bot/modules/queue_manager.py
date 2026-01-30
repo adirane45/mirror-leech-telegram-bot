@@ -19,6 +19,40 @@ from ..helper.telegram_helper.message_utils import (
 queue_info = {}  # gid -> {"priority": int, "timeout": int, "paused": bool, "created_at": time}
 
 
+async def pause_all_tasks_auto():
+    async with task_dict_lock:
+        tasks = list(task_dict.values())
+    paused_count = 0
+    for task in tasks:
+        try:
+            obj = task.task()
+            if hasattr(obj, "pause"):
+                await obj.pause()
+                queue_info[task.gid()] = queue_info.get(task.gid(), {})
+                queue_info[task.gid()]["paused"] = True
+                paused_count += 1
+        except Exception:
+            continue
+    return paused_count, len(tasks)
+
+
+async def resume_all_tasks_auto():
+    async with task_dict_lock:
+        tasks = list(task_dict.values())
+    resumed_count = 0
+    for task in tasks:
+        try:
+            obj = task.task()
+            if hasattr(obj, "resume"):
+                await obj.resume()
+                queue_info[task.gid()] = queue_info.get(task.gid(), {})
+                queue_info[task.gid()]["paused"] = False
+                resumed_count += 1
+        except Exception:
+            continue
+    return resumed_count, len(tasks)
+
+
 @new_task
 async def show_queue(_, message):
     """Display all active tasks with options to manage them - Modified by: justadi"""
@@ -238,29 +272,15 @@ async def pause_all_queue(_, message):
         await send_message(message, "❌ <b>Owner Only!</b>\nThis command is only for the owner!")
         return
     
-    async with task_dict_lock:
-        tasks = list(task_dict.values())
-    
-    if not tasks:
+    paused_count, total = await pause_all_tasks_auto()
+    if total == 0:
         await send_message(message, "❌ <b>No Active Tasks!</b>")
         return
-    
-    paused_count = 0
-    for task in tasks:
-        try:
-            obj = task.task()
-            if hasattr(obj, 'pause'):
-                await obj.pause()
-                queue_info[task.gid()] = queue_info.get(task.gid(), {})
-                queue_info[task.gid()]["paused"] = True
-                paused_count += 1
-        except:
-            pass
     
     await send_message(
         message, 
         f"✅ <b>All Tasks Paused!</b>\n\n"
-        f"<b>Paused:</b> {paused_count}/{len(tasks)}\n\n"
+        f"<b>Paused:</b> {paused_count}/{total}\n\n"
         f"<i>Modified by: justadi</i>",
         InteractiveKeyboards.quick_actions()
     )
@@ -273,29 +293,15 @@ async def resume_all_queue(_, message):
         await send_message(message, "❌ <b>Owner Only!</b>\nThis command is only for the owner!")
         return
     
-    async with task_dict_lock:
-        tasks = list(task_dict.values())
-    
-    if not tasks:
+    resumed_count, total = await resume_all_tasks_auto()
+    if total == 0:
         await send_message(message, "❌ <b>No Active Tasks!</b>")
         return
-    
-    resumed_count = 0
-    for task in tasks:
-        try:
-            obj = task.task()
-            if hasattr(obj, 'resume'):
-                await obj.resume()
-                queue_info[task.gid()] = queue_info.get(task.gid(), {})
-                queue_info[task.gid()]["paused"] = False
-                resumed_count += 1
-        except:
-            pass
     
     await send_message(
         message, 
         f"✅ <b>All Tasks Resumed!</b>\n\n"
-        f"<b>Resumed:</b> {resumed_count}/{len(tasks)}\n\n"
+        f"<b>Resumed:</b> {resumed_count}/{total}\n\n"
         f"<i>Modified by: justadi</i>",
         InteractiveKeyboards.quick_actions()
     )

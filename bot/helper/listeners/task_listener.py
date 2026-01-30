@@ -31,6 +31,7 @@ from ..ext_utils.files_utils import (
     remove_non_included_files,
     move_and_merge,
 )
+from ..ext_utils.history_utils import add_history
 from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size
 from ..ext_utils.task_manager import start_from_queued, check_running_tasks
@@ -387,6 +388,15 @@ class TaskListener(TaskConfig):
                 button = None
             msg += f"\n\n<b>cc: </b>{self.tag}"
             await send_message(self.message, msg, button)
+        add_history(
+            name=self.name,
+            size=self.size,
+            status="success",
+            user_id=self.user_id,
+            tag=self.tag,
+            link=link or rclone_path or "",
+            tool="leech" if self.is_leech else "upload",
+        )
         if self.seed:
             await clean_target(self.up_dir)
             async with queue_dict_lock:
@@ -418,6 +428,15 @@ class TaskListener(TaskConfig):
         await self.remove_from_same_dir()
         msg = f"{self.tag} Download: {escape(str(error))}"
         await send_message(self.message, msg, button)
+        add_history(
+            name=self.name,
+            size=self.size,
+            status="failed",
+            user_id=self.user_id,
+            tag=self.tag,
+            link=self.link,
+            tool="download",
+        )
         if count == 0:
             await self.clean()
         else:
@@ -456,6 +475,15 @@ class TaskListener(TaskConfig):
                 del task_dict[self.mid]
             count = len(task_dict)
         await send_message(self.message, f"{self.tag} {escape(str(error))}")
+        add_history(
+            name=self.name,
+            size=self.size,
+            status="failed",
+            user_id=self.user_id,
+            tag=self.tag,
+            link=self.link,
+            tool="upload",
+        )
         if count == 0:
             await self.clean()
         else:
