@@ -39,6 +39,7 @@ from .queue_manager import (
     resume_all_queue,
 )
 from .dashboard import dashboard
+from .dashboard_callbacks import dashboard_callback_handler
 from .task_details import task_details
 from .search_filter import search_tasks, filter_tasks
 from .history import download_history_view
@@ -101,6 +102,7 @@ __all__ = [
     "pause_all_queue",
     "resume_all_queue",
     "dashboard",
+    "dashboard_callback_handler",
     "task_details",
     "search_tasks",
     "filter_tasks",

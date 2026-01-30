@@ -8,7 +8,7 @@ from ..helper.telegram_helper.message_utils import send_message, edit_message
 @new_task
 async def speedtest(_, message):
     """Run speedtest and display results - Modified by: justadi"""
-    speed_msg = await send_message(message, "<b>🚀 Running speedtest...</b>\n<i>Modified by: justadi</i>")
+    speed_msg = await send_message(message, "<b>🚀 Running speedtest...</b>\n<i>Please wait, this may take a moment.</i>")
     
     try:
         # Try ookla speedtest first (more reliable)
@@ -32,27 +32,56 @@ async def speedtest(_, message):
         
         # Parse the output
         output = stdout.decode().strip()
+        
+        if not output:
+            await edit_message(
+                speed_msg,
+                "<b>❌ Speedtest Error!</b>\n\n<code>No output received from speedtest</code>\n\n<i>Modified by: justadi</i>"
+            )
+            return
+            
         lines = output.split('\n')
         
         result_text = "<b>🚀 Speedtest Results</b>\n"
         result_text += "<i>Modified by: justadi</i>\n\n"
         
+        found_data = False
         # Parse ookla speedtest output
         for line in lines:
             if "Latency:" in line or "Idle Latency:" in line:
-                ping = line.split(":")[1].strip().split()[0]
-                result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
+                try:
+                    ping = line.split(":")[1].strip().split()[0]
+                    result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
+                    found_data = True
+                except:
+                    pass
             elif "Download:" in line:
-                download = line.split(":")[1].strip()
-                result_text += f"<b>⬇️ Download:</b> <code>{download}</code>\n"
+                try:
+                    download = line.split(":")[1].strip()
+                    result_text += f"<b>⬇️ Download:</b> <code>{download}</code>\n"
+                    found_data = True
+                except:
+                    pass
             elif "Upload:" in line:
-                upload = line.split(":")[1].strip()
-                result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code>\n"
+                try:
+                    upload = line.split(":")[1].strip()
+                    result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code>\n"
+                    found_data = True
+                except:
+                    pass
             # Fallback for speedtest-cli format
             elif line.startswith("Ping:"):
-                ping = line.split(":")[1].strip()
-                result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
+                try:
+                    ping = line.split(":")[1].strip()
+                    result_text += f"<b>📡 Ping:</b> <code>{ping}</code>\n"
+                    found_data = True
+                except:
+                    pass
         
+        if not found_data:
+            # If parsing failed, show raw output
+            result_text += f"\n<code>{output[:500]}</code>"
+            
         await edit_message(speed_msg, result_text)
         
     except FileNotFoundError:
