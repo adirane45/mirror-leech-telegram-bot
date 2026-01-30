@@ -263,6 +263,14 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 subsize = ""
                 count = ""
             if view_mode == "detailed":
+                try:
+                    from ...core.task_categorizer import TaskCategorizer
+
+                    category = await TaskCategorizer.get_task_category(task.gid())
+                    if category:
+                        msg += f"\n<b>Category:</b> <code>{category}</code>"
+                except Exception:
+                    pass
                 msg += f"\n<b>Processed:</b> {task.processed_bytes()}{subsize}"
                 if count:
                     msg += f"\n<b>Count:</b> {count}"

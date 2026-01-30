@@ -16,8 +16,10 @@ async def main():
         update_qb_options,
         update_variables,
     )
+    from .core.task_scheduler import TaskScheduler
 
     await load_settings()
+    await TaskScheduler.init()
 
     await gather(TgClient.start_bot(), TgClient.start_user())
     await gather(load_configurations(), update_variables())

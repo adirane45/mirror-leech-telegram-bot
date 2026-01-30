@@ -213,5 +213,30 @@ class DbManager:
             return
         await self.db[name][TgClient.ID].drop()
 
+    async def save_task_schedule(self, task_id: str, task_data: dict):
+        if self._return or self.db is None:
+            return
+        await self.db.schedules[TgClient.ID].update_one(
+            {"_id": task_id}, {"$set": task_data}, upsert=True
+        )
+
+    async def delete_task_schedule(self, task_id: str):
+        if self._return or self.db is None:
+            return
+        await self.db.schedules[TgClient.ID].delete_one({"_id": task_id})
+
+    async def get_task_schedules(self):
+        if self._return or self.db is None:
+            return {}
+        schedules = {}
+        if await self.db.schedules[TgClient.ID].find_one():
+            rows = self.db.schedules[TgClient.ID].find({})
+            async for row in rows:
+                task_id = row.get("_id")
+                if task_id:
+                    row.pop("_id", None)
+                    schedules[task_id] = row
+        return schedules
+
 
 database = DbManager()

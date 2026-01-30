@@ -274,6 +274,55 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            schedule_task,
+            filters=command(BotCommands.ScheduleCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            list_schedules,
+            filters=command(BotCommands.SchedulesCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            cancel_schedule,
+            filters=command(BotCommands.UnscheduleCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            set_bandwidth,
+            filters=command(BotCommands.LimitCommand, case_sensitive=True)
+            & CustomFilters.sudo,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            set_task_bandwidth,
+            filters=command(BotCommands.LimitTaskCommand, case_sensitive=True)
+            & CustomFilters.sudo,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            manage_categories,
+            filters=command(BotCommands.CategoryCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            categorize_task,
+            filters=command(BotCommands.CategorizeCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             task_status,
             filters=command(BotCommands.StatusCommand, case_sensitive=True)
             & CustomFilters.authorized,
