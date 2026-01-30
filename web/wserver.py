@@ -379,8 +379,11 @@ async def set_aria2(gid, selected_files):
 async def homepage():
     return (
         "<h1>See mirror-leech-telegram-bot "
-        "<a href='https://www.github.com/anasty17/mirror-leech-telegram-bot'>@GitHub</a> "
-        "By <a href='https://github.com/anasty17'>Anas</a></h1>"
+        "<a href='https://www.github.com/adirane45/mirror-leech-telegram-bot'>@GitHub</a> "
+        "By <a href='https://github.com/adirane45'>Aditya Rane</a> | "
+        "<a href='https://www.linkedin.com/in/aditya-rane-a912004r/'>LinkedIn</a> | "
+        "<a href='https://www.instagram.com/rane_adi45'>Instagram</a> | "
+        "<a href='https://t.me/rane_adi45'>Telegram</a></h1>"
     )
 
 
