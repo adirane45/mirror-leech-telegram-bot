@@ -30,6 +30,9 @@ from .nzb_search import hydra_search
 from .services import start, ping, log
 from .shell import run_shell
 from .speedtest import speedtest
+from .scheduler import schedule_task, list_schedules, cancel_schedule
+from .bandwidth import set_bandwidth, set_task_bandwidth
+from .task_categories import manage_categories, categorize_task
 from .queue_manager import (
     show_queue,
     pause_queue,
@@ -95,6 +98,13 @@ __all__ = [
     "log",
     "run_shell",
     "speedtest",
+    "schedule_task",
+    "list_schedules",
+    "cancel_schedule",
+    "set_bandwidth",
+    "set_task_bandwidth",
+    "manage_categories",
+    "categorize_task",
     "show_queue",
     "pause_queue",
     "resume_queue",

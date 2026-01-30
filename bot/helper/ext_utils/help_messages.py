@@ -419,6 +419,13 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.StatusCommand}: Shows a status of all the downloads.
 /{BotCommands.StatsCommand}: Show stats of the machine where the bot is hosted in.
 /{BotCommands.SpeedCommand}: Run speedtest to check server's internet speed.
+/{BotCommands.ScheduleCommand}: Schedule a mirror/leech task.
+/{BotCommands.SchedulesCommand}: List your scheduled tasks.
+/{BotCommands.UnscheduleCommand}: Cancel a scheduled task.
+/{BotCommands.LimitCommand}: Set global bandwidth limit (Only Owner & Sudo).
+/{BotCommands.LimitTaskCommand}: Set task bandwidth limit (Only Owner & Sudo).
+/{BotCommands.CategoryCommand}: Manage task categories.
+/{BotCommands.CategorizeCommand}: Assign category to a task by gid.
 /{BotCommands.QueueCommand}: Show all active tasks with queue management options.
 /{BotCommands.PauseCommand} [gid]: Pause a specific task (or reply to task message).
 /{BotCommands.ResumeCommand} [gid]: Resume a paused task (or reply to task message).

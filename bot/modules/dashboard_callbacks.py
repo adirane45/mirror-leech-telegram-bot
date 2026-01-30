@@ -1,4 +1,5 @@
 # Dashboard Quick Actions Callback Handler
+# Handle interactive button clicks from dashboard
 # Modified by: justadi
 
 from ..helper.ext_utils.bot_utils import new_task

@@ -950,51 +950,30 @@ Authentication using [cookies.txt](https://github.com/yt-dlp/yt-dlp/wiki/Extract
   <img src="https://contrib.rocks/image?repo=anasty17/mirror-leech-telegram-bot" />
 </a>
 
-# Donations
+-----
 
-<p> If you feel like showing your appreciation for this project, then how about buying me a coffee.</p>
+## 🎉 Enhanced Features by justadi
 
-[!["Buy Me A Coffee"](https://storage.ko-fi.com/cdn/kofi2.png)](https://ko-fi.com/anasty17)
+### Advanced Task Management
+- ⏰ **Task Scheduling**: Schedule downloads to start at specific times
+- 🚦 **Bandwidth Limiting**: Global and per-task speed limits
+- 📂 **Task Categorization**: Organize tasks into custom categories
+- 📊 **Progress Visualization**: Enhanced progress bars in status view
 
-Binance ID:
+### Commands
+```bash
+# Scheduling
+/schedule HH:MM mirror <link>     # Schedule a task
+/schedules                        # List scheduled tasks
+/unschedule <task_id>            # Cancel scheduled task
 
-```
-52187862
-```
+# Bandwidth Management
+/limit dl|ul <mbps|off>          # Set global limit
+/limit_task <gid> dl|ul <mbps>   # Set task-specific limit
 
-USDT Address:
-
-```
-TEzjjfkxLKQqndpsdpkA7jgiX7QQCL5p4f
-```
-
-Network:
-
-```
-TRC20
-```
-TRX Address:
-
-```
-TEzjjfkxLKQqndpsdpkA7jgiX7QQCL5p4f
-```
-
-Network:
-
-```
-TRC20
-```
-
-BTC Address:
-
-```
-17dkvxjqdc3yiaTs6dpjUB1TjV3tD7ScWe
-```
-
-ETH Address:
-
-```
-0xf798a8a1c72d593e16d8f3bb619ebd1a093c7309
+# Task Organization
+/category list|add|del|stats     # Manage categories
+/categorize <gid> <category>     # Assign category to task
 ```
 
 -----

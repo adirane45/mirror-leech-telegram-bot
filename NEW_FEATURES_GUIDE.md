@@ -2,7 +2,100 @@
 **Enhanced by: justadi**
 
 ## Overview
-This bot has been enhanced with comprehensive UI/UX features, interactive keyboards, and advanced task management capabilities - all while preserving existing functionality.
+This bot has been enhanced with comprehensive UI/UX features, interactive keyboards, advanced task management capabilities, task scheduling, bandwidth limiting, and categorization - all while preserving existing functionality.
+
+---
+
+## 🆕 Advanced Features (2026 Update)
+
+### Task Scheduling
+Schedule downloads to start at specific times, perfect for taking advantage of off-peak bandwidth hours.
+
+**Commands:**
+- `/schedule HH:MM mirror <link> [options]` - Schedule for specific time today/tomorrow
+- `/schedule YYYY-MM-DD HH:MM leech <link>` - Schedule for specific date and time
+- `/schedules` - List all your scheduled tasks
+- `/unschedule <task_id>` - Cancel a scheduled task
+
+**Examples:**
+```bash
+# Schedule at 2:30 AM tonight
+/schedule 02:30 mirror https://example.com/file.zip
+
+# Schedule with date
+/schedule 2026-02-01 18:00 leech magnet:?xt=urn:btih:...
+
+# List your schedules
+/schedules
+
+# Cancel a schedule
+/unschedule abc123def456
+```
+
+**Modified by: justadi**
+
+---
+
+### Bandwidth Limiting
+Control download and upload speeds globally or per-task to prevent network saturation.
+
+**Commands:**
+- `/limit dl <mbps>` - Set global download limit (sudo only)
+- `/limit ul <mbps>` - Set global upload limit (sudo only)
+- `/limit dl off` - Remove download limit
+- `/limit_task <gid> dl <mbps>` - Set task-specific download limit
+- `/limit_task <gid> ul <mbps>` - Set task-specific upload limit
+
+**Examples:**
+```bash
+# Set global 50 Mbps download limit
+/limit dl 50
+
+# Set global 10 Mbps upload limit
+/limit ul 10
+
+# Remove limits
+/limit dl off
+
+# Limit specific task to 20 Mbps
+/limit_task abc123 dl 20
+```
+
+**Modified by: justadi**
+
+---
+
+### Task Categorization
+Organize your tasks into categories like "Movies", "Software", "Backups" for better management.
+
+**Commands:**
+- `/category list` - Show all categories
+- `/category add <name>` - Create new category
+- `/category del <name>` - Delete category
+- `/category stats` - Show category statistics
+- `/categorize <gid> <category>` - Assign task to category
+
+**Examples:**
+```bash
+# Create categories
+/category add movies
+/category add software
+
+# List categories
+/category list
+
+# Assign task to category
+/categorize abc123 movies
+
+# View stats
+/category stats
+```
+
+**Modified by: justadi**
+
+---
+
+## 📊 Original Features
 
 ---
 
