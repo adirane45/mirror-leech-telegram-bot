@@ -371,4 +371,62 @@ def add_handlers():
             filters=command(BotCommands.ResumeAllCommand, case_sensitive=True)
             & CustomFilters.owner,
         )
+    )    TgClient.bot.add_handler(
+        MessageHandler(
+            dashboard,
+            filters=command(BotCommands.DashboardCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            task_details,
+            filters=command(BotCommands.TaskDetailsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            search_tasks,
+            filters=command(BotCommands.SearchTasksCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            filter_tasks,
+            filters=command(BotCommands.FilterTasksCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            download_history_view,
+            filters=command(BotCommands.HistoryCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            settings_panel,
+            filters=command(BotCommands.SettingsUICommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            view_toggle,
+            filters=command(BotCommands.ViewToggleCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            set_alerts,
+            filters=command(BotCommands.SetAlertsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(settings_callback, filters=regex("^settings"))
     )

@@ -3,7 +3,7 @@ from psutil import virtual_memory, cpu_percent, disk_usage
 from time import time
 from asyncio import iscoroutinefunction, gather
 
-from ... import task_dict, task_dict_lock, bot_start_time, status_dict, DOWNLOAD_DIR
+from ... import task_dict, task_dict_lock, bot_start_time, status_dict, DOWNLOAD_DIR, user_data
 from ...core.config_manager import Config
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.bot_commands import BotCommands
@@ -45,6 +45,39 @@ STATUSES = {
     "PA": MirrorStatus.STATUS_PAUSED,
     "CK": MirrorStatus.STATUS_CHECK,
 }
+
+STATUS_EMOJI = {
+    MirrorStatus.STATUS_DOWNLOAD: "▶️",
+    MirrorStatus.STATUS_UPLOAD: "⬆️",
+    MirrorStatus.STATUS_QUEUEDL: "⏳",
+    MirrorStatus.STATUS_QUEUEUP: "⏳",
+    MirrorStatus.STATUS_PAUSED: "⏸️",
+    MirrorStatus.STATUS_CLONE: "📂",
+    MirrorStatus.STATUS_SEED: "🌱",
+    MirrorStatus.STATUS_ARCHIVE: "🗜️",
+    MirrorStatus.STATUS_EXTRACT: "📦",
+    MirrorStatus.STATUS_SPLIT: "✂️",
+    MirrorStatus.STATUS_CHECK: "✅",
+    MirrorStatus.STATUS_SAMVID: "🎞️",
+    MirrorStatus.STATUS_CONVERT: "🎛️",
+    MirrorStatus.STATUS_FFMPEG: "🎬",
+}
+
+
+def speed_indicator(speed_text: str):
+    try:
+        speed_bytes = speed_string_to_bytes(speed_text)
+    except Exception:
+        speed_bytes = 0
+    if speed_bytes >= 50 * 1024 * 1024:
+        return "⚡"
+    if speed_bytes >= 10 * 1024 * 1024:
+        return "🚀"
+    if speed_bytes >= 2 * 1024 * 1024:
+        return "🏃"
+    if speed_bytes > 0:
+        return "🐢"
+    return "⏸️"
 
 
 async def get_task_by_gid(gid: str):
@@ -163,6 +196,12 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
 
     tasks = await get_specific_tasks(status, sid if is_user else None)
 
+    view_mode = "detailed"
+    if is_user:
+        view_mode = user_data.get(sid, {}).get("UI_VIEW", "detailed")
+    if sid in status_dict and status_dict[sid].get("view"):
+        view_mode = status_dict[sid]["view"]
+
     STATUS_LIMIT = Config.STATUS_LIMIT
     tasks_no = len(tasks)
     pages = (max(tasks_no, 1) + STATUS_LIMIT - 1) // STATUS_LIMIT
@@ -174,6 +213,14 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         status_dict[sid]["page_no"] = page_no
     start_position = (page_no - 1) * STATUS_LIMIT
 
+    counts = {
+        "download": 0,
+        "upload": 0,
+        "paused": 0,
+        "queued": 0,
+        "other": 0,
+    }
+
     for index, task in enumerate(
         tasks[start_position : STATUS_LIMIT + start_position], start=1
     ):
@@ -183,10 +230,22 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             tstatus = await task.status()
         else:
             tstatus = task.status()
-        if task.listener.is_super_chat:
-            msg += f"<b>{index + start_position}.<a href='{task.listener.message.link}'>{tstatus}</a>: </b>"
+        if tstatus == MirrorStatus.STATUS_DOWNLOAD:
+            counts["download"] += 1
+        elif tstatus == MirrorStatus.STATUS_UPLOAD:
+            counts["upload"] += 1
+        elif tstatus == MirrorStatus.STATUS_PAUSED:
+            counts["paused"] += 1
+        elif tstatus in [MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
+            counts["queued"] += 1
         else:
-            msg += f"<b>{index + start_position}.{tstatus}: </b>"
+            counts["other"] += 1
+
+        status_icon = STATUS_EMOJI.get(tstatus, "⚙️")
+        if task.listener.is_super_chat:
+            msg += f"<b>{index + start_position}.<a href='{task.listener.message.link}'>{status_icon} {tstatus}</a>:</b> "
+        else:
+            msg += f"<b>{index + start_position}.{status_icon} {tstatus}:</b> "
         msg += f"<code>{escape(f'{task.name()}')}</code>"
         if task.listener.subname:
             msg += f"\n<i>{task.listener.subname}</i>"
@@ -195,7 +254,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             and task.listener.progress
         ):
             progress = task.progress()
-            msg += f"\n{get_progress_bar_string(progress)} {progress}"
+            msg += f"\n<b>Progress:</b> {get_progress_bar_string(progress)} {progress}"
             if task.listener.subname:
                 subsize = f"/{get_readable_file_size(task.listener.subsize)}"
                 ac = len(task.listener.files_to_proceed)
@@ -203,12 +262,17 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             else:
                 subsize = ""
                 count = ""
-            msg += f"\n<b>Processed:</b> {task.processed_bytes()}{subsize}"
-            if count:
-                msg += f"\n<b>Count:</b> {count}"
-            msg += f"\n<b>Size:</b> {task.size()}"
-            msg += f"\n<b>Speed:</b> {task.speed()}"
-            msg += f"\n<b>ETA:</b> {task.eta()}"
+            if view_mode == "detailed":
+                msg += f"\n<b>Processed:</b> {task.processed_bytes()}{subsize}"
+                if count:
+                    msg += f"\n<b>Count:</b> {count}"
+                msg += f"\n<b>Size:</b> {task.size()}"
+                spd = task.speed()
+                msg += f"\n<b>Speed:</b> {speed_indicator(spd)} {spd}"
+                msg += f"\n<b>ETA:</b> ⏳ {task.eta()}"
+            else:
+                spd = task.speed()
+                msg += f"\n<b>Speed:</b> {speed_indicator(spd)} {spd} | <b>ETA:</b> ⏳ {task.eta()}"
             if (
                 tstatus == MirrorStatus.STATUS_DOWNLOAD
                 and task.listener.is_torrent
@@ -234,8 +298,15 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         else:
             msg = f"No Active {status} Tasks!\n\n"
     buttons = ButtonMaker()
+    msg = (
+        f"<b>📌 Status Overview:</b> ▶️ {counts['download']} | ⬆️ {counts['upload']} | "
+        f"⏸️ {counts['paused']} | ⏳ {counts['queued']} | ⚙️ {counts['other']}\n\n"
+    ) + msg
     if not is_user:
         buttons.data_button("📜", f"status {sid} ov", position="header")
+    buttons.data_button(
+        "View", f"status {sid} view", position="header"
+    )
     if len(tasks) > STATUS_LIMIT:
         msg += f"<b>Page:</b> {page_no}/{pages} | <b>Tasks:</b> {tasks_no} | <b>Step:</b> {page_step}\n"
         buttons.data_button("<<", f"status {sid} pre", position="header")

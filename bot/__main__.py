@@ -57,10 +57,12 @@ bot_loop.run_until_complete(main())
 from .helper.ext_utils.bot_utils import create_help_buttons
 from .helper.listeners.aria2_listener import add_aria2_callbacks
 from .core.handlers import add_handlers
+from .modules.settings_ui import init_ui_monitor
 
 add_aria2_callbacks()
 create_help_buttons()
 add_handlers()
+init_ui_monitor()
 
 LOGGER.info("Bot Started!")
 bot_loop.run_forever()

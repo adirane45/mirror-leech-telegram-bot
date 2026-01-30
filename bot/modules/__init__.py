@@ -38,6 +38,11 @@ from .queue_manager import (
     pause_all_queue,
     resume_all_queue,
 )
+from .dashboard import dashboard
+from .task_details import task_details
+from .search_filter import search_tasks, filter_tasks
+from .history import download_history_view
+from .settings_ui import settings_panel, view_toggle, set_alerts, settings_callback
 from .stats import bot_stats, get_packages_version
 from .status import task_status, status_pages
 from .users_settings import get_users_settings, edit_user_settings, send_user_settings
@@ -95,6 +100,15 @@ __all__ = [
     "set_priority",
     "pause_all_queue",
     "resume_all_queue",
+    "dashboard",
+    "task_details",
+    "search_tasks",
+    "filter_tasks",
+    "download_history_view",
+    "settings_panel",
+    "view_toggle",
+    "set_alerts",
+    "settings_callback",
     "bot_stats",
     "get_packages_version",
     "task_status",
