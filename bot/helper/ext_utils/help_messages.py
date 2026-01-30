@@ -457,3 +457,132 @@ NOTE: Try each command without any argument to see more detalis.
 
 # Enhanced with Interactive UI/UX and Queue Manager
 # Modified by: justadi
+
+# Archive Management Help - Modified by: justadi
+archive_help = """<b>Archive Management Commands</b>
+
+<b>Create ZIP/TAR Archive</b>: /zip
+Usage: /zip <source_path> [format] [level]
+
+Formats:
+  • zip      - Universal format (fast compression)
+  • tar      - Uncompressed TAR
+  • tar.gz   - TAR with GZIP (good compression)
+  • tar.bz2  - TAR with BZIP2 (better compression)
+  • 7z       - Best compression ratio
+
+Compression Levels (0-9):
+  • 0       - No compression
+  • 1-5     - Light to medium compression
+  • 6       - Default (balanced speed/ratio)
+  • 7-9     - High compression (slower)
+
+Examples:
+  /zip /downloads/folder
+  /zip /downloads/video.mp4 zip 9
+  /zip /downloads/files tar.gz
+
+<b>Extract Archive</b>: /unzip
+Usage: /unzip <archive_path> [destination] [password]
+
+Examples:
+  /unzip /downloads/archive.zip
+  /unzip archive.zip /tmp/extracted
+  /unzip secure.zip /tmp password123
+
+<b>List Archive Contents</b>: /zipinfo
+Usage: /zipinfo <archive_path>
+
+Shows:
+  • Number of files in archive
+  • Original and compressed size
+  • Compression ratio
+  • File listing
+
+Example:
+  /zipinfo archive.zip
+"""
+
+# Media Information Help - Modified by: justadi
+media_help = """<b>Media Information Extraction</b>
+
+<b>Get Media Details</b>: /mediainfo
+Usage: /mediainfo <file_path> [brief]
+
+Detailed Output:
+  • Container format (MP4, MKV, AVI, etc.)
+  • Video streams (codec, resolution, fps, bitrate)
+  • Audio streams (codec, channels, sample rate)
+  • Subtitle tracks
+  • Duration and file size
+  • Metadata (title, artist, album, etc.)
+  • Quality rating
+
+Examples:
+  /mediainfo /downloads/movie.mkv
+  /mediainfo video.mp4 brief
+
+<b>Extract Video Thumbnail</b>: /thumbnail
+Usage: /thumbnail <file_path> [timestamp]
+
+Extracts a frame from video at specified time.
+Timestamp Format: HH:MM:SS (default: 00:00:05)
+
+Examples:
+  /thumbnail video.mp4                    (extract at 5 seconds)
+  /thumbnail movie.mkv 00:00:30           (extract at 30 seconds)
+  /thumbnail film.avi 00:02:15            (extract at 2 min 15 sec)
+
+<b>Quick Media Stats</b>: /mstats
+Usage: /mstats <file_path>
+
+Shows essential information:
+  • Resolution and FPS
+  • Duration and file size
+  • Codecs (video & audio)
+  • Quality rating
+
+Useful for quick checks without detailed analysis.
+
+Example:
+  /mstats video.mp4
+"""
+
+# Web Dashboard Help - Modified by: justadi
+dashboard_web_help = """<b>Web-Based Dashboard</b>
+
+Access real-time download monitoring at:
+http://your-bot-domain:8000/dashboard
+
+<b>Features</b>:
+  • Real-time task status updates
+  • Download/upload progress visualization
+  • Speed monitoring (live bitrate)
+  • Multi-task management interface
+  • System statistics (CPU, RAM, Disk)
+  • Task control (pause, resume, cancel)
+  • Responsive design for mobile/desktop
+  • WebSocket for instant updates
+
+<b>Dashboard Metrics</b>:
+  • Active Tasks - Number of running downloads
+  • Total Speed - Combined download speed
+  • Total Downloads - Count of mirror tasks
+  • Total Uploads - Count of leech tasks
+
+<b>Task Controls</b>:
+  • Pause - Temporarily stop a task
+  • Resume - Continue paused task
+  • Cancel - Stop and delete task
+
+<b>System Info</b>:
+  • CPU Usage percentage
+  • Memory (RAM) usage
+  • Disk space usage
+  • Bot uptime
+
+<b>WebSocket Updates</b>:
+Real-time progress updates without page refresh.
+Automatic reconnection on connection loss.
+"""
+
