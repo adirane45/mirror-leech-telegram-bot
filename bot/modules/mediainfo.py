@@ -25,7 +25,7 @@ import os
 import logging
 from bot.core.media_info import media_info_extractor
 from bot.helper.ext_utils.bot_utils import new_task, is_premium_user
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from bot.helper.telegram_helper.message_utils import send_message, edit_message, send_file
 from pyrogram.types import Message
 
 LOGGER = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ async def get_media_info(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message, 
+        await send_message(message, 
             "❌ <b>Usage:</b> /mediainfo &lt;file_path&gt; [brief]\n\n"
             "<b>Examples:</b>\n"
             "  /mediainfo /path/to/video.mp4\n"
@@ -80,21 +80,21 @@ async def get_media_info(_, message: Message):
     
     # Validate file exists
     if not os.path.exists(file_path):
-        await sendMessage(message, f"❌ File not found: {file_path}")
+        await send_message(message, f"❌ File not found: {file_path}")
         return
     
     if not os.path.isfile(file_path):
-        await sendMessage(message, f"❌ {file_path} is not a file")
+        await send_message(message, f"❌ {file_path} is not a file")
         return
     
     # Check permission
     if not await is_premium_user(message.from_user.id):
-        await sendMessage(message, "⚠️ This feature is available for premium users")
+        await send_message(message, "⚠️ This feature is available for premium users")
         return
     
     file_name = os.path.basename(file_path)
     
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"🔍 Analyzing media file...\n"
         f"📁 File: <code>{file_name}</code>\n\n"
@@ -113,9 +113,9 @@ async def get_media_info(_, message: Message):
             quality = media_info_extractor.get_quality_rating(media_info)
             info_text += f"\n\n⭐ <b>Quality:</b> {quality}"
             
-            await editMessage(status_msg, info_text)
+            await edit_message(status_msg, info_text)
         else:
-            await editMessage(status_msg, 
+            await edit_message(status_msg, 
                 "❌ Failed to extract media information\n\n"
                 "<b>Make sure:</b>\n"
                 "• File is a valid media file\n"
@@ -124,7 +124,7 @@ async def get_media_info(_, message: Message):
     
     except Exception as e:
         LOGGER.error(f"Media info extraction error: {e}")
-        await editMessage(status_msg, f"❌ Error: {str(e)}")
+        await edit_message(status_msg, f"❌ Error: {str(e)}")
 
 
 @new_task
@@ -165,7 +165,7 @@ async def extract_thumbnail(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message,
+        await send_message(message,
             "❌ <b>Usage:</b> /thumbnail &lt;file_path&gt; [timestamp]\n\n"
             "<b>Examples:</b>\n"
             "  /thumbnail /path/to/video.mp4\n"
@@ -179,11 +179,11 @@ async def extract_thumbnail(_, message: Message):
     
     # Validate file
     if not os.path.exists(file_path):
-        await sendMessage(message, f"❌ File not found: {file_path}")
+        await send_message(message, f"❌ File not found: {file_path}")
         return
     
     if not os.path.isfile(file_path):
-        await sendMessage(message, f"❌ {file_path} is not a file")
+        await send_message(message, f"❌ {file_path} is not a file")
         return
     
     # Validate timestamp format
@@ -194,19 +194,19 @@ async def extract_thumbnail(_, message: Message):
         for part in time_parts:
             int(part)
     except:
-        await sendMessage(message, 
+        await send_message(message, 
             "❌ Invalid timestamp format\n\n"
             "Use HH:MM:SS format (e.g., 00:00:30)")
         return
     
     # Check permission
     if not await is_premium_user(message.from_user.id):
-        await sendMessage(message, "⚠️ This feature is available for premium users")
+        await send_message(message, "⚠️ This feature is available for premium users")
         return
     
     file_name = os.path.basename(file_path)
     
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"🎬 Extracting thumbnail...\n"
         f"📁 File: <code>{file_name}</code>\n"
@@ -229,17 +229,17 @@ async def extract_thumbnail(_, message: Message):
         
         if success and os.path.exists(thumbnail_path):
             # Send thumbnail
-            await editMessage(status_msg, 
+            await edit_message(status_msg, 
                 f"✅ Thumbnail extracted successfully!\n\n"
                 f"📁 Source: <code>{file_name}</code>\n"
                 f"⏱️ Timestamp: {timestamp}\n"
                 f"💾 Size: {os.path.getsize(thumbnail_path)} bytes")
             
             # Send the image
-            await sendFile(message, thumbnail_path, 
+            await send_file(message, thumbnail_path, 
                 caption=f"Thumbnail from {file_name} @ {timestamp}")
         else:
-            await editMessage(status_msg,
+            await edit_message(status_msg,
                 "❌ Failed to extract thumbnail\n\n"
                 "<b>Make sure:</b>\n"
                 "• Video file is valid and readable\n"
@@ -248,7 +248,7 @@ async def extract_thumbnail(_, message: Message):
     
     except Exception as e:
         LOGGER.error(f"Thumbnail extraction error: {e}")
-        await editMessage(status_msg, f"❌ Error: {str(e)}")
+        await edit_message(status_msg, f"❌ Error: {str(e)}")
 
 
 @new_task
@@ -272,18 +272,18 @@ async def quick_media_stats(_, message: Message):
     parts = message.text.split()
     
     if len(parts) < 2:
-        await sendMessage(message, "❌ Usage: /mstats <file_path>")
+        await send_message(message, "❌ Usage: /mstats <file_path>")
         return
     
     file_path = parts[1]
     
     if not os.path.exists(file_path):
-        await sendMessage(message, f"❌ File not found: {file_path}")
+        await send_message(message, f"❌ File not found: {file_path}")
         return
     
     file_name = os.path.basename(file_path)
     
-    status_msg = await sendMessage(
+    status_msg = await send_message(
         message,
         f"📊 Getting quick stats...\n"
         f"📁 File: <code>{file_name}</code>"
@@ -320,13 +320,13 @@ async def quick_media_stats(_, message: Message):
             
             lines.append(f"\n⭐ <b>Quality:</b> {quality}")
             
-            await editMessage(status_msg, '\n'.join(lines))
+            await edit_message(status_msg, '\n'.join(lines))
         else:
-            await editMessage(status_msg, "❌ Failed to extract media information")
+            await edit_message(status_msg, "❌ Failed to extract media information")
     
     except Exception as e:
         LOGGER.error(f"Quick stats error: {e}")
-        await editMessage(status_msg, f"❌ Error: {str(e)}")
+        await edit_message(status_msg, f"❌ Error: {str(e)}")
 
 
 def _format_duration(seconds: float) -> str:
