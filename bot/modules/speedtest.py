@@ -7,11 +7,11 @@ from ..helper.telegram_helper.message_utils import send_message, edit_message
 
 @new_task
 async def speedtest(_, message):
-    """Run speedtest and display results"""
-    speed_msg = await send_message(message, "<b>Running speedtest...</b>")
+    """Run speedtest and display results - Modified by: justadi"""
+    speed_msg = await send_message(message, "<b>🚀 Running speedtest...</b>\n<i>Modified by: justadi</i>")
     
     try:
-        # Run speedtest-cli with json output
+        # Run speedtest-cli with simple output
         cmd = ["speedtest-cli", "--simple"]
         process = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = await process.communicate()
@@ -20,7 +20,7 @@ async def speedtest(_, message):
             error_msg = stderr.decode().strip() if stderr else "Unknown error"
             await edit_message(
                 speed_msg,
-                f"<b>Speedtest Failed!</b>\n\n<code>{error_msg}</code>"
+                f"<b>❌ Speedtest Failed!</b>\n\n<code>{error_msg}</code>\n\n<i>Modified by: justadi</i>"
             )
             return
         
@@ -28,31 +28,33 @@ async def speedtest(_, message):
         output = stdout.decode().strip()
         lines = output.split('\n')
         
-        result_text = "<b>🚀 Speedtest Results</b>\n\n"
+        result_text = "<b>🚀 Speedtest Results</b>\n"
+        result_text += "<i>Modified by: justadi</i>\n\n"
         
         for line in lines:
             if line.startswith("Ping:"):
                 ping = line.split(":")[1].strip()
-                result_text += f"<b>📡 Ping:</b> <code>{ping}</code>\n"
+                result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
             elif line.startswith("Download:"):
                 download = line.split(":")[1].strip()
-                result_text += f"<b>⬇️ Download:</b> <code>{download}</code>\n"
+                result_text += f"<b>⬇️ Download:</b> <code>{download}</code> Mbps\n"
             elif line.startswith("Upload:"):
                 upload = line.split(":")[1].strip()
-                result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code>\n"
+                result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code> Mbps\n"
         
         await edit_message(speed_msg, result_text)
         
     except FileNotFoundError:
         await edit_message(
             speed_msg,
-            "<b>Speedtest Error!</b>\n\n"
+            "<b>❌ Speedtest Error!</b>\n\n"
             "<code>speedtest-cli is not installed.\n"
             "Please install it using:\n"
-            "pip install speedtest-cli</code>"
+            "pip install speedtest-cli</code>\n\n"
+            "<i>Modified by: justadi</i>"
         )
     except Exception as e:
         await edit_message(
             speed_msg,
-            f"<b>Speedtest Error!</b>\n\n<code>{str(e)}</code>"
+            f"<b>❌ Speedtest Error!</b>\n\n<code>{str(e)}</code>\n\n<i>Modified by: justadi</i>"
         )

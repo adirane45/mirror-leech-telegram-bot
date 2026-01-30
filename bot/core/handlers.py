@@ -1,3 +1,7 @@
+# Bot Command Handlers
+# Enhanced with Interactive UI and Queue Management
+# Modified by: justadi
+
 from pyrogram.filters import command, regex
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler, EditedMessageHandler
 

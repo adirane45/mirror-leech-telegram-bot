@@ -7,6 +7,7 @@ from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.status_utils import get_task_by_gid, get_all_tasks, MirrorStatus
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.interactive_keyboards import InteractiveKeyboards
 from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.message_utils import (
     send_message,
@@ -20,25 +21,25 @@ queue_info = {}  # gid -> {"priority": int, "timeout": int, "paused": bool, "cre
 
 @new_task
 async def show_queue(_, message):
-    """Display all active tasks with options to manage them"""
+    """Display all active tasks with options to manage them - Modified by: justadi"""
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     
     async with task_dict_lock:
         tasks = list(task_dict.values())
     
     if not tasks:
-        await send_message(message, "❌ No active tasks in queue!")
+        await send_message(message, "❌ <b>No Active Tasks!</b>\n\n<i>Modified by: justadi</i>")
         return
     
     # Build task list with buttons
-    buttons = ButtonMaker()
-    msg_text = "<b>📋 Task Queue Manager</b>\n\n"
+    msg_text = "<b>📋 Task Queue Manager</b>\n"
+    msg_text += "<i>Enhanced UI by: justadi</i>\n\n"
     msg_text += f"<b>Total Tasks: {len(tasks)}</b>\n\n"
     
     for idx, task in enumerate(tasks, 1):
         status = task.status()
         gid = task.gid()
-        name = task.name()[:40]  # Truncate long names
+        name = task.name()[:35]  # Truncate long names
         
         paused = queue_info.get(gid, {}).get("paused", False)
         priority = queue_info.get(gid, {}).get("priority", 0)
@@ -47,24 +48,26 @@ async def show_queue(_, message):
         priority_str = f" [P{priority}]" if priority != 0 else ""
         
         msg_text += f"{idx}. {status_emoji} <code>{name}</code>{priority_str}\n"
-        msg_text += f"   Status: <b>{status}</b> | GID: <code>{gid}</code>\n"
+        msg_text += f"   <b>Status:</b> {status} | <code>{gid[:8]}</code>\n\n"
     
-    msg_text += "\n<b>Actions:</b>\n"
-    msg_text += "• /pqueue [gid] - Pause task\n"
-    msg_text += "• /rqueue [gid] - Resume task\n"
-    msg_text += "• /prqueue [gid] [priority] - Set priority (0=normal, 1=high, -1=low)\n"
+    msg_text += "<b>⚡ Quick Actions Available:</b>\n"
+    msg_text += "• Use buttons below to manage tasks\n"
+    msg_text += "• Tap any task for options\n"
     
-    queue_msg = await send_message(message, msg_text)
+    queue_msg = await send_message(message, msg_text, InteractiveKeyboards.queue_management())
 
 
 @new_task
 async def pause_queue(_, message):
-    """Pause a specific task or all tasks"""
+    """Pause a specific task or all tasks - Modified by: justadi"""
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split()
     
     if len(msg) < 2:
-        await send_message(message, "Usage: /pqueue [gid] or reply to a task message")
+        await send_message(
+            message, 
+            "⏸️ <b>Pause Task</b>\n\nUsage: /pqueue [gid]\n\n<i>Modified by: justadi</i>"
+        )
         return
     
     gid = msg[1] if len(msg) > 1 else None
@@ -78,12 +81,12 @@ async def pause_queue(_, message):
                     gid = task.gid()
     
     if not gid:
-        await send_message(message, "❌ GID not found!")
+        await send_message(message, "❌ <b>GID not found!</b>")
         return
     
     task = await get_task_by_gid(gid)
     if task is None:
-        await send_message(message, f"❌ Task with GID <code>{gid}</code> not found!")
+        await send_message(message, f"❌ <b>Task not found!</b>\n<code>{gid}</code>")
         return
     
     # Check authorization
@@ -91,7 +94,7 @@ async def pause_queue(_, message):
         Config.OWNER_ID != user_id
         and task.listener.user_id != user_id
     ):
-        await send_message(message, "❌ This task is not for you!")
+        await send_message(message, "❌ <b>Unauthorized!</b> This task is not for you!")
         return
     
     try:
@@ -101,22 +104,29 @@ async def pause_queue(_, message):
             await obj.pause()
             queue_info[gid] = queue_info.get(gid, {})
             queue_info[gid]["paused"] = True
-            await send_message(message, f"✅ Task <code>{gid}</code> has been paused!")
+            resp = await send_message(
+                message, 
+                f"✅ <b>Task Paused!</b>\n<code>{gid[:12]}</code>\n\n<i>Modified by: justadi</i>",
+                InteractiveKeyboards.task_menu(gid)
+            )
         else:
-            await send_message(message, f"⚠️ This task type doesn't support pause!")
+            await send_message(message, f"⚠️ <b>Not Supported!</b>\nThis task type doesn't support pause!")
     except Exception as e:
         LOGGER.error(f"Error pausing task {gid}: {e}")
-        await send_message(message, f"❌ Error pausing task: {str(e)}")
+        await send_message(message, f"❌ <b>Error:</b> {str(e)}")
 
 
 @new_task
 async def resume_queue(_, message):
-    """Resume a paused task"""
+    """Resume a paused task - Modified by: justadi"""
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split()
     
     if len(msg) < 2:
-        await send_message(message, "Usage: /rqueue [gid] or reply to a task message")
+        await send_message(
+            message, 
+            "▶️ <b>Resume Task</b>\n\nUsage: /rqueue [gid]\n\n<i>Modified by: justadi</i>"
+        )
         return
     
     gid = msg[1] if len(msg) > 1 else None
@@ -130,12 +140,12 @@ async def resume_queue(_, message):
                     gid = task.gid()
     
     if not gid:
-        await send_message(message, "❌ GID not found!")
+        await send_message(message, "❌ <b>GID not found!</b>")
         return
     
     task = await get_task_by_gid(gid)
     if task is None:
-        await send_message(message, f"❌ Task with GID <code>{gid}</code> not found!")
+        await send_message(message, f"❌ <b>Task not found!</b>\n<code>{gid}</code>")
         return
     
     # Check authorization
@@ -143,7 +153,7 @@ async def resume_queue(_, message):
         Config.OWNER_ID != user_id
         and task.listener.user_id != user_id
     ):
-        await send_message(message, "❌ This task is not for you!")
+        await send_message(message, "❌ <b>Unauthorized!</b> This task is not for you!")
         return
     
     try:
@@ -153,25 +163,34 @@ async def resume_queue(_, message):
             await obj.resume()
             queue_info[gid] = queue_info.get(gid, {})
             queue_info[gid]["paused"] = False
-            await send_message(message, f"✅ Task <code>{gid}</code> has been resumed!")
+            resp = await send_message(
+                message, 
+                f"✅ <b>Task Resumed!</b>\n<code>{gid[:12]}</code>\n\n<i>Modified by: justadi</i>",
+                InteractiveKeyboards.task_menu(gid)
+            )
         else:
-            await send_message(message, f"⚠️ This task type doesn't support resume!")
+            await send_message(message, f"⚠️ <b>Not Supported!</b>\nThis task type doesn't support resume!")
     except Exception as e:
         LOGGER.error(f"Error resuming task {gid}: {e}")
-        await send_message(message, f"❌ Error resuming task: {str(e)}")
+        await send_message(message, f"❌ <b>Error:</b> {str(e)}")
 
 
 @new_task
 async def set_priority(_, message):
-    """Set task priority"""
+    """Set task priority - Modified by: justadi"""
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split()
     
     if len(msg) < 3:
         await send_message(
             message,
-            "Usage: /prqueue [gid] [priority]\n"
-            "Priority: 1=high, 0=normal, -1=low"
+            "⬆️ <b>Set Priority</b>\n\n"
+            "Usage: /prqueue [gid] [priority]\n\n"
+            "Priority Levels:\n"
+            "• <code>1</code> = ⬆️ High\n"
+            "• <code>0</code> = ➡️ Normal\n"
+            "• <code>-1</code> = ⬇️ Low\n\n"
+            "<i>Modified by: justadi</i>"
         )
         return
     
@@ -179,15 +198,15 @@ async def set_priority(_, message):
     try:
         priority = int(msg[2])
         if priority not in [-1, 0, 1]:
-            await send_message(message, "❌ Priority must be -1, 0, or 1")
+            await send_message(message, "❌ <b>Invalid Priority!</b>\nMust be -1, 0, or 1")
             return
     except (ValueError, IndexError):
-        await send_message(message, "❌ Invalid priority value!")
+        await send_message(message, "❌ <b>Error!</b> Invalid priority value")
         return
     
     task = await get_task_by_gid(gid)
     if task is None:
-        await send_message(message, f"❌ Task with GID <code>{gid}</code> not found!")
+        await send_message(message, f"❌ <b>Task not found!</b>\n<code>{gid}</code>")
         return
     
     # Check authorization
@@ -195,31 +214,35 @@ async def set_priority(_, message):
         Config.OWNER_ID != user_id
         and task.listener.user_id != user_id
     ):
-        await send_message(message, "❌ This task is not for you!")
+        await send_message(message, "❌ <b>Unauthorized!</b> This task is not for you!")
         return
     
     queue_info[gid] = queue_info.get(gid, {})
     queue_info[gid]["priority"] = priority
     
-    priority_text = {-1: "Low", 0: "Normal", 1: "High"}[priority]
-    await send_message(
+    priority_text = {-1: "⬇️ Low", 0: "➡️ Normal", 1: "⬆️ High"}[priority]
+    resp = await send_message(
         message,
-        f"✅ Task <code>{gid}</code> priority set to <b>{priority_text}</b>"
+        f"✅ <b>Priority Updated!</b>\n"
+        f"GID: <code>{gid[:12]}</code>\n"
+        f"Priority: <b>{priority_text}</b>\n\n"
+        f"<i>Modified by: justadi</i>",
+        InteractiveKeyboards.task_menu(gid)
     )
 
 
 @new_task
 async def pause_all_queue(_, message):
-    """Pause all active tasks"""
+    """Pause all active tasks - Modified by: justadi"""
     if message.from_user.id != Config.OWNER_ID:
-        await send_message(message, "❌ This command is only for the owner!")
+        await send_message(message, "❌ <b>Owner Only!</b>\nThis command is only for the owner!")
         return
     
     async with task_dict_lock:
         tasks = list(task_dict.values())
     
     if not tasks:
-        await send_message(message, "❌ No active tasks to pause!")
+        await send_message(message, "❌ <b>No Active Tasks!</b>")
         return
     
     paused_count = 0
@@ -234,21 +257,27 @@ async def pause_all_queue(_, message):
         except:
             pass
     
-    await send_message(message, f"✅ Paused <b>{paused_count}/{len(tasks)}</b> tasks!")
+    await send_message(
+        message, 
+        f"✅ <b>All Tasks Paused!</b>\n\n"
+        f"<b>Paused:</b> {paused_count}/{len(tasks)}\n\n"
+        f"<i>Modified by: justadi</i>",
+        InteractiveKeyboards.quick_actions()
+    )
 
 
 @new_task
 async def resume_all_queue(_, message):
-    """Resume all paused tasks"""
+    """Resume all paused tasks - Modified by: justadi"""
     if message.from_user.id != Config.OWNER_ID:
-        await send_message(message, "❌ This command is only for the owner!")
+        await send_message(message, "❌ <b>Owner Only!</b>\nThis command is only for the owner!")
         return
     
     async with task_dict_lock:
         tasks = list(task_dict.values())
     
     if not tasks:
-        await send_message(message, "❌ No active tasks to resume!")
+        await send_message(message, "❌ <b>No Active Tasks!</b>")
         return
     
     resumed_count = 0
@@ -263,4 +292,10 @@ async def resume_all_queue(_, message):
         except:
             pass
     
-    await send_message(message, f"✅ Resumed <b>{resumed_count}/{len(tasks)}</b> tasks!")
+    await send_message(
+        message, 
+        f"✅ <b>All Tasks Resumed!</b>\n\n"
+        f"<b>Resumed:</b> {resumed_count}/{len(tasks)}\n\n"
+        f"<i>Modified by: justadi</i>",
+        InteractiveKeyboards.quick_actions()
+    )
