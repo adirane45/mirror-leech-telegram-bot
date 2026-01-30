@@ -1,5 +1,6 @@
 # Task Details View - Modified by: justadi
 from html import escape
+from inspect import iscoroutinefunction
 
 from .. import task_dict, task_dict_lock
 from ..helper.ext_utils.bot_utils import new_task
@@ -32,7 +33,7 @@ async def task_details(_, message):
     
     # Gather task information
     name = escape(task.name())
-    status = task.status() if not callable(task.status) else await task.status()
+    status = await task.status() if iscoroutinefunction(task.status) else task.status()
     size = task.size()
     
     details = f"<b>🔎 Task Details</b>\n\n"

@@ -11,18 +11,24 @@ async def speedtest(_, message):
     speed_msg = await send_message(message, "<b>🚀 Running speedtest...</b>\n<i>Modified by: justadi</i>")
     
     try:
-        # Run speedtest-cli with simple output
-        cmd = ["speedtest-cli", "--simple"]
+        # Try ookla speedtest first (more reliable)
+        cmd = ["speedtest", "--accept-license", "--accept-gdpr"]
         process = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = await process.communicate()
         
         if process.returncode != 0:
-            error_msg = stderr.decode().strip() if stderr else "Unknown error"
-            await edit_message(
-                speed_msg,
-                f"<b>❌ Speedtest Failed!</b>\n\n<code>{error_msg}</code>\n\n<i>Modified by: justadi</i>"
-            )
-            return
+            # Fallback to speedtest-cli
+            cmd = ["speedtest-cli", "--simple", "--secure"]
+            process = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                error_msg = stderr.decode().strip() if stderr else "Unknown error"
+                await edit_message(
+                    speed_msg,
+                    f"<b>❌ Speedtest Failed!</b>\n\n<code>{error_msg}</code>\n\n<i>Modified by: justadi</i>"
+                )
+                return
         
         # Parse the output
         output = stdout.decode().strip()
@@ -31,16 +37,21 @@ async def speedtest(_, message):
         result_text = "<b>🚀 Speedtest Results</b>\n"
         result_text += "<i>Modified by: justadi</i>\n\n"
         
+        # Parse ookla speedtest output
         for line in lines:
-            if line.startswith("Ping:"):
+            if "Latency:" in line or "Idle Latency:" in line:
+                ping = line.split(":")[1].strip().split()[0]
+                result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
+            elif "Download:" in line:
+                download = line.split(":")[1].strip()
+                result_text += f"<b>⬇️ Download:</b> <code>{download}</code>\n"
+            elif "Upload:" in line:
+                upload = line.split(":")[1].strip()
+                result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code>\n"
+            # Fallback for speedtest-cli format
+            elif line.startswith("Ping:"):
                 ping = line.split(":")[1].strip()
                 result_text += f"<b>📡 Ping:</b> <code>{ping}</code> ms\n"
-            elif line.startswith("Download:"):
-                download = line.split(":")[1].strip()
-                result_text += f"<b>⬇️ Download:</b> <code>{download}</code> Mbps\n"
-            elif line.startswith("Upload:"):
-                upload = line.split(":")[1].strip()
-                result_text += f"<b>⬆️ Upload:</b> <code>{upload}</code> Mbps\n"
         
         await edit_message(speed_msg, result_text)
         

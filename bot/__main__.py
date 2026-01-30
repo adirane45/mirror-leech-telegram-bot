@@ -50,6 +50,10 @@ async def main():
         telegraph.create_account(),
         rclone_serve_booter(),
     )
+    
+    # Set bot commands for Telegram menu
+    from .helper.ext_utils.bot_commands_setup import set_bot_commands
+    await set_bot_commands()
 
 
 bot_loop.run_until_complete(main())
