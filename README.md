@@ -105,8 +105,8 @@ A **powerful, feature-rich Telegram bot** for managing downloads efficiently. Mi
 **Option 1: Docker (Easiest)**
 ```bash
 # Clone repository
-git clone https://github.com/adirane45/mirror.git
-cd mirror
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
+cd mirror-leech-telegram-bot
 
 # Setup config
 cp config_sample.py config.py
@@ -119,8 +119,8 @@ sudo docker-compose up --build
 **Option 2: Manual**
 ```bash
 # Clone and setup
-git clone https://github.com/adirane45/mirror.git
-cd mirror
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
+cd mirror-leech-telegram-bot
 python3 -m venv mltbenv
 source mltbenv/bin/activate
 pip install -r requirements.txt
