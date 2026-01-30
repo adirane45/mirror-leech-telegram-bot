@@ -3,6 +3,7 @@ from pyrogram.types import BotCommand
 
 from ...core.telegram_manager import TgClient
 from ..telegram_helper.bot_commands import BotCommands
+from ... import LOGGER
 
 
 async def set_bot_commands():
@@ -25,8 +26,6 @@ async def set_bot_commands():
     
     try:
         await TgClient.bot.set_bot_commands(commands)
-        from .. import LOGGER
         LOGGER.info("Bot commands set successfully")
     except Exception as e:
-        from .. import LOGGER
         LOGGER.error(f"Failed to set bot commands: {e}")
