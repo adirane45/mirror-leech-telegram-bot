@@ -7,6 +7,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, WARNING
 from asyncio import sleep
+from time import time
+import psutil
 from sabnzbdapi import SabnzbdClient
 from aioaria2 import Aria2HttpClient
 from aioqbt.client import create_client
@@ -49,6 +51,7 @@ basicConfig(
 )
 
 LOGGER = getLogger(__name__)
+START_TIME = time()
 
 
 async def re_verify(paused, resumed, hash_id):
@@ -91,6 +94,137 @@ async def re_verify(paused, resumed, hash_id):
 @app.get("/app/files", response_class=HTMLResponse)
 async def files(request: Request):
     return templates.TemplateResponse("page.html", {"request": request})
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def _safe_get(item, key, default=None):
+    if isinstance(item, dict):
+        return item.get(key, default)
+    return getattr(item, key, default)
+
+
+def _map_status(raw_status: str):
+    if not raw_status:
+        return "unknown"
+    raw = raw_status.lower()
+    if raw in {"active", "downloading", "forceddl", "queueddl"}:
+        return "downloading"
+    if raw in {"uploading", "forcedup", "queuedup", "seeding"}:
+        return "uploading"
+    if "pause" in raw:
+        return "paused"
+    if raw in {"error", "missingfiles"}:
+        return "error"
+    if raw in {"complete", "completed"}:
+        return "completed"
+    return raw
+
+
+async def _collect_aria2_tasks():
+    tasks = []
+    if not aria2:
+        return tasks
+    try:
+        active = await aria2.tellActive()
+        for item in active:
+            total = _to_int(item.get("totalLength", 0))
+            completed = _to_int(item.get("completedLength", 0))
+            progress = (completed / total * 100) if total > 0 else 0
+            tasks.append(
+                {
+                    "gid": item.get("gid"),
+                    "name": (item.get("bittorrent", {}) or {}).get("info", {}).get("name")
+                    or (item.get("files", [{}])[0] or {}).get("path", "Aria2 Task"),
+                    "engine": "aria2",
+                    "status": _map_status(item.get("status")),
+                    "progress": progress,
+                    "speed": _to_int(item.get("downloadSpeed", 0)),
+                    "eta": _to_int(item.get("eta", 0)),
+                    "total_length": total,
+                    "completed_length": completed,
+                }
+            )
+    except Exception as e:
+        LOGGER.error(f"Dashboard aria2 error: {e}")
+    return tasks
+
+
+async def _collect_qbittorrent_tasks():
+    tasks = []
+    if not qbittorrent:
+        return tasks
+    try:
+        torrents = await qbittorrent.torrents.info()
+        for item in torrents:
+            total = _to_int(_safe_get(item, "size", 0))
+            completed = _to_int(_safe_get(item, "downloaded", 0))
+            progress = _safe_get(item, "progress", 0) * 100
+            tasks.append(
+                {
+                    "gid": _safe_get(item, "hash", ""),
+                    "name": _safe_get(item, "name", "qBittorrent Task"),
+                    "engine": "qbittorrent",
+                    "status": _map_status(_safe_get(item, "state", "")),
+                    "progress": progress,
+                    "speed": _to_int(_safe_get(item, "dlspeed", 0)),
+                    "eta": _to_int(_safe_get(item, "eta", 0)),
+                    "total_length": total,
+                    "completed_length": completed,
+                }
+            )
+    except Exception as e:
+        LOGGER.error(f"Dashboard qBittorrent error: {e}")
+    return tasks
+
+
+@app.get("/api/dashboard/tasks")
+async def dashboard_tasks():
+    aria2_tasks = await _collect_aria2_tasks()
+    qbittorrent_tasks = await _collect_qbittorrent_tasks()
+    tasks = aria2_tasks + qbittorrent_tasks
+    return JSONResponse({"tasks": tasks, "total": len(tasks)})
+
+
+@app.get("/api/dashboard/stats")
+async def dashboard_stats():
+    total_speed = 0
+    try:
+        if aria2:
+            global_stats = await aria2.getGlobalStat()
+            total_speed += _to_int(global_stats.get("downloadSpeed", 0))
+        if qbittorrent:
+            transfer = await qbittorrent.transfer.info()
+            total_speed += _to_int(_safe_get(transfer, "dl_info_speed", 0))
+    except Exception as e:
+        LOGGER.error(f"Dashboard stats error: {e}")
+
+    cpu_usage = round(psutil.cpu_percent(interval=None), 2)
+    memory_usage = round(psutil.virtual_memory().percent, 2)
+
+    aria2_tasks = await _collect_aria2_tasks()
+    qbittorrent_tasks = await _collect_qbittorrent_tasks()
+    active_tasks = len(aria2_tasks) + len(qbittorrent_tasks)
+
+    return JSONResponse(
+        {
+            "active_tasks": active_tasks,
+            "total_speed": total_speed,
+            "cpu_usage": cpu_usage,
+            "memory_usage": memory_usage,
+            "uptime": int(time() - START_TIME),
+        }
+    )
 
 
 @app.api_route(

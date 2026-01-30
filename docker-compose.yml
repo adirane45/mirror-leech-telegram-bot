@@ -4,3 +4,5 @@ services:
     command: bash start.sh
     restart: on-failure
     network_mode: "host"
+    environment:
+      - BASE_URL_PORT=8000

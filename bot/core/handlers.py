@@ -6,6 +6,8 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler, EditedMessageHandler
 
 from ..modules import *
+from ..modules.archive import compress_file, extract_archive, list_archive
+from ..modules.mediainfo import get_media_info, extract_thumbnail, quick_media_stats
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.filters import CustomFilters
 from .telegram_manager import TgClient
@@ -482,4 +484,45 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(dashboard_callback_handler, filters=regex("^quick"))
+    )    TgClient.bot.add_handler(
+        MessageHandler(
+            compress_file,
+            filters=command(BotCommands.ZipCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            extract_archive,
+            filters=command(BotCommands.UnzipCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            list_archive,
+            filters=command(BotCommands.ZipInfoCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            get_media_info,
+            filters=command(BotCommands.MediaInfoCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            extract_thumbnail,
+            filters=command(BotCommands.ThumbnailCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            quick_media_stats,
+            filters=command(BotCommands.MStatsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
     )

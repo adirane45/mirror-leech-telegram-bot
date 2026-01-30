@@ -63,4 +63,10 @@ class BotCommands:
     UserSetCommand = [f"usetting{i}", f"us{i}"]
     SelectCommand = f"sel{i}"
     RssCommand = f"rss{i}"
-    NzbSearchCommand = f"nzbsearch{i}"
+    NzbSearchCommand = f"nzbsearch{i}"    ZipCommand = f"zip{i}"
+    UnzipCommand = f"unzip{i}"
+    ZipInfoCommand = f"zipinfo{i}"
+    MediaInfoCommand = f"mediainfo{i}"
+    ThumbnailCommand = f"thumbnail{i}"
+    MStatsCommand = f"mstats{i}"
+    WebDashboardCommand = f"webdash{i}"
