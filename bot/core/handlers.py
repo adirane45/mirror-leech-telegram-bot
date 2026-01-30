@@ -263,6 +263,13 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            speedtest,
+            filters=command(BotCommands.SpeedCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             task_status,
             filters=command(BotCommands.StatusCommand, case_sensitive=True)
             & CustomFilters.authorized,

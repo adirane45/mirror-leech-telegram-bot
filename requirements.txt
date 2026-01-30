@@ -24,6 +24,7 @@ pymongo
 kurigram
 python-magic
 requests
+speedtest-cli
 telegraph
 tenacity
 tgcrypto
