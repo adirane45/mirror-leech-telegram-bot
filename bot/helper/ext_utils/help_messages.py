@@ -419,6 +419,12 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.StatusCommand}: Shows a status of all the downloads.
 /{BotCommands.StatsCommand}: Show stats of the machine where the bot is hosted in.
 /{BotCommands.SpeedCommand}: Run speedtest to check server's internet speed.
+/{BotCommands.QueueCommand}: Show all active tasks with queue management options.
+/{BotCommands.PauseCommand} [gid]: Pause a specific task (or reply to task message).
+/{BotCommands.ResumeCommand} [gid]: Resume a paused task (or reply to task message).
+/{BotCommands.PriorityCommand} [gid] [priority]: Set task priority (-1/0/1 = low/normal/high).
+/{BotCommands.PauseAllCommand}: Pause all active tasks (Only Owner).
+/{BotCommands.ResumeAllCommand}: Resume all paused tasks (Only Owner).
 /{BotCommands.PingCommand}: Check how long it takes to Ping the Bot (Only Owner & Sudo).
 /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
 /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).

@@ -30,6 +30,14 @@ from .nzb_search import hydra_search
 from .services import start, ping, log
 from .shell import run_shell
 from .speedtest import speedtest
+from .queue_manager import (
+    show_queue,
+    pause_queue,
+    resume_queue,
+    set_priority,
+    pause_all_queue,
+    resume_all_queue,
+)
 from .stats import bot_stats, get_packages_version
 from .status import task_status, status_pages
 from .users_settings import get_users_settings, edit_user_settings, send_user_settings
@@ -81,6 +89,12 @@ __all__ = [
     "log",
     "run_shell",
     "speedtest",
+    "show_queue",
+    "pause_queue",
+    "resume_queue",
+    "set_priority",
+    "pause_all_queue",
+    "resume_all_queue",
     "bot_stats",
     "get_packages_version",
     "task_status",
