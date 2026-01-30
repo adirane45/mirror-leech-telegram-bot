@@ -15,6 +15,8 @@ from ..helper.telegram_helper.message_utils import send_message
 
 
 async def _collect_status_counts():
+    from inspect import iscoroutinefunction
+    
     tasks = list(task_dict.values())
     counts = {
         "download": 0,
@@ -26,15 +28,17 @@ async def _collect_status_counts():
     if not tasks:
         return counts
 
-    coro_tasks = [tk for tk in tasks if callable(getattr(tk.status, "__call__", None))]
-    coro_statuses = await gather(*[tk.status() for tk in coro_tasks])
-    coro_index = 0
-    for tk in tasks:
-        if tk in coro_tasks:
-            st = coro_statuses[coro_index]
-            coro_index += 1
-        else:
-            st = tk.status()
+    # Separate async and sync status methods
+    coro_tasks = [tk for tk in tasks if iscoroutinefunction(tk.status)]
+    sync_tasks = [tk for tk in tasks if not iscoroutinefunction(tk.status)]
+    
+    # Get async statuses
+    coro_statuses = await gather(*[tk.status() for tk in coro_tasks]) if coro_tasks else []
+    
+    # Process all statuses
+    all_statuses = list(coro_statuses) + [tk.status() for tk in sync_tasks]
+    
+    for st in all_statuses:
         if st == MirrorStatus.STATUS_DOWNLOAD:
             counts["download"] += 1
         elif st == MirrorStatus.STATUS_UPLOAD:
