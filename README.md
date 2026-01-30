@@ -10,7 +10,7 @@
 **Enhanced by: Aditya Rane** | **Version: 3.0.0** | **Date: January 30, 2026**  
 **Contact:** adityrane45@gmail.com
 
-[🌐 Website](#) • [📚 Documentation](#-complete-documentation) • [💬 Support Group](#support) • [🚀 Getting Started](#-quick-start) • [📖 Full Guide](#)
+[🔗 LinkedIn](https://www.linkedin.com/in/aditya-rane-a912004r/) • [📱 Instagram](https://www.instagram.com/rane_adi45) • [💬 Telegram](https://t.me/rane_adi45) • [📚 Documentation](#-complete-documentation) • [🚀 Getting Started](#-quick-start)
 
 </div>
 
@@ -509,11 +509,16 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ---
 
 **Made with ❤️ by Aditya Rane**  
-**Version 3.0.0 | Production Ready ✅**  
-**Contact:** adityrane45@gmail.com
+**Version 3.0.0 | Production Ready ✅**
 
-[![GitHub Stars](https://img.shields.io/github/stars/adirane45/mirror.svg?style=social)](https://github.com/adirane45/mirror)
-[![GitHub Forks](https://img.shields.io/github/forks/adirane45/mirror.svg?style=social)](https://github.com/adirane45/mirror/fork)
+### 🔗 Connect With Me
+- 📧 **Email:** adityrane45@gmail.com
+- 💼 **LinkedIn:** [aditya-rane-a912004r](https://www.linkedin.com/in/aditya-rane-a912004r/)
+- 📸 **Instagram:** [@rane_adi45](https://www.instagram.com/rane_adi45)
+- 💬 **Telegram:** [@rane_adi45](https://t.me/rane_adi45)
+
+[![GitHub Stars](https://img.shields.io/github/stars/adirane45/mirror-leech-telegram-bot.svg?style=social)](https://github.com/adirane45/mirror-leech-telegram-bot)
+[![GitHub Forks](https://img.shields.io/github/forks/adirane45/mirror-leech-telegram-bot.svg?style=social)](https://github.com/adirane45/mirror-leech-telegram-bot/fork)
 
 </div>
 
@@ -530,11 +535,14 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
   - [ADVANCED_FEATURES_GUIDE.md](ADVANCED_FEATURES_GUIDE.md) - Advanced topics
 
 - 🔗 **Important Links**
-  - [GitHub Repository](https://github.com/adirane45/mirror)
+  - [GitHub Repository](https://github.com/adirane45/mirror-leech-telegram-bot)
   - [Official Channel](https://t.me/mltb_official_channel)
   - [Support Group](https://t.me/mltb_official_support)
-  - [Report Issue](https://github.com/adirane45/mirror/issues)
-  - [Discussions](https://github.com/adirane45/mirror/discussions)
+  - [Report Issue](https://github.com/adirane45/mirror-leech-telegram-bot/issues)
+  - [Discussions](https://github.com/adirane45/mirror-leech-telegram-bot/discussions)
+  - [LinkedIn](https://www.linkedin.com/in/aditya-rane-a912004r/)
+  - [Instagram](https://www.instagram.com/rane_adi45)
+  - [Telegram](https://t.me/rane_adi45)
 
 - 🛠️ **Tools & Resources**
   - [Get Bot Token](https://t.me/botfather)

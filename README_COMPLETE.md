@@ -122,7 +122,7 @@
 
 1. **Clone Repository**
 ```bash
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 ```
 
@@ -154,7 +154,7 @@ Send /start to initialize
 
 1. **Clone Repository**
 ```bash
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 ```
 
@@ -993,7 +993,7 @@ mirror-leech-telegram-bot/
 
 ```bash
 # Clone repository
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Create virtual environment
@@ -1131,13 +1131,13 @@ This project is licensed under the MIT License. See LICENSE file for details.
 
 ### Report Issues
 
-- GitHub Issues: [Project Issues](https://github.com/anasty17/mirror-leech-telegram-bot)
+- GitHub Issues: [Project Issues](https://github.com/adirane45/mirror-leech-telegram-bot)
 - Include error logs and configuration (without sensitive data)
 - Provide reproduction steps
 
 ### Feature Requests
 
-- GitHub Discussions: [Project Discussions](https://github.com/anasty17/mirror-leech-telegram-bot)
+- GitHub Discussions: [Project Discussions](https://github.com/adirane45/mirror-leech-telegram-bot)
 - Describe desired feature
 - Explain use case and benefits
 

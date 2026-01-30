@@ -23,7 +23,7 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # 2. Create configuration
@@ -69,7 +69,7 @@ Docker Compose version 1.29+
 
 ```bash
 # Clone
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Verify structure
@@ -284,7 +284,7 @@ mediainfo --version  # Should show version
 
 ```bash
 # Clone repository
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Verify contents

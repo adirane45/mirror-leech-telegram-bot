@@ -120,7 +120,7 @@ DOWNLOAD_DIR = "/downloads"
 |----------|------|
 | Get Bot Token | [@BotFather](https://t.me/botfather) |
 | Get User ID | [@userinfobot](https://t.me/userinfobot) |
-| GitHub | [mirror-leech-telegram-bot](https://github.com/anasty17/mirror-leech-telegram-bot) |
+| GitHub | [mirror-leech-telegram-bot](https://github.com/adirane45/mirror-leech-telegram-bot) |
 | Documentation | [README_COMPLETE.md](README_COMPLETE.md) |
 | Setup Guide | [SETUP_GUIDE.md](SETUP_GUIDE.md) |
 | Usage Guide | [USAGE_GUIDE.md](USAGE_GUIDE.md) |
