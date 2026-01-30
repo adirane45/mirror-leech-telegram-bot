@@ -11,6 +11,7 @@ from asyncio import (
 
 from ... import user_data, bot_loop
 from ...core.config_manager import Config
+from ...core.telegram_manager import TgClient
 from ..telegram_helper.button_build import ButtonMaker
 from .telegraph_helper import telegraph
 from .help_messages import (
@@ -20,6 +21,22 @@ from .help_messages import (
 )
 
 COMMAND_USAGE = {}
+
+
+async def is_premium_user(user_id):
+    """
+    Check if user is a premium telegram user
+    
+    Args:
+        user_id: Telegram user ID
+    
+    Returns:
+        bool: True if user is premium, False otherwise
+    """
+    try:
+        return TgClient.IS_PREMIUM_USER if TgClient.user and TgClient.user.id == user_id else False
+    except:
+        return False
 
 THREAD_POOL = ThreadPoolExecutor(max_workers=500)
 
