@@ -371,7 +371,8 @@ def add_handlers():
             filters=command(BotCommands.ResumeAllCommand, case_sensitive=True)
             & CustomFilters.owner,
         )
-    )    TgClient.bot.add_handler(
+    )
+    TgClient.bot.add_handler(
         MessageHandler(
             dashboard,
             filters=command(BotCommands.DashboardCommand, case_sensitive=True)
