@@ -5,9 +5,10 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-brightgreen.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/anasty17/mirror-leech-telegram-bot)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/adirane45/mirror)
 
-**Enhanced by: justadi** | **Version: 3.0.0** | **Date: January 30, 2026**
+**Enhanced by: Aditya Rane** | **Version: 3.0.0** | **Date: January 30, 2026**  
+**Contact:** adityrane45@gmail.com
 
 [🌐 Website](#) • [📚 Documentation](#-complete-documentation) • [💬 Support Group](#support) • [🚀 Getting Started](#-quick-start) • [📖 Full Guide](#)
 
@@ -83,11 +84,11 @@ A **powerful, feature-rich Telegram bot** for managing downloads efficiently. Mi
 
 | Source | Mirror | Leech | Notes |
 |--------|--------|-------|-------|
-| **Direct Links** | ✅ | ❌ | HTTP, FTP, etc. |
+| **Direct Links** | ✅ | ✅ | HTTP, FTP, etc. |
 | **Torrents** | ✅ | ✅ | Via qBittorrent |
 | **Google Drive** | ✅ | ✅ | Native support |
-| **YouTube** | ✅ | ❌ | YT-DLP integrated |
-| **NZB Files** | ✅ | ❌ | Via SABnzbd |
+| **YouTube** | ✅ | ✅ | YT-DLP integrated |
+| **NZB Files** | ✅ | ✅ | Via SABnzbd |
 | **JDownloader** | ✅ | ❌ | Premium sources |
 
 ---
@@ -104,8 +105,8 @@ A **powerful, feature-rich Telegram bot** for managing downloads efficiently. Mi
 **Option 1: Docker (Easiest)**
 ```bash
 # Clone repository
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
-cd mirror-leech-telegram-bot
+git clone https://github.com/adirane45/mirror.git
+cd mirror
 
 # Setup config
 cp config_sample.py config.py
@@ -118,8 +119,8 @@ sudo docker-compose up --build
 **Option 2: Manual**
 ```bash
 # Clone and setup
-git clone https://github.com/anasty17/mirror-leech-telegram-bot.git
-cd mirror-leech-telegram-bot
+git clone https://github.com/adirane45/mirror.git
+cd mirror
 python3 -m venv mltbenv
 source mltbenv/bin/activate
 pip install -r requirements.txt
@@ -352,7 +353,8 @@ AUTO_PAUSE_MEMORY = 85   Pause at 85% RAM
 
 ## 📊 What's New (v3.0.0)
 
-✨ **Enhanced by: justadi** on January 30, 2026
+✨ **Enhanced by: Aditya Rane** on January 30, 2026  
+✉️ **Contact:** adityrane45@gmail.com
 
 ### New Features
 - ✅ Task scheduling system
@@ -405,7 +407,8 @@ Contributions are welcome! To contribute:
 This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file for details.
 
 **Original Author:** [anasty17](https://github.com/anasty17)  
-**Enhanced by:** justadi (January 2026)
+**Enhanced by:** Aditya Rane (January 2026)  
+**Email:** adityrane45@gmail.com
 
 ---
 
@@ -414,8 +417,8 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ### Getting Help
 
 1. **Documentation** - Read the guides linked above
-2. **Issues** - Check [GitHub Issues](https://github.com/anasty17/mirror-leech-telegram-bot/issues)
-3. **Discussions** - Use [GitHub Discussions](https://github.com/anasty17/mirror-leech-telegram-bot/discussions)
+2. **Issues** - Check [GitHub Issues](https://github.com/adirane45/mirror/issues)
+3. **Discussions** - Use [GitHub Discussions](https://github.com/adirane45/mirror/discussions)
 4. **Telegram Channel** - https://t.me/mltb_official_channel
 5. **Telegram Group** - https://t.me/mltb_official_support
 
@@ -483,7 +486,8 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ## 🙏 Credits & Acknowledgments
 
 - **Original Creator:** [anasty17](https://github.com/anasty17)
-- **Enhanced by:** justadi (January 2026)
+- **Enhanced by:** Aditya Rane (January 2026)
+- **Email:** adityrane45@gmail.com
 - **Based on:** [python-aria-mirror-bot](https://github.com/lzzy12/python-aria-mirror-bot)
 - **Technologies:** 
   - [Pyrogram](https://github.com/pyrogram/pyrogram) - Telegram client library
@@ -504,11 +508,12 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ by justadi**  
-**Version 3.0.0 | Production Ready ✅**
+**Made with ❤️ by Aditya Rane**  
+**Version 3.0.0 | Production Ready ✅**  
+**Contact:** adityrane45@gmail.com
 
-[![GitHub Stars](https://img.shields.io/github/stars/anasty17/mirror-leech-telegram-bot.svg?style=social)](https://github.com/anasty17/mirror-leech-telegram-bot)
-[![GitHub Forks](https://img.shields.io/github/forks/anasty17/mirror-leech-telegram-bot.svg?style=social)](https://github.com/anasty17/mirror-leech-telegram-bot/fork)
+[![GitHub Stars](https://img.shields.io/github/stars/adirane45/mirror.svg?style=social)](https://github.com/adirane45/mirror)
+[![GitHub Forks](https://img.shields.io/github/forks/adirane45/mirror.svg?style=social)](https://github.com/adirane45/mirror/fork)
 
 </div>
 
@@ -525,11 +530,11 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
   - [ADVANCED_FEATURES_GUIDE.md](ADVANCED_FEATURES_GUIDE.md) - Advanced topics
 
 - 🔗 **Important Links**
-  - [GitHub Repository](https://github.com/anasty17/mirror-leech-telegram-bot)
+  - [GitHub Repository](https://github.com/adirane45/mirror)
   - [Official Channel](https://t.me/mltb_official_channel)
   - [Support Group](https://t.me/mltb_official_support)
-  - [Report Issue](https://github.com/anasty17/mirror-leech-telegram-bot/issues)
-  - [Discussions](https://github.com/anasty17/mirror-leech-telegram-bot/discussions)
+  - [Report Issue](https://github.com/adirane45/mirror/issues)
+  - [Discussions](https://github.com/adirane45/mirror/discussions)
 
 - 🛠️ **Tools & Resources**
   - [Get Bot Token](https://t.me/botfather)
