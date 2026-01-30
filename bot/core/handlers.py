@@ -326,3 +326,45 @@ def add_handlers():
             & CustomFilters.authorized,
         )
     )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            show_queue,
+            filters=command(BotCommands.QueueCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            pause_queue,
+            filters=command(BotCommands.PauseCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            resume_queue,
+            filters=command(BotCommands.ResumeCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            set_priority,
+            filters=command(BotCommands.PriorityCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            pause_all_queue,
+            filters=command(BotCommands.PauseAllCommand, case_sensitive=True)
+            & CustomFilters.owner,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            resume_all_queue,
+            filters=command(BotCommands.ResumeAllCommand, case_sensitive=True)
+            & CustomFilters.owner,
+        )
+    )
