@@ -431,3 +431,6 @@ def add_handlers():
     TgClient.bot.add_handler(
         CallbackQueryHandler(settings_callback, filters=regex("^settings"))
     )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(dashboard_callback_handler, filters=regex("^quick"))
+    )

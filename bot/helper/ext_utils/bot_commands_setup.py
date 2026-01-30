@@ -8,20 +8,23 @@ from ... import LOGGER
 
 async def set_bot_commands():
     """Set bot commands that appear in Telegram's command menu"""
+    # Get the command suffix
+    i = getattr(BotCommands, 'StartCommand', 'start').replace('start', '')
+    
     commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Get help and command list"),
-        BotCommand("mirror", "Mirror a file/folder to cloud"),
-        BotCommand("leech", "Leech a file/folder to Telegram"),
-        BotCommand("clone", "Clone from Google Drive"),
-        BotCommand("status", "Show active downloads"),
-        BotCommand("dashboard", "Show system overview"),
-        BotCommand("queue", "Show task queue"),
-        BotCommand("speed", "Test server speed"),
-        BotCommand("history", "View download history"),
-        BotCommand("settings", "Configure bot settings"),
-        BotCommand("cancel", "Cancel a task"),
-        BotCommand("stats", "Show bot statistics"),
+        BotCommand(f"mirror{i}", "Mirror a file/folder to cloud"),
+        BotCommand(f"leech{i}", "Leech a file/folder to Telegram"),
+        BotCommand(f"clone{i}", "Clone from Google Drive"),
+        BotCommand(f"status{i}", "Show active downloads"),
+        BotCommand(f"dashboard{i}", "Show system overview"),
+        BotCommand(f"queue{i}", "Show task queue"),
+        BotCommand(f"speed{i}", "Test server speed"),
+        BotCommand(f"history{i}", "View download history"),
+        BotCommand(f"settings{i}", "Configure bot settings"),
+        BotCommand(f"cancel{i}", "Cancel a task"),
+        BotCommand(f"stats{i}", "Show bot statistics"),
     ]
     
     try:
@@ -29,3 +32,4 @@ async def set_bot_commands():
         LOGGER.info("Bot commands set successfully")
     except Exception as e:
         LOGGER.error(f"Failed to set bot commands: {e}")
+
