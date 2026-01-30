@@ -1,3 +1,7 @@
+# Mirror Leech Telegram Bot
+# Enhanced with Interactive UI and Queue Manager
+# Modified by: justadi
+
 from uvloop import install
 
 install()
