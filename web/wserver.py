@@ -32,11 +32,24 @@ sabnzbd_client = SabnzbdClient(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global aria2, qbittorrent
-    aria2 = Aria2HttpClient("http://localhost:6800/jsonrpc")
-    qbittorrent = await create_client("http://localhost:8090/api/v2/")
+    try:
+        aria2 = Aria2HttpClient("http://localhost:6800/jsonrpc")
+    except Exception as e:
+        aria2 = None
+        LOGGER.warning(f"Aria2 not available: {e}")
+
+    try:
+        qbittorrent = await create_client("http://localhost:8090/api/v2/")
+    except Exception as e:
+        qbittorrent = None
+        LOGGER.warning(f"qBittorrent not available: {e}")
+
     yield
-    await aria2.close()
-    await qbittorrent.close()
+
+    if aria2 is not None:
+        await aria2.close()
+    if qbittorrent is not None:
+        await qbittorrent.close()
 
 
 app = FastAPI(lifespan=lifespan)

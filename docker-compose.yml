@@ -1,8 +1,8 @@
 services:
   app:
     build: .
-    command: bash start.sh
+    command: python3 -m bot
     restart: on-failure
     network_mode: "host"
     environment:
-      - BASE_URL_PORT=8000
+      - BASE_URL_PORT=8060

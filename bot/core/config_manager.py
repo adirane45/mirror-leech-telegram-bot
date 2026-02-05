@@ -146,6 +146,23 @@ class Config:
     LOG_FILE_MAX_SIZE_MB = 100
     LOG_FILE_BACKUP_COUNT = 5
     LOG_LEVEL = "INFO"
+
+    # ==================== PHASE 2 CONFIGURATION ====================
+    ENABLE_ENHANCED_LOGGING = False
+    LOG_DIR = "logs"
+
+    ENABLE_ALERT_SYSTEM = False
+    ALERT_RETENTION_HOURS = 24
+
+    ENABLE_BACKUP_SYSTEM = False
+    BACKUP_DIR = "./backups"
+    BACKUP_FREQUENCY = "daily"
+
+    ENABLE_PROFILER = False
+    PROFILE_THRESHOLD = 1.0
+
+    ENABLE_RECOVERY_MANAGER = False
+    ENABLE_AUTO_RECOVERY = False
     
     # Feature Flags
     FEATURE_FLAGS = {}

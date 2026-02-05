@@ -1,0 +1,34 @@
+# Phase 2 Enhanced Requirements
+# Safe Innovation Path - Phase 2
+
+# Phase 1 dependencies (existing)
+redis >= 4.0
+celery >= 5.3.4
+prometheus-client >= 0.14
+
+# Phase 2 new dependencies
+
+# Logging and structured logging
+python-json-logger >= 2.0.7
+
+# ELK Stack support (optional, for log aggregation)
+elasticsearch >= 8.0.0; extra == "elk"
+kibana-client >= 0.1.0; extra == "elk"
+
+# Email notifications
+aiosmtplib >= 3.0.0
+
+# Performance profiling
+py-spy >= 0.3.14; extra == "profiling"
+
+# Data validation and integrity
+pydantic >= 2.0.0
+
+# Testing Phase 2
+pytest >= 7.4.0
+pytest-asyncio >= 0.21.0
+pytest-timeout >= 2.1.0
+pytest-cov >= 4.1.0
+
+# Backup compression (optional)
+python-magic >= 0.4.27

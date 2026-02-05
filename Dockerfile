@@ -12,11 +12,12 @@ RUN apt-get update \
 
 RUN python3 -m venv mltbenv
 
-COPY requirements-enhanced.txt .
-RUN mltbenv/bin/pip install --no-cache-dir -r requirements-enhanced.txt
+COPY requirements-enhanced.txt requirements-phase2.txt ./
+RUN /app/mltbenv/bin/pip install --no-cache-dir -r requirements-enhanced.txt -r requirements-phase2.txt
 
 COPY . .
 
 RUN sed -i 's/\r$//' *.sh
 
-CMD ["bash", "start.sh"]
+ENV PATH="/app/mltbenv/bin:$PATH"
+CMD ["python3", "-m", "bot"]
