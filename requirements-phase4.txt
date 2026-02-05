@@ -1,0 +1,41 @@
+# Phase 4: Performance & Optimization - Python Requirements
+
+# Core dependencies (already in requirements.txt)
+# These are additional dependencies for Phase 4 features
+
+# Query optimization & analysis
+sqlparse>=0.4.4  # SQL query parsing and analysis
+queryparser>=1.0  # Additional query parsing
+
+# Performance monitoring
+psutil>=5.9.5  # System performance metrics
+py-spy>=0.3.14  # Profiling support
+
+# Distributed systems
+aioredis>=2.0.0  # Async Redis client (for connection pooling)
+hiredis>=2.3.0  # C parser for Redis
+
+# Testing dependencies
+pytest>=7.4.0  # Testing framework
+pytest-asyncio>=0.21.0  # Async test support
+pytest-cov>=4.1.0  # Coverage reporting
+pytest-benchmark>=4.0.0  # Performance benchmarking
+pytest-timeout>=2.1.0  # Test timeout handling
+
+# Development dependencies
+black>=23.0.0  # Code formatting
+flake8>=6.0.0  # Linting
+mypy>=1.0.0  # Type checking
+isort>=5.12.0  # Import sorting
+
+# Load testing
+locust>=2.15.0  # Load testing framework
+apache-benchmark>=1.0  # AB testing
+
+# Monitoring & metrics
+prometheus-client>=0.17.0  # Prometheus metrics (already in Phase 1)
+statsd>=4.0.0  # StatsD client
+
+# Performance tweaks
+uvloop>=0.17.0  # High-performance event loop
+orjson>=3.9.0  # Fast JSON serialization
