@@ -4,6 +4,7 @@ from asyncio import gather, TimeoutError
 from aiohttp import ClientError
 from pathlib import Path
 from inspect import iscoroutinefunction
+from os import environ
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -39,9 +40,18 @@ class TorrentManager:
 
     @classmethod
     async def initiate(cls):
+        aria2_host = environ.get("ARIA2_HOST", "localhost")
+        aria2_port = environ.get("ARIA2_PORT", "6800")
+        qb_host = environ.get("QB_HOST", "localhost")
+        qb_port = environ.get("QB_PORT", "8090")
+        
         cls.aria2, cls.qbittorrent = await gather(
-            Aria2WebsocketClient.new("http://localhost:6800/jsonrpc"),
-            create_client("http://localhost:8090/api/v2/"),
+            Aria2WebsocketClient.new(f"http://{aria2_host}:{aria2_port}/jsonrpc"),
+            create_client(
+                f"http://{qb_host}:{qb_port}/api/v2/",
+                username="admin",
+                password="mltbmltb",
+            ),
         )
         cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
 

@@ -1,8 +1,246 @@
+version: '3.8'
+
 services:
+  # ===== aria2 Download Manager =====
+  aria2:
+    image: p3terx/aria2-pro:latest
+    container_name: mltb-aria2
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    environment:
+      - RPC_SECRET=
+      - PUID=1000
+      - PGID=1000
+      - RPC_PORT=6800
+      - LISTEN_PORT=6888
+      - DISK_CACHE=64M
+      - IPV6_MODE=false
+      - UPDATE_TRACKERS=true
+    volumes:
+      - downloads:/downloads
+      - ./aria2/config:/config
+    ports:
+      - "6800:6800"
+      - "6888:6888"
+      - "6888:6888/udp"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6800/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== qBittorrent WebUI =====
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: mltb-qbittorrent
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - WEBUI_PORT=8090
+    volumes:
+      - downloads:/downloads
+      - ./qbittorrent/config:/config
+    ports:
+      - "8090:8090"
+      - "6881:6881"
+      - "6881:6881/udp"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Redis Cache =====
+  redis:
+    image: redis:7-alpine
+    container_name: mltb-redis
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== MongoDB Database =====
+  mongodb:
+    image: mongo:4.4
+    container_name: mltb-mongodb
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Prometheus Metrics =====
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mltb-prometheus
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Grafana Dashboard =====
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mltb-grafana
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mltbadmin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Bot Application =====
   app:
     build: .
-    command: python3 -m bot
-    restart: on-failure
-    network_mode: "host"
+    container_name: mltb-app
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "8060:8060"
+      - "9090:9090"
     environment:
       - BASE_URL_PORT=8060
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ARIA2_HOST=aria2
+      - ARIA2_PORT=6800
+      - QB_HOST=qbittorrent
+      - QB_PORT=8090
+    volumes:
+      - downloads:/app/downloads
+      - ./bot:/app/bot:ro
+      - ./config.py:/app/config.py:ro
+      - logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      aria2:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8060/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Celery Worker =====
+  celery-worker:
+    build: .
+    container_name: mltb-celery-worker
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - downloads:/app/downloads
+      - ./bot:/app/bot:ro
+      - ./config.py:/app/config.py:ro
+      - logs:/app/logs
+    command: /app/mltbenv/bin/celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --pool=prefork --max-tasks-per-child=20 --time-limit=3700 --soft-time-limit=3600
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/mltbenv/bin/celery", "-A", "bot.core.celery_app", "inspect", "active"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===== Celery Beat Scheduler =====
+  celery-beat:
+    build: .
+    container_name: mltb-celery-beat
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ./bot:/app/bot:ro
+      - ./config.py:/app/config.py:ro
+      - logs:/app/logs
+    command: /app/mltbenv/bin/celery -A bot.core.celery_app beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+
+# ===== Networks =====
+networks:
+  mltb-net:
+    driver: bridge
+
+# ===== Volumes =====
+volumes:
+  downloads:
+    driver: local
+  redis-data:
+    driver: local
+  mongodb-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  logs:
+    driver: local

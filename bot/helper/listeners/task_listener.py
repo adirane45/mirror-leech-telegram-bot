@@ -1,4 +1,5 @@
 from aiofiles.os import path as aiopath, listdir, remove
+from os import path as ospath
 from asyncio import sleep, gather
 from html import escape
 from requests import utils as rutils
@@ -153,10 +154,34 @@ class TaskListener(TaskConfig):
         if not await aiopath.exists(f"{self.dir}/{self.name}"):
             try:
                 files = await listdir(self.dir)
+                if not files:
+                    try:
+                        a2status = await TorrentManager.aria2.tellStatus(gid)
+                        a2files = a2status.get("files", [])
+                        a2path = ""
+                        for file_info in a2files:
+                            if file_info.get("path"):
+                                a2path = file_info["path"]
+                                break
+                        if a2path and await aiopath.exists(a2path):
+                            self.dir = ospath.dirname(a2path)
+                            self.name = ospath.basename(a2path)
+                        else:
+                            await self.on_upload_error(
+                                f"No files found in download dir: {self.dir}"
+                            )
+                            return
+                    except Exception as e:
+                        LOGGER.exception("Error fetching aria2 path")
+                        await self.on_upload_error(
+                            f"No files found in download dir: {self.dir}"
+                        )
+                        return
                 self.name = files[-1]
                 if self.name == "yt-dlp-thumb":
                     self.name = files[0]
             except Exception as e:
+                LOGGER.exception(f"Error in file listing")
                 await self.on_upload_error(str(e))
                 return
 

@@ -533,13 +533,26 @@ def yandex_disk(url: str) -> str:
 def github(url):
     """GitHub direct links generator"""
     try:
-        findall(r"\bhttps?://.*github\.com.*releases\S+", url)[0]
+        # Support both release URLs and archive URLs
+        match = findall(r"\bhttps?://.*github\.com.*(?:releases|archive)\S+", url)[0]
     except IndexError as e:
-        raise DirectDownloadLinkException("No GitHub Releases links found") from e
+        # If not a releases or archive URL, treat as archive attempt
+        if "github.com" not in url:
+            raise DirectDownloadLinkException("Not a GitHub link") from e
+        # Try to handle as direct archive link
+        match = url
+    
     with create_scraper() as session:
-        _res = session.get(url, stream=True, allow_redirects=False)
+        _res = session.get(match, stream=True, allow_redirects=True)
+        # For archive URLs, get the final URL after redirect
+        if _res.url != match:
+            return _res.url
+        # For release URLs, check for location header
         if "location" in _res.headers:
             return _res.headers["location"]
+        # If it's an archive URL, return the final resolved URL
+        if "/archive/" in match or "/releases/" in match:
+            return _res.url
         raise DirectDownloadLinkException("ERROR: Can't extract the link")
 
 

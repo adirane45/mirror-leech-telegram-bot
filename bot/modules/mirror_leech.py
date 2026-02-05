@@ -211,7 +211,7 @@ class Mirror(TaskListener):
 
         await self.get_tag(text)
 
-        path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
+        path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}/"
 
         if not self.link and (reply_to := self.message.reply_to_message):
             if reply_to.text:
@@ -301,6 +301,7 @@ class Mirror(TaskListener):
         try:
             await self.before_start()
         except Exception as e:
+            LOGGER.exception("before_start failed")
             await send_message(self.message, e)
             await self.remove_from_same_dir()
             return
@@ -333,13 +334,14 @@ class Mirror(TaskListener):
                         await self.remove_from_same_dir()
                         return
                 except Exception as e:
+                    LOGGER.exception("direct_link_generator failed")
                     await send_message(self.message, e)
                     await self.remove_from_same_dir()
                     return
 
         if file_ is not None:
             await TelegramDownloadHelper(self).add_download(
-                reply_to, f"{path}/", session
+                reply_to, f"{path}", session
             )
         elif isinstance(self.link, dict):
             await add_direct_download(self, path)
@@ -350,7 +352,7 @@ class Mirror(TaskListener):
         elif self.is_nzb:
             await add_nzb(self, path)
         elif is_rclone_path(self.link):
-            await add_rclone_download(self, f"{path}/")
+            await add_rclone_download(self, f"{path}")
         elif is_gdrive_link(self.link) or is_gdrive_id(self.link):
             await add_gd_download(self, path)
         else:

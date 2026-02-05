@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, WARNING
 from asyncio import sleep
 from time import time
+from os import environ
 import psutil
 from sabnzbdapi import SabnzbdClient
 from aioaria2 import Aria2HttpClient
@@ -32,14 +33,23 @@ sabnzbd_client = SabnzbdClient(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global aria2, qbittorrent
+    aria2_host = environ.get("ARIA2_HOST", "localhost")
+    aria2_port = environ.get("ARIA2_PORT", "6800")
+    qb_host = environ.get("QB_HOST", "localhost")
+    qb_port = environ.get("QB_PORT", "8090")
+    
     try:
-        aria2 = Aria2HttpClient("http://localhost:6800/jsonrpc")
+        aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
     except Exception as e:
         aria2 = None
         LOGGER.warning(f"Aria2 not available: {e}")
 
     try:
-        qbittorrent = await create_client("http://localhost:8090/api/v2/")
+        qbittorrent = await create_client(
+            f"http://{qb_host}:{qb_port}/api/v2/",
+            username="admin",
+            password="mltbmltb",
+        )
     except Exception as e:
         qbittorrent = None
         LOGGER.warning(f"qBittorrent not available: {e}")

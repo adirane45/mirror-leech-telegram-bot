@@ -27,6 +27,8 @@ getLogger("pyrogram").setLevel(ERROR)
 getLogger("httpx").setLevel(WARNING)
 getLogger("pymongo").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
+getLogger("aioqbt").setLevel(ERROR)
+getLogger("web.wserver").setLevel(ERROR)
 
 bot_start_time = time()
 

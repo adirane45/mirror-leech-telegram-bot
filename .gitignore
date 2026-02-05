@@ -37,3 +37,13 @@ sabnzbd/
 thumbnails/
 tokens/
 runtime/
+
+# Temporary deployment and documentation files
+deploy-production.sh
+docker-compose.production.yml
+requirements-phase2.txt
+requirements-enhanced.txt
+PHASE2_VERIFICATION.md
+PHASE2_COMPLETION_SUMMARY.txt
+INTEGRATION_SUMMARY.md
+DEPLOYMENT_GUIDE.md
