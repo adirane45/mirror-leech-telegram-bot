@@ -28,40 +28,46 @@ from .torrent_manager import TorrentManager
 
 async def update_qb_options():
     LOGGER.info("Get qBittorrent options from server")
-    if not qbit_options:
-        opt = await TorrentManager.qbittorrent.app.preferences()
-        qbit_options.update(opt)
-        del qbit_options["listen_port"]
-        for k in list(qbit_options.keys()):
-            if k.startswith("rss"):
-                del qbit_options[k]
-        qbit_options["web_ui_password"] = "mltbmltb"
-        await TorrentManager.qbittorrent.app.set_preferences(
-            {"web_ui_password": "mltbmltb"}
-        )
-    else:
-        await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
+    try:
+        if not qbit_options:
+            opt = await TorrentManager.qbittorrent.app.preferences()
+            qbit_options.update(opt)
+            del qbit_options["listen_port"]
+            for k in list(qbit_options.keys()):
+                if k.startswith("rss"):
+                    del qbit_options[k]
+            qbit_options["web_ui_password"] = "mltbmltb"
+            await TorrentManager.qbittorrent.app.set_preferences(
+                {"web_ui_password": "mltbmltb"}
+            )
+        else:
+            await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
+    except Exception as e:
+        LOGGER.warning(f"qBittorrent options skipped: {e}")
 
 
 async def update_aria2_options():
     LOGGER.info("Get aria2 options from server")
-    if not aria2_options:
-        op = await TorrentManager.aria2.getGlobalOption()
-        aria2_options.update(op)
-    else:
-        await TorrentManager.aria2.changeGlobalOption(aria2_options)
+    try:
+        if not aria2_options:
+            op = await TorrentManager.aria2.getGlobalOption()
+            aria2_options.update(op)
+        else:
+            await TorrentManager.aria2.changeGlobalOption(aria2_options)
+    except Exception as e:
+        LOGGER.warning(f"aria2 options skipped: {e}")
 
 
 async def update_nzb_options():
     LOGGER.info("Get SABnzbd options from server")
-    while True:
+    for _ in range(10):
         try:
             no = (await sabnzbd_client.get_config())["config"]["misc"]
             nzb_options.update(no)
-        except:
+            return
+        except Exception:
             await sleep(0.5)
-            continue
-        break
+    LOGGER.warning("SABnzbd options skipped: service unavailable")
 
 
 async def load_settings():

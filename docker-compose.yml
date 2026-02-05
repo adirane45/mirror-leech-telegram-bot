@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    command: bash start.sh
+    command: python3 -m bot
     restart: on-failure
     network_mode: "host"
     environment:
