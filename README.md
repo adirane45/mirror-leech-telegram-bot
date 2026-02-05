@@ -1,13 +1,13 @@
-# 🚀 Mirror-Leech Telegram Bot v3.0.0
+# 🚀 Mirror-Leech Telegram Bot v3.1.0 - Phase 2
 
 <div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.13+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-brightgreen.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/adirane45/mirror)
 
-**Enhanced by: Aditya Rane** | **Version: 3.0.0** | **Date: January 30, 2026**  
+**Enhanced by: Aditya Rane** | **Version: 3.1.0 Phase 2** | **Date: February 5, 2026** | **Release: [v3.1.0-phase2](https://github.com/adirane45/mirror-leech-telegram-bot/releases/tag/v3.1.0-phase2)**  
 **Contact:** adityrane45@gmail.com
 
 [🔗 LinkedIn](https://www.linkedin.com/in/aditya-rane-a912004r/) • [📱 Instagram](https://www.instagram.com/rane_adi45) • [💬 Telegram](https://t.me/rane_adi45) • [📚 Documentation](#-complete-documentation) • [🚀 Getting Started](#-quick-start)
@@ -18,14 +18,21 @@
 
 ## ✨ What is This Bot?
 
-A **powerful, feature-rich Telegram bot** for managing downloads efficiently. Mirror files from the internet to Google Drive or leech them to Telegram with an advanced queue system, real-time monitoring, and web dashboard.
+A **powerful, production-grade Telegram bot** for managing downloads efficiently. Mirror files from the internet to Google Drive or leech them to Telegram with an advanced queue system, real-time monitoring, JSON-structured logging, and comprehensive web dashboard.
+
+**Now with Phase 2 Enhancements:**
+- 📊 **JSON-Structured Logging** - Machine-parsable logs for monitoring systems
+- 🔔 **Alert System** - Real-time notifications with configurable delivery channels
+- 💾 **Automatic Backups** - State snapshots with recovery capabilities
+- ⚡ **Performance Profiling** - Request latency and function timing analysis
+- 🔄 **Recovery Manager** - Automatic failover and state recovery
 
 **Perfect for:**
-- 🔄 Automating file transfers
-- ☁️ Backing up files to cloud storage
-- 📊 Monitoring downloads in real-time
-- 🎯 Batch processing multiple files
-- 📱 Remote file management via Telegram
+- 🔄 Automating file transfers at scale
+- ☁️ Backing up files to cloud storage with instant recovery
+- 📊 Monitoring downloads with deep observability
+- 🎯 Batch processing multiple files with reliability
+- 📱 Remote file management via Telegram with confidence
 
 ---
 
@@ -76,7 +83,28 @@ A **powerful, feature-rich Telegram bot** for managing downloads efficiently. Mi
 
 </td>
 </tr>
-</table>
+<tr>
+<td width="50%">
+
+### 📊 Phase 2: Monitoring & Recovery
+- JSON-structured logging
+- Real-time alert system
+- Automatic backups & recovery
+- Performance profiling
+- Health monitoring
+
+</td>
+<td width="50%">
+
+### 🔍 Observability
+- Machine-parsable logs
+- Metrics collection (Prometheus)
+- Event tracking
+- System profiling
+- State recovery
+
+</td>
+
 
 ---
 
@@ -156,9 +184,21 @@ python3 -m bot
 | [**README_COMPLETE.md**](README_COMPLETE.md) | 📋 Complete overview | 20-30 min |
 | [**SETUP_GUIDE.md**](SETUP_GUIDE.md) | 🚀 Installation steps | 30-45 min |
 | [**USAGE_GUIDE.md**](USAGE_GUIDE.md) | 📖 All commands (50+) | 45-60 min |
+| [**DEPLOYMENT_GUIDE.md**](DEPLOYMENT_GUIDE.md) | 🐳 Docker deployment | 15-20 min |
+| [**PHASE2_VERIFICATION.md**](PHASE2_VERIFICATION.md) | ✅ Phase 2 test results | 10 min |
+| [**PHASE2_COMPLETION_SUMMARY.txt**](PHASE2_COMPLETION_SUMMARY.txt) | 📋 Phase 2 checklist | 10 min |
 | [**QUICK_REFERENCE.md**](QUICK_REFERENCE.md) | ⚡ Command cheat sheet | 5 min |
-| [**DOCUMENTATION_INDEX.md**](DOCUMENTATION_INDEX.md) | 🗺️ Navigation guide | 5 min |
 | [**ADVANCED_FEATURES_GUIDE.md**](ADVANCED_FEATURES_GUIDE.md) | 🔧 Advanced setup | 20-30 min |
+
+### 📈 Phase 2 Features Documentation
+
+**New in v3.1.0:**
+- [PHASE2_VERIFICATION.md](PHASE2_VERIFICATION.md) - End-to-end test results & verification
+- [PHASE2_COMPLETION_SUMMARY.txt](PHASE2_COMPLETION_SUMMARY.txt) - Implementation checklist & deployment guide
+- JSON-structured logging configuration
+- Alert system setup & delivery channels
+- Automatic backup recovery procedures
+- Performance profiling guides
 
 ### 🎓 Learning Paths
 

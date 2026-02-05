@@ -1,26 +1,47 @@
-# MLTB Phase 1 Production Deployment Guide
+# MLTB v3.1.0 Phase 2 Production Deployment Guide
+
+> **Latest Release:** [v3.1.0-phase2](https://github.com/adirane45/mirror-leech-telegram-bot/releases/tag/v3.1.0-phase2)  
+> **Features:** JSON Logging • Alert System • Auto Backup • Performance Profiler • Recovery Manager
 
 ## Quick Start (2 minutes)
 
 ```bash
 # 1. Clone and navigate
-git clone https://github.com/your-repo/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
-# 2. Run deployment script
-chmod +x deploy.sh
-./deploy.sh
+# 2. Use latest Phase 2 version
+git checkout master  # or pull latest
 
 # 3. Configure credentials
+cp .env.security.example .env.production
 nano .env.production
 # Update with your Telegram BOT_TOKEN and API credentials
 
-# 4. Start services
+# 4. Start services with Docker
+docker compose build app
 docker compose -f docker-compose.secure.yml up -d
 
 # 5. Verify deployment
-./scripts/health_check.sh
+curl http://localhost:8060/dashboard
+docker logs -f mirror-leech-telegram-bot-app-1 | grep "Phase 2"
 ```
+
+**Port 8060:** Dashboard with real-time monitoring  
+**Phase 2 Services:** 5/5 services enabled by default ✅
+
+---
+
+## What's New in Phase 2
+
+### 🆕 Enhanced Monitoring & Recovery
+- **JSON Logging:** Machine-parsable structured logs
+- **Alert System:** Real-time notifications with delivery channels
+- **Backup Manager:** Automatic state snapshots + recovery
+- **Profiler:** Request latency & function timing analysis
+- **Recovery Manager:** Automatic failover & state restoration
+
+All Phase 2 features are **optional** - bot operates normally without them.
 
 ---
 
@@ -29,8 +50,9 @@ docker compose -f docker-compose.secure.yml up -d
 ### Prerequisites
 - Docker & Docker Compose installed
 - Linux server (Kali Linux, Ubuntu, Debian, etc.)
-- 2GB+ RAM available
-- Port access: 8000 (web), 3000 (Grafana), 6379 (Redis), 27017 (MongoDB)
+- 2GB+ RAM recommended
+- **Port 8060** (web dashboard) - updated from 8050
+- Ports 9090 (Prometheus), 6379 (Redis), 27017 (MongoDB) if using Phase 1
 
 ### Step 1: Environment Setup
 
@@ -47,6 +69,8 @@ nano .env.production
 # Telegram Bot Credentials
 BOT_TOKEN=your_telegram_bot_token_here
 CHAT_ID=your_chat_id_here
+OWNER_ID=your_user_id_here
+
 
 # Grafana Admin (change from default!)
 GRAFANA_ADMIN_PASSWORD=your_strong_password
