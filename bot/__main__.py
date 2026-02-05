@@ -41,6 +41,12 @@ async def main():
         metrics.enable()
         if metrics.is_enabled():
             LOGGER.info("📊 Metrics collection enabled on port 9090")
+            # Start metrics HTTP server
+            try:
+                from .core.metrics_server import metrics_server
+                metrics_server.start()
+            except Exception as e:
+                LOGGER.warning(f"Metrics HTTP server failed to start: {e}")
     except Exception as e:
         LOGGER.info(f"Metrics initialization skipped: {e}")
 

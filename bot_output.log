@@ -1,0 +1,38 @@
+nohup: ignoring input
+2026-02-05 13:35:04,083 - bot - INFO - ==================================================
+2026-02-05 13:35:04,084 - bot - INFO - 🚀 Starting Enhanced MLTB v3.1.0
+2026-02-05 13:35:04,084 - bot - INFO - Safe Innovation Path - All enhancements are optional
+2026-02-05 13:35:04,085 - bot - INFO - ==================================================
+2026-02-05 13:35:04,257 - bot - INFO - Redis caching is DISABLED - using fallback mode
+2026-02-05 13:35:04,381 - bot - INFO - ✅ Prometheus metrics enabled
+2026-02-05 13:35:04,381 - bot - INFO - 📊 Metrics collection enabled on port 9090
+2026-02-05 13:35:04,383 - bot - INFO - ✅ Metrics HTTP server started on port 9090
+2026-02-05 13:35:04,384 - bot - INFO -    Access metrics at http://localhost:9090/metrics
+2026-02-05 13:35:04,388 - bot - INFO - ✅ Metrics HTTP server listening on port 9090
+2026-02-05 13:35:05,081 - bot - INFO - Replacing existing deploy config in Database
+2026-02-05 13:35:05,330 - bot - INFO - Users data has been imported from Database
+2026-02-05 13:35:05,347 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-05 13:35:05,348 - bot - INFO - Task Scheduler initialized
+2026-02-05 13:35:05,363 - bot - INFO - Creating client from BOT_TOKEN
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/kali/mirror-leech-telegram-bot/bot/__main__.py", line 106, in <module>
+    bot_loop.run_until_complete(main())
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/home/kali/mirror-leech-telegram-bot/bot/__main__.py", line 56, in main
+    await gather(TgClient.start_bot(), TgClient.start_user())
+  File "/home/kali/mirror-leech-telegram-bot/bot/core/telegram_manager.py", line 36, in start_bot
+    await cls.bot.start()
+  File "/home/kali/mirror-leech-telegram-bot/venv/lib/python3.13/site-packages/pyrogram/methods/utilities/start.py", line 77, in start
+    is_authorized = await self.connect()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/mirror-leech-telegram-bot/venv/lib/python3.13/site-packages/pyrogram/methods/auth/connect.py", line 39, in connect
+    await self.load_session()
+  File "/home/kali/mirror-leech-telegram-bot/venv/lib/python3.13/site-packages/pyrogram/client.py", line 899, in load_session
+    await self.storage.open()
+  File "/home/kali/mirror-leech-telegram-bot/venv/lib/python3.13/site-packages/pyrogram/storage/sqlite_storage.py", line 304, in open
+    self.conn = sqlite3.connect(str(path), timeout=1, check_same_thread=False)
+                ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file

@@ -69,6 +69,93 @@ class Config:
     USE_SERVICE_ACCOUNTS = False
     WEB_PINCODE = False
     YT_DLP_OPTIONS = {}
+    
+    # ==================== PHASE 1 ENHANCEMENTS ====================
+    # Redis Configuration
+    ENABLE_REDIS_CACHE = False
+    REDIS_HOST = "redis"
+    REDIS_PORT = 6379
+    REDIS_DB = 0
+    REDIS_PASSWORD = ""
+    CACHE_TTL_TASK_STATUS = 300
+    CACHE_TTL_USER_DATA = 3600
+    CACHE_TTL_STATISTICS = 600
+    
+    # Celery Configuration
+    ENABLE_CELERY = False
+    CELERY_BROKER_URL = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND = "redis://redis:6379/1"
+    CELERY_DOWNLOAD_QUEUE = "downloads"
+    CELERY_UPLOAD_QUEUE = "uploads"
+    CELERY_MAINTENANCE_QUEUE = "maintenance"
+    
+    # Metrics Configuration
+    ENABLE_METRICS = False
+    METRICS_PORT = 9090
+    METRICS_PATH = "/metrics"
+    METRICS_UPDATE_INTERVAL = 60
+    
+    # Rate Limiting
+    ENABLE_RATE_LIMITING = False
+    RATE_LIMIT_DOWNLOADS_PER_HOUR = 10
+    RATE_LIMIT_DOWNLOADS_PER_DAY = 50
+    RATE_LIMIT_UPLOADS_PER_HOUR = 10
+    RATE_LIMIT_UPLOADS_PER_DAY = 50
+    RATE_LIMIT_COMMANDS_PER_MINUTE = 5
+    
+    # Auto-Cleanup
+    ENABLE_AUTO_CLEANUP = True
+    AUTO_CLEANUP_MAX_AGE_HOURS = 24
+    AUTO_CLEANUP_SCHEDULE_HOUR = 2
+    
+    # Notifications
+    ENABLE_ENHANCED_NOTIFICATIONS = True
+    NOTIFICATION_MILESTONES = [25, 50, 75]
+    ENABLE_EMAIL_NOTIFICATIONS = False
+    EMAIL_SMTP_SERVER = ""
+    EMAIL_SMTP_PORT = 587
+    EMAIL_USERNAME = ""
+    EMAIL_PASSWORD = ""
+    EMAIL_FROM_ADDRESS = ""
+    EMAIL_TO_ADDRESSES = []
+    
+    # Backup
+    ENABLE_AUTO_BACKUP = True
+    BACKUP_SCHEDULE_HOUR = 3
+    BACKUP_RETENTION_DAYS = 7
+    BACKUP_DIRECTORY = "./backups"
+    
+    # Performance Tuning
+    DB_POOL_SIZE = 10
+    DB_MAX_OVERFLOW = 20
+    MAX_CONCURRENT_DOWNLOADS = 5
+    MAX_CONCURRENT_UPLOADS = 3
+    TASK_TIMEOUT_DOWNLOAD = 7200
+    TASK_TIMEOUT_UPLOAD = 7200
+    
+    # Security
+    ENABLE_API_AUTH = False
+    API_SECRET_KEY = ""
+    JWT_EXPIRATION = 3600
+    API_WHITELIST_IPS = []
+    
+    # Logging
+    ENABLE_JSON_LOGGING = False
+    LOG_TO_FILE = True
+    LOG_FILE_PATH = "logs/mltb.log"
+    LOG_FILE_MAX_SIZE_MB = 100
+    LOG_FILE_BACKUP_COUNT = 5
+    LOG_LEVEL = "INFO"
+    
+    # Feature Flags
+    FEATURE_FLAGS = {}
+    ALERT_CPU_THRESHOLD = 90
+    ALERT_MEMORY_THRESHOLD = 90
+    ALERT_DISK_THRESHOLD = 90
+    ALERT_NOTIFICATION_CHAT = ""
+    
+    # Experimental
+    EXPERIMENTAL_FEATURES = {}
 
     @classmethod
     def _convert(cls, key: str, value):

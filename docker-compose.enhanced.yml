@@ -26,7 +26,7 @@ services:
       - ./downloads:/app/downloads
       - ./config.py:/app/config.py:ro
     ports:
-      - "8000:8000"
+      - "8000:8050"
       - "9090:9090"  # Metrics endpoint
     healthcheck:
       test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/health')"]
@@ -55,12 +55,13 @@ services:
   # Celery Worker - Background Task Processing
   celery-worker:
     build: .
-    command: celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --max-tasks-per-child=50
+    command: /app/mltbenv/bin/celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --max-tasks-per-child=50
     restart: always
     environment:
       - REDIS_HOST=redis
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - C_FORCE_ROOT=true
     depends_on:
       redis:
         condition: service_healthy
@@ -70,7 +71,7 @@ services:
       - ./downloads:/app/downloads
       - ./config.py:/app/config.py:ro
     healthcheck:
-      test: ["CMD", "celery", "-A", "bot.core.celery_app", "inspect", "ping"]
+      test: ["CMD", "/app/mltbenv/bin/celery", "-A", "bot.core.celery_app", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -78,7 +79,7 @@ services:
   # Celery Beat - Periodic Task Scheduler
   celery-beat:
     build: .
-    command: celery -A bot.core.celery_app beat --loglevel=info
+    command: /app/mltbenv/bin/celery -A bot.core.celery_app beat --loglevel=info
     restart: always
     environment:
       - REDIS_HOST=redis
@@ -94,7 +95,7 @@ services:
 
   # MongoDB - Database (optional but recommended)
   mongodb:
-    image: mongo:7
+    image: mongo:4.4
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: mltb_user
@@ -107,7 +108,7 @@ services:
     ports:
       - "27017:27017"
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
