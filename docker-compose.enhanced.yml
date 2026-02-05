@@ -15,6 +15,7 @@ services:
       - ENABLE_REDIS_CACHE=true
       - ENABLE_CELERY=true
       - ENABLE_METRICS=true
+      - SKIP_UPDATE=1
     depends_on:
       redis:
         condition: service_healthy
