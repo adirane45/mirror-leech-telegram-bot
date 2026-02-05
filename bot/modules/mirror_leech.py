@@ -365,6 +365,7 @@ class Mirror(TaskListener):
 
 
 async def mirror(client, message):
+    LOGGER.info(f"🔄 /mirror command received from {message.from_user.id if message.from_user else 'unknown'}")
     bot_loop.create_task(Mirror(client, message).new_event())
 
 
@@ -381,6 +382,7 @@ async def nzb_mirror(client, message):
 
 
 async def leech(client, message):
+    LOGGER.info(f"📥 /leech command received from {message.from_user.id if message.from_user else 'unknown'}")
     bot_loop.create_task(Mirror(client, message, is_leech=True).new_event())
 
 
