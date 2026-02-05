@@ -49,6 +49,18 @@ async def main():
                 LOGGER.warning(f"Metrics HTTP server failed to start: {e}")
     except Exception as e:
         LOGGER.info(f"Metrics initialization skipped: {e}")
+    
+    # Initialize Phase 2 Services (optional, non-breaking)
+    try:
+        LOGGER.info("="*50)
+        LOGGER.info("🔧 Initializing Phase 2: Enhanced Logging & Monitoring")
+        LOGGER.info("="*50)
+        from .core.enhanced_startup_phase2 import initialize_phase2_services
+        phase2_status = await initialize_phase2_services()
+        enabled = sum(1 for v in phase2_status.values() if v)
+        LOGGER.info(f"✅ Phase 2: {enabled}/5 services enabled")
+    except Exception as e:
+        LOGGER.info(f"⚠️  Phase 2 initialization skipped: {e}")
 
     await load_settings()
     await TaskScheduler.init()

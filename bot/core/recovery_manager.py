@@ -13,8 +13,11 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 import json
 import hashlib
+from logging import getLogger
 
-from . import LOGGER, Config
+from .config_manager import Config
+
+LOGGER = getLogger(__name__)
 
 
 class IntegrityCheck:

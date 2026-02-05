@@ -9,7 +9,9 @@ Date: February 5, 2026
 """
 
 from typing import Dict
-from . import LOGGER
+from logging import getLogger
+
+LOGGER = getLogger(__name__)
 
 from .logger_manager import logger_manager
 from .alert_manager import alert_manager

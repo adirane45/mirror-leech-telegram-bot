@@ -14,8 +14,11 @@ from typing import Dict, Optional, List
 from datetime import datetime, timedelta
 from collections import defaultdict
 import statistics
+from logging import getLogger
 
-from . import LOGGER, Config
+from .config_manager import Config
+
+LOGGER = getLogger(__name__)
 
 
 class PerformanceMetric:

@@ -13,8 +13,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
+from logging import getLogger
 
-from . import LOGGER, Config
+from .config_manager import Config
+
+LOGGER = getLogger(__name__)
 
 
 class JSONFormatter(logging.Formatter):

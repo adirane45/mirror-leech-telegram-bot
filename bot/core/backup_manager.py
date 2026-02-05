@@ -14,8 +14,11 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional, List
 import json
 import hashlib
+from logging import getLogger
 
-from . import LOGGER, Config
+from .config_manager import Config
+
+LOGGER = getLogger(__name__)
 
 
 class BackupMetadata:
