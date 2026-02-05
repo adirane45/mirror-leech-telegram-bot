@@ -5,4 +5,4 @@ services:
     restart: on-failure
     network_mode: "host"
     environment:
-      - BASE_URL_PORT=8000
+      - BASE_URL_PORT=8060

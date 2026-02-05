@@ -107,7 +107,7 @@ services:
     networks:
       - mltb-secure-net
     ports:
-      - "0.0.0.0:8000:8050"  # Accept from anywhere (configurable)
+      - "0.0.0.0:8060:8060"  # Accept from anywhere (configurable)
       - "127.0.0.1:9090:9090"  # Metrics - bind to localhost only
     environment:
       - BOT_API_KEY=${BOT_API_KEY}
@@ -135,7 +135,7 @@ services:
       mongodb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8050/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8060/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

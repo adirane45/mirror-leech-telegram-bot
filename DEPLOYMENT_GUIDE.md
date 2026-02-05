@@ -203,7 +203,7 @@ SKIP_UPDATE=1  (prevents overwriting in containers)
 ### 1. Bot Application (Port 8000)
 ```yaml
 Container: app
-Internal Port: 8050
+Internal Port: 8060
 Features:
   - FastAPI/Pyrogram bot
   - Prometheus metrics export (port 9090)
@@ -293,7 +293,7 @@ Default: admin / admin (CHANGE!)
 ./scripts/health_check.sh
 
 # Checks validate:
-✓ Web endpoint (8050)
+✓ Web endpoint (8060)
 ✓ Redis (6379)
 ✓ MongoDB (27017)
 ✓ Metrics endpoint (9090)
@@ -522,8 +522,8 @@ Use Nginx as reverse proxy:
 
 ```nginx
 upstream mltb {
-    server app:8050 weight=1;
-    server app2:8050 weight=1;
+    server app:8060 weight=1;
+    server app2:8060 weight=1;
 }
 
 server {

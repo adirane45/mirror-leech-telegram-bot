@@ -230,7 +230,7 @@ python3 -m bot
 
 Access a modern, real-time web interface:
 ```
-http://your-server:8050/dashboard
+http://your-server:8060/dashboard
 ```
 
 **Features:**
