@@ -1,7 +1,7 @@
 FROM anasty17/mltb:latest
 
 WORKDIR /app
-RUN chmod 777 /app
+RUN chmod 777 /app && mkdir -p /app/downloads && chmod 777 /app/downloads
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \

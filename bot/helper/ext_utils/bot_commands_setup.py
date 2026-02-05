@@ -1,5 +1,10 @@
 # Bot Commands Setup - Modified by: justadi
-from pyrogram.types import BotCommand
+from pyrogram.types import (
+    BotCommand,
+    BotCommandScopeDefault,
+    BotCommandScopeAllPrivateChats,
+    BotCommandScopeAllGroupChats,
+)
 
 from ...core.telegram_manager import TgClient
 from ..telegram_helper.bot_commands import BotCommands
@@ -35,8 +40,26 @@ async def set_bot_commands():
     ]
     
     try:
-        await TgClient.bot.set_bot_commands(commands)
-        LOGGER.info("Bot commands set successfully")
+        from asyncio import sleep
+        scopes = [
+            BotCommandScopeDefault(),
+            BotCommandScopeAllPrivateChats(),
+            BotCommandScopeAllGroupChats(),
+        ]
+
+        # Clear then set commands for all major scopes to avoid language/scope mismatch.
+        for scope in scopes:
+            try:
+                await TgClient.bot.delete_bot_commands(scope=scope)
+            except Exception as clear_err:
+                LOGGER.debug(f"Command clear skipped for scope {scope}: {clear_err}")
+
+        await sleep(0.5)
+
+        for scope in scopes:
+            await TgClient.bot.set_bot_commands(commands=commands, scope=scope)
+
+        LOGGER.info("✅ Bot commands set successfully for default/private/group scopes")
     except Exception as e:
         LOGGER.error(f"Failed to set bot commands: {e}")
 

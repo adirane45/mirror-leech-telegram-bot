@@ -62,20 +62,35 @@ async def main():
     except Exception as e:
         LOGGER.info(f"⚠️  Phase 2 initialization skipped: {e}")
 
+    LOGGER.info("Loading settings...")
     await load_settings()
+    LOGGER.info("✅ Settings loaded")
+    
+    LOGGER.info("Initializing task scheduler...")
     await TaskScheduler.init()
+    LOGGER.info("✅ Task scheduler initialized")
 
+    LOGGER.info("Starting Telegram clients...")
     await gather(TgClient.start_bot(), TgClient.start_user())
+    LOGGER.info("✅ Telegram clients started")
+    
+    LOGGER.info("Loading configurations...")
     await gather(load_configurations(), update_variables())
+    LOGGER.info("✅ Configurations loaded")
 
     from .core.torrent_manager import TorrentManager
 
+    LOGGER.info("Initiating torrent manager...")
     await TorrentManager.initiate()
+    LOGGER.info("✅ Torrent manager initiated")
+    
+    LOGGER.info("Updating download client options...")
     await gather(
         update_qb_options(),
         update_aria2_options(),
         update_nzb_options(),
     )
+    LOGGER.info("✅ Download client options updated")
     from .helper.ext_utils.files_utils import clean_all
     from .core.jdownloader_booter import jdownloader
     from .helper.ext_utils.telegraph_helper import telegraph
@@ -99,20 +114,44 @@ async def main():
     except Exception as e:
         LOGGER.debug(f"Metrics update loop skipped: {e}")
     
-    await gather(
-        save_settings(),
-        jdownloader.boot(),
-        clean_all(),
-        initiate_search_tools(),
-        get_packages_version(),
-        restart_notification(),
-        telegraph.create_account(),
-        rclone_serve_booter(),
-    )
+    LOGGER.info("Running final initialization tasks...")
+    from asyncio import wait_for, TimeoutError as AsyncioTimeoutError
+    
+    tasks = [
+        ("save_settings", save_settings()),
+        ("jdownloader.boot", jdownloader.boot()),
+        ("clean_all", clean_all()),
+        ("initiate_search_tools", initiate_search_tools()),
+        ("get_packages_version", get_packages_version()),
+        ("restart_notification", restart_notification()),
+        ("telegraph.create_account", telegraph.create_account()),
+        ("rclone_serve_booter", rclone_serve_booter()),
+    ]
+    
+    for task_name, task_coro in tasks:
+        try:
+            LOGGER.info(f"Running {task_name}...")
+            await wait_for(task_coro, timeout=15.0)
+            LOGGER.info(f"✅ {task_name} completed")
+        except AsyncioTimeoutError:
+            LOGGER.warning(f"⏱️  {task_name} timed out (15s)")
+        except Exception as e:
+            LOGGER.warning(f"⚠️  {task_name} failed: {e}")
+    
+    LOGGER.info("✅ Final initialization tasks completed")
     
     # Set bot commands for Telegram menu
-    from .helper.ext_utils.bot_commands_setup import set_bot_commands
-    await set_bot_commands()
+    LOGGER.info("Setting bot commands...")
+    try:
+        from .helper.ext_utils.bot_commands_setup import set_bot_commands
+        await wait_for(set_bot_commands(), timeout=15.0)
+        LOGGER.info("✅ Bot commands set")
+    except AsyncioTimeoutError:
+        LOGGER.warning("⏱️  Setting bot commands timed out (15s) - menu may not appear immediately")
+    except Exception as e:
+        LOGGER.warning(f"⚠️  Setting bot commands failed: {e} - try /help to see commands")
+    
+    LOGGER.info("🎉 Main initialization completed!")
 
 
 bot_loop.run_until_complete(main())

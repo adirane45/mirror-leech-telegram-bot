@@ -60,13 +60,20 @@ async def update_aria2_options():
 
 async def update_nzb_options():
     LOGGER.info("Get SABnzbd options from server")
-    for _ in range(10):
-        try:
-            no = (await sabnzbd_client.get_config())["config"]["misc"]
-            nzb_options.update(no)
-            return
-        except Exception:
-            await sleep(0.5)
+    from asyncio import wait_for, TimeoutError as AsyncioTimeoutError
+    try:
+        for _ in range(10):
+            try:
+                no = await wait_for(
+                    sabnzbd_client.get_config(),
+                    timeout=2.0
+                )
+                nzb_options.update(no["config"]["misc"])
+                return
+            except (Exception, AsyncioTimeoutError):
+                await sleep(0.5)
+    except Exception as e:
+        LOGGER.warning(f"SABnzbd options error: {e}")
     LOGGER.warning("SABnzbd options skipped: service unavailable")
 
 

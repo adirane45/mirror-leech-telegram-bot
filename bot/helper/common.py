@@ -169,6 +169,9 @@ class TaskConfig:
                 raise ValueError(f"NO TOKEN! {token_path} not Exists!")
 
     async def before_start(self):
+        # Ensure download directory exists for this task
+        await makedirs(self.dir, exist_ok=True)
+        
         self.name_sub = (
             self.name_sub
             or self.user_dict.get("NAME_SUBSTITUTE", False)

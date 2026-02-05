@@ -29,24 +29,29 @@ class TgClient:
 
     @classmethod
     async def start_bot(cls):
-        LOGGER.info("Creating client from BOT_TOKEN")
-        cls.ID = Config.BOT_TOKEN.split(":", 1)[0]
-        cls.bot = Client(
-            cls.ID,
-            Config.TELEGRAM_API,
-            Config.TELEGRAM_HASH,
-            proxy=Config.TG_PROXY,
-            bot_token=Config.BOT_TOKEN,
-            workdir=cls._get_workdir(),
-            parse_mode=enums.ParseMode.HTML,
-            max_concurrent_transmissions=10,
-            max_message_cache_size=15000,
-            max_topic_cache_size=15000,
-            sleep_threshold=0,
-            link_preview_options=LinkPreviewOptions(is_disabled=True),
-        )
-        await cls.bot.start()
-        cls.NAME = cls.bot.me.username
+        try:
+            LOGGER.info("Creating client from BOT_TOKEN")
+            cls.ID = Config.BOT_TOKEN.split(":", 1)[0]
+            cls.bot = Client(
+                cls.ID,
+                Config.TELEGRAM_API,
+                Config.TELEGRAM_HASH,
+                proxy=Config.TG_PROXY,
+                bot_token=Config.BOT_TOKEN,
+                workdir=cls._get_workdir(),
+                parse_mode=enums.ParseMode.HTML,
+                max_concurrent_transmissions=10,
+                max_message_cache_size=15000,
+                max_topic_cache_size=15000,
+                sleep_threshold=0,
+                link_preview_options=LinkPreviewOptions(is_disabled=True),
+            )
+            LOGGER.info("Starting Telegram bot client...")
+            await cls.bot.start()
+            cls.NAME = cls.bot.me.username
+            LOGGER.info(f"✅ Bot client started successfully - @{cls.NAME}")
+        except Exception as e:
+            LOGGER.error(f"Failed to start bot client: {e}", exc_info=True)
 
     @classmethod
     async def start_user(cls):
