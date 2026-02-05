@@ -17,6 +17,32 @@ async def main():
         update_variables,
     )
     from .core.task_scheduler import TaskScheduler
+    
+    # Safe Innovation Path - Phase 1 Initialization
+    LOGGER.info("="*50)
+    LOGGER.info("🚀 Starting Enhanced MLTB v3.1.0")
+    LOGGER.info("Safe Innovation Path - All enhancements are optional")
+    LOGGER.info("="*50)
+    
+    # Initialize Redis (optional, non-breaking)
+    try:
+        from .core.redis_manager import redis_client
+        await redis_client.initialize(
+            host=getattr(Config, 'REDIS_HOST', 'redis'),
+            port=getattr(Config, 'REDIS_PORT', 6379),
+            db=getattr(Config, 'REDIS_DB', 0)
+        )
+    except Exception as e:
+        LOGGER.info(f"Redis initialization skipped: {e}")
+    
+    # Initialize Metrics (optional, non-breaking)
+    try:
+        from .core.metrics import metrics
+        metrics.enable()
+        if metrics.is_enabled():
+            LOGGER.info("📊 Metrics collection enabled on port 9090")
+    except Exception as e:
+        LOGGER.info(f"Metrics initialization skipped: {e}")
 
     await load_settings()
     await TaskScheduler.init()
@@ -42,6 +68,19 @@ async def main():
         restart_notification,
     )
 
+    # Start metrics update loop if enabled
+    try:
+        from .core.metrics import metrics
+        if metrics.is_enabled():
+            from .helper.ext_utils.bot_utils import SetInterval
+            SetInterval(
+                getattr(Config, 'METRICS_UPDATE_INTERVAL', 60),
+                metrics.update_system_metrics
+            )
+            LOGGER.info("✅ System metrics monitoring started")
+    except Exception as e:
+        LOGGER.debug(f"Metrics update loop skipped: {e}")
+    
     await gather(
         save_settings(),
         jdownloader.boot(),
