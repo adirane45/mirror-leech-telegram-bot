@@ -1,5 +1,6 @@
 from aiofiles.os import path as aiopath
 from base64 import b64encode
+from os import path as ospath
 from re import match as re_match
 
 from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
@@ -273,7 +274,9 @@ class Mirror(TaskListener):
                 file_.mime_type == "application/x-bittorrent"
                 or file_.file_name.endswith((".torrent", ".dlc", ".nzb"))
             ):
-                self.link = await reply_to.download()
+                file_name = file_.file_name or "telegram.file"
+                download_path = ospath.join(DOWNLOAD_DIR, file_name)
+                self.link = await reply_to.download(file_name=download_path)
                 file_ = None
 
         if (

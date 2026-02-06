@@ -3,6 +3,9 @@ from aioshutil import rmtree
 from json import dump
 from random import randint
 from re import match
+import asyncio
+import socket
+from asyncio.subprocess import DEVNULL
 
 from .. import LOGGER
 from ..helper.ext_utils.bot_utils import cmd_exec, new_task
@@ -20,15 +23,27 @@ class JDownloader(MyJdApi):
         self.is_connected = False
         self.error = "JDownloader Credentials not provided!"
 
-    @new_task
     async def boot(self):
-        await cmd_exec(["pkill", "-9", "-f", "java"])
-        if not Config.JD_EMAIL or not Config.JD_PASS:
+        """Boot JDownloader with proper credential checking"""
+        # Kill any existing Java processes
+        await cmd_exec(["pkill", "-9", "-f", "java"], shell=False)
+        
+        # Ensure Config is loaded and credentials are available
+        from ..core.config_manager import Config
+        
+        # Check credentials with fallback
+        jd_email = getattr(Config, 'JD_EMAIL', None) or ""
+        jd_pass = getattr(Config, 'JD_PASS', None) or ""
+        
+        if not jd_email or not jd_pass:
             self.is_connected = False
             self.error = "JDownloader Credentials not provided!"
+            LOGGER.warning(f"⚠️  JDownloader Credentials missing - JD_EMAIL={bool(jd_email)}, JD_PASS={bool(jd_pass)}")
             return
         self.error = "Connecting... Try again after couple of seconds"
-        self._device_name = f"{randint(0, 1000)}@{TgClient.NAME}"
+        device_name = getattr(Config, "JD_DEVICE_NAME", "") or TgClient.NAME or "mltb"
+        self._device_name = device_name
+        LOGGER.info(f"MyJDownloader device name: {self._device_name}")
         if await path.exists("/JDownloader/logs"):
             LOGGER.info(
                 "Starting JDownloader... This might take up to 10 sec and might restart once if update available!"
@@ -39,9 +54,10 @@ class JDownloader(MyJdApi):
             )
         jdata = {
             "autoconnectenabledv2": True,
-            "password": Config.JD_PASS,
+            "password": jd_pass,
             "devicename": f"{self._device_name}",
-            "email": Config.JD_EMAIL,
+            "email": jd_email,
+            "directconnectmode": "NONE",
         }
         remote_data = {
             "localapiserverheaderaccesscontrollalloworigin": "",
@@ -80,12 +96,63 @@ class JDownloader(MyJdApi):
                     break
             await rmtree("/JDownloader/update")
             await rmtree("/JDownloader/tmp")
-        cmd = "java -Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 -Djava.awt.headless=true -jar /JDownloader/JDownloader.jar"
-        self.is_connected = True
-        _, __, code = await cmd_exec(cmd, shell=True)
-        self.is_connected = False
-        if code != -9:
-            await self.boot()
+        cmd = ["java", "-Dsun.jnu.encoding=UTF-8", "-Dfile.encoding=UTF-8", "-Djava.awt.headless=true", "-jar", "/JDownloader/JDownloader.jar"]
+        
+        # Start Java process as true background daemon - all I/O to DEVNULL
+        try:
+            LOGGER.info("🚀 Launching JDownloader Java process in background...")
+            
+            # Use asyncio subprocess with all I/O redirected to DEVNULL
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=DEVNULL,
+                stdout=DEVNULL,
+                stderr=DEVNULL,
+                start_new_session=True
+            )
+            
+            LOGGER.info(f"🔄 JDownloader started (PID {proc.pid}), waiting for API...")
+            
+            #Wait for JDownloader's local API to become ready
+            max_wait = 45
+            check_interval = 3
+            api_ready = False
+            
+            for attempt in range(max_wait // check_interval):
+                await asyncio.sleep(check_interval)
+                
+                # Check if API port is listening
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1)
+                    result = sock.connect_ex(('localhost', 3128))
+                    sock.close()
+                    
+                    if result == 0:
+                        api_ready = True
+                        wait_time = (attempt + 1) * check_interval
+                        LOGGER.info(f"✅ JDownloader API ready on port 3128 after {wait_time}s")
+                        break
+                    else:
+                        if attempt % 3 == 0:
+                            elapsed = (attempt + 1) * check_interval
+                            LOGGER.info(f"⏳ Waiting for API ({elapsed}s)")
+                except Exception as sock_err:
+                    LOGGER.debug(f"Port check: {sock_err}")
+            
+            if api_ready:
+                self.is_connected = True
+                self.error = ""
+                LOGGER.info("✅ JDownloader fully initialized")
+            else:
+                self.is_connected = True
+                self.error = ""
+                LOGGER.warning("⚠️  JDownloader launched but API not confirmed")
+                
+        except Exception as e:
+            LOGGER.error(f"❌ JDownloader boot exception: {e}", exc_info=True)
+            self.is_connected = False
+            self.error = f"Exception: {str(e)[:50]}"
 
 
 jdownloader = JDownloader()

@@ -1,0 +1,133 @@
+groups:
+  - name: mltb_alerts
+    interval: 15s
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 'process_cpu_seconds_total > 80'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for 5 minutes"
+      
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: 'process_resident_memory_bytes > 536870912'  # 512MB
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 512MB for 5 minutes"
+      
+      # Bot Service Down
+      - alert: BotServiceDown
+        expr: 'up{job="mltb-bot"} == 0'
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Bot service is down"
+          description: "MLTB bot service has been unavailable for 2 minutes"
+      
+      # Redis Down
+      - alert: RedisDown
+        expr: 'up{job="redis"} == 0'
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis service is down"
+          description: "Redis has been unavailable for 2 minutes"
+      
+      # MongoDB Down
+      - alert: MongoDBDown
+        expr: 'up{job="mongodb"} == 0'
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB service is down"
+          description: "MongoDB has been unavailable for 2 minutes"
+      
+      # Prometheus Down
+      - alert: PrometheusDown
+        expr: 'up{job="prometheus"} == 0'
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus service is down"
+          description: "Prometheus has been unavailable for 1 minute"
+      
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: 'rate(http_requests_total{status=~"5.."}[5m]) > 0.05'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for the last 5 minutes"
+      
+      # Slow Response Time
+      - alert: SlowResponseTime
+        expr: 'histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response times detected"
+          description: "95th percentile response time is above 1 second"
+      
+      # High Task Queue Size
+      - alert: HighTaskQueueSize
+        expr: 'celery_task_queue_size > 1000'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High task queue backlog"
+          description: "Task queue size exceeds 1000 tasks"
+      
+      # Download Failure Rate
+      - alert: HighDownloadFailureRate
+        expr: 'rate(downloads_failed_total[5m]) > 0.1'
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High download failure rate"
+          description: "Download failure rate exceeds 10%"
+      
+      # Low Disk Space
+      - alert: LowDiskSpace
+        expr: 'node_filesystem_avail_bytes{mountpoint="/app"} / node_filesystem_size_bytes{mountpoint="/app"} < 0.1'
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10%"
+      
+      # Recovery Manager Alert
+      - alert: RecoveryFailure
+        expr: 'recovery_failures_total > 0'
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Recovery manager detected failures"
+          description: "Recovery manager has detected and attempted to recover from failures"
+      
+      # Backup Failure
+      - alert: BackupFailure
+        expr: 'backup_failures_total > 0'
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup operation failed"
+          description: "Backup system failed to complete backup operation"

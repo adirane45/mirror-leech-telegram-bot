@@ -13,7 +13,14 @@ from ...mirror_leech_utils.status_utils.aria2_status import Aria2Status
 from ...telegram_helper.message_utils import send_status_message, send_message
 
 
+def _map_download_path(path: str) -> str:
+    if path.startswith("/app/downloads"):
+        return path.replace("/app/downloads", "/downloads", 1)
+    return path
+
+
 async def add_aria2_download(listener, dpath, header, ratio, seed_time):
+    dpath = _map_download_path(dpath)
     a2c_opt = {"dir": dpath}
     if listener.name:
         a2c_opt["out"] = listener.name

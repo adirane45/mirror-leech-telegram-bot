@@ -1,0 +1,137 @@
+{
+  "dashboard": {
+    "title": "MLTB System Alerts",
+    "panels": [
+      {
+        "title": "CPU Usage Alert",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{name=~\"mltb-.*\"}[5m]) * 100",
+            "legendFormat": "{{name}}"
+          }
+        ],
+        "alert": {
+          "name": "High CPU Usage",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [85],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "name": "High CPU Usage Alert",
+          "noDataState": "no_data",
+          "notificationUids": ["nginx_uid"]
+        }
+      },
+      {
+        "title": "Memory Usage Alert",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{name=~\"mltb-.*\"} / container_spec_memory_limit_bytes * 100",
+            "legendFormat": "{{name}}"
+          }
+        ],
+        "alert": {
+          "name": "High Memory Usage",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [85],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "name": "High Memory Usage Alert",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "title": "Disk Space Alert",
+        "targets": [
+          {
+            "expr": "node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"} * 100",
+            "legendFormat": "Available %"
+          }
+        ],
+        "alert": {
+          "name": "Low Disk Space",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [10],
+                "type": "lt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "name": "Low Disk Space Alert",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "title": "Download Status",
+        "targets": [
+          {
+            "expr": "mltb_active_downloads",
+            "legendFormat": "Active Downloads"
+          }
+        ]
+      },
+      {
+        "title": "Upload Status",
+        "targets": [
+          {
+            "expr": "mltb_active_uploads",
+            "legendFormat": "Active Uploads"
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 30,
+    "version": 1
+  },
+  "overwrite": true
+}

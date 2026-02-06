@@ -7,6 +7,7 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
+import asyncio
 import importlib
 from abc import ABC, abstractmethod
 from pathlib import Path

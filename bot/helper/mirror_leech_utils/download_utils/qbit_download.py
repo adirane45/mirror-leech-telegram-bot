@@ -42,7 +42,14 @@ def _get_hash_file(fpath):
 """
 
 
+def _map_download_path(path: str) -> str:
+    if path.startswith("/app/downloads"):
+        return path.replace("/app/downloads", "/downloads", 1)
+    return path
+
+
 async def add_qb_torrent(listener, path, ratio, seed_time):
+    path = _map_download_path(path)
     try:
         form = AddFormBuilder.with_client(TorrentManager.qbittorrent)
         if await aiopath.exists(listener.link):

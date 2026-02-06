@@ -169,8 +169,11 @@ class TaskConfig:
                 raise ValueError(f"NO TOKEN! {token_path} not Exists!")
 
     async def before_start(self):
-        # Ensure download directory exists for this task
+        # Ensure download directory exists for this task with proper permissions
         await makedirs(self.dir, exist_ok=True)
+        # Set permissions to 777 so qBittorrent (UID 1000) can write
+        from os import chmod
+        chmod(self.dir, 0o777)
         
         self.name_sub = (
             self.name_sub

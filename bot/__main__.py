@@ -62,6 +62,18 @@ async def main():
     except Exception as e:
         LOGGER.info(f"⚠️  Phase 2 initialization skipped: {e}")
 
+    # Initialize Phase 3 Services (optional, non-breaking)
+    try:
+        LOGGER.info("="*50)
+        LOGGER.info("🚀 Initializing Phase 3: Advanced Features")
+        LOGGER.info("="*50)
+        from .core.enhanced_startup_phase3 import initialize_phase3_services
+        phase3_status = await initialize_phase3_services()
+        enabled = sum(1 for v in phase3_status.values() if v)
+        LOGGER.info(f"✅ Phase 3: {enabled}/3 services enabled")
+    except Exception as e:
+        LOGGER.info(f"⚠️  Phase 3 initialization skipped: {e}")
+
     LOGGER.info("Loading settings...")
     await load_settings()
     LOGGER.info("✅ Settings loaded")
@@ -130,11 +142,16 @@ async def main():
     
     for task_name, task_coro in tasks:
         try:
+            # JDownloader needs more time for Java startup and initialization
+            if task_name == "jdownloader.boot":
+                timeout = 120.0  # 2 minutes for Java to fully initialize
+            else:
+                timeout = 15.0
             LOGGER.info(f"Running {task_name}...")
-            await wait_for(task_coro, timeout=15.0)
+            await wait_for(task_coro, timeout=timeout)
             LOGGER.info(f"✅ {task_name} completed")
         except AsyncioTimeoutError:
-            LOGGER.warning(f"⏱️  {task_name} timed out (15s)")
+            LOGGER.warning(f"⏱️  {task_name} timed out ({timeout}s)")
         except Exception as e:
             LOGGER.warning(f"⚠️  {task_name} failed: {e}")
     

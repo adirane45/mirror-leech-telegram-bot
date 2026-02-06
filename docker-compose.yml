@@ -9,7 +9,7 @@ services:
     networks:
       - mltb-net
     environment:
-      - RPC_SECRET=
+      - RPC_SECRET=mltb_aria2_secret_2026
       - PUID=1000
       - PGID=1000
       - RPC_PORT=6800
@@ -19,13 +19,13 @@ services:
       - UPDATE_TRACKERS=true
     volumes:
       - downloads:/downloads
-      - ./aria2/config:/config
+      - ./clients/aria2/config:/config
     ports:
       - "6800:6800"
       - "6888:6888"
       - "6888:6888/udp"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6800/"]
+      test: ["CMD", "curl", "-f", "-X", "POST", "-H", "Content-Type: application/json", "--data", "{\"jsonrpc\":\"2.0\",\"id\":\"mltb\",\"method\":\"aria2.getVersion\",\"params\":[\"token:mltb_aria2_secret_2026\"]}", "http://localhost:6800/jsonrpc"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,9 +42,10 @@ services:
       - PGID=1000
       - TZ=UTC
       - WEBUI_PORT=8090
+      - WEBUI_PASSWORD=mltbmltb
     volumes:
       - downloads:/downloads
-      - ./qbittorrent/config:/config
+      - ./clients/qbittorrent/config:/config
     ports:
       - "8090:8090"
       - "6881:6881"
@@ -73,11 +74,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # ===== MongoDB Database =====
+  # ===== MongoDB Database (Upgraded to 7.0 - Not used, cloud MongoDB configured) =====
   mongodb:
-    image: mongo:4.4
+    image: mongo:7.0
     container_name: mltb-mongodb
-    restart: unless-stopped
+    restart: "no"
+    profiles:
+      - local-db
     networks:
       - mltb-net
     ports:
@@ -85,7 +88,7 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -100,7 +103,7 @@ services:
     ports:
       - "9091:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./integrations/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -128,7 +131,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./integrations/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       prometheus:
         condition: service_healthy
@@ -154,17 +157,21 @@ services:
       - REDIS_PORT=6379
       - ARIA2_HOST=aria2
       - ARIA2_PORT=6800
+      - ARIA2_SECRET=mltb_aria2_secret_2026
       - QB_HOST=qbittorrent
       - QB_PORT=8090
+      # Disable MongoDB to speed up startup (set to empty string)
+      - DATABASE_URL=
+      - MONGODB_URI=
     volumes:
       - downloads:/app/downloads
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./web:/app/web:ro
+      - ./config/main_config.py:/app/config.py:ro
+      - ./config/.env.production:/app/.env.production:ro
       - logs:/app/logs
     depends_on:
       redis:
-        condition: service_healthy
-      mongodb:
         condition: service_healthy
       aria2:
         condition: service_healthy
@@ -188,16 +195,15 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - C_FORCE_ROOT=1
     volumes:
       - downloads:/app/downloads
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./config/main_config.py:/app/config.py:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --pool=prefork --max-tasks-per-child=20 --time-limit=3700 --soft-time-limit=3600
     depends_on:
       redis:
-        condition: service_healthy
-      mongodb:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "/app/mltbenv/bin/celery", "-A", "bot.core.celery_app", "inspect", "active"]
@@ -218,7 +224,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./config/main_config.py:/app/config.py:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app beat --loglevel=info
     depends_on:

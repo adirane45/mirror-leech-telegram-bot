@@ -42,17 +42,48 @@ class TorrentManager:
     async def initiate(cls):
         aria2_host = environ.get("ARIA2_HOST", "localhost")
         aria2_port = environ.get("ARIA2_PORT", "6800")
+        aria2_secret = environ.get("ARIA2_SECRET", "")
         qb_host = environ.get("QB_HOST", "localhost")
         qb_port = environ.get("QB_PORT", "8090")
         
-        cls.aria2, cls.qbittorrent = await gather(
-            Aria2WebsocketClient.new(f"http://{aria2_host}:{aria2_port}/jsonrpc"),
-            create_client(
-                f"http://{qb_host}:{qb_port}/api/v2/",
+        # Try different authentication methods for qBittorrent
+        qb_url = f"http://{qb_host}:{qb_port}/api/v2/"
+        qb_client = None
+        
+        # Try with password first
+        try:
+            qb_client = await create_client(
+                qb_url,
                 username="admin",
                 password="mltbmltb",
-            ),
-        )
+            )
+        except Exception as e:
+            LOGGER.warning(f"qBittorrent auth with password failed: {e}, trying without password...")
+            try:
+                # Try with empty password
+                qb_client = await create_client(
+                    qb_url,
+                    username="admin",
+                    password="",
+                )
+            except Exception as e2:
+                LOGGER.warning(f"qBittorrent auth without password failed: {e2}, trying unauthenticated...")
+                try:
+                    # Try unauthenticated
+                    qb_client = await create_client(qb_url)
+                except Exception as e3:
+                    LOGGER.error(f"All qBittorrent authentication methods failed: {e3}")
+                    raise
+        
+        # Connect to aria2 with secret if provided
+        if aria2_secret:
+            cls.aria2 = await Aria2WebsocketClient.new(
+                f"http://{aria2_host}:{aria2_port}/jsonrpc",
+                token=aria2_secret
+            )
+        else:
+            cls.aria2 = await Aria2WebsocketClient.new(f"http://{aria2_host}:{aria2_port}/jsonrpc")
+        cls.qbittorrent = qb_client
         cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
 
     @classmethod

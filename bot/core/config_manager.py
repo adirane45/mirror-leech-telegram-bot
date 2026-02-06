@@ -174,6 +174,31 @@ class Config:
     # Experimental
     EXPERIMENTAL_FEATURES = {}
 
+    # ==================== PHASE 3 CONFIGURATION ====================
+    # GraphQL API
+    ENABLE_GRAPHQL_API = False
+    GRAPHQL_COMPLEXITY_LIMIT = 1000
+    GRAPHQL_MAX_DEPTH = 10
+    GRAPHQL_RATE_LIMIT = 100
+
+    # Plugin System
+    ENABLE_PLUGIN_SYSTEM = False
+    AUTO_LOAD_PLUGINS = True
+    PLUGIN_DIRECTORY = "plugins"
+    PLUGIN_AUTO_RELOAD = True
+
+    # Advanced Dashboard
+    ENABLE_ADVANCED_DASHBOARD = False
+    ENABLE_LIVE_METRICS = True
+    DASHBOARD_REFRESH_INTERVAL = 5
+    DASHBOARD_MAX_HISTORICAL_POINTS = 1000
+
+    # Performance Optimization
+    ENABLE_QUERY_OPTIMIZATION = False
+    QUERY_CACHE_ENABLED = False
+    CACHE_TTL = 300
+    PLUGINS_DIR = "plugins"
+
     @classmethod
     def _convert(cls, key: str, value):
         if not hasattr(cls, key):

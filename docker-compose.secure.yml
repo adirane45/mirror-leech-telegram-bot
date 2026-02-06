@@ -53,8 +53,8 @@ services:
     ports:
       - "127.0.0.1:9091:9090"  # Bind only to localhost
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - ./integrations/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./integrations/monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -89,7 +89,7 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./integrations/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       prometheus:
         condition: service_healthy
@@ -126,7 +126,7 @@ services:
       - SKIP_UPDATE=1
     volumes:
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./config/main_config.py:/app/config.py:ro
       - downloads:/downloads
       - logging:/app/logs
     depends_on:
@@ -161,7 +161,7 @@ services:
       - SKIP_UPDATE=1
     volumes:
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./config/main_config.py:/app/config.py:ro
       - downloads:/downloads
       - logging:/app/logs
     command: celery -A bot.core.celery_app worker --loglevel=info --concurrency=${CELERY_WORKER_CONCURRENCY} --pool=prefork --max-tasks-per-child=${CELERY_WORKER_MAX_TASKS} --time-limit=3700 --soft-time-limit=3600 --prefetch-multiplier=${CELERY_WORKER_PREFETCH_MULTIPLIER} --autoscale=10,3
@@ -196,7 +196,7 @@ services:
       - SKIP_UPDATE=1
     volumes:
       - ./bot:/app/bot:ro
-      - ./config.py:/app/config.py:ro
+      - ./config/main_config.py:/app/config.py:ro
       - logging:/app/logs
     command: celery -A bot.core.celery_app beat --loglevel=info
     depends_on:

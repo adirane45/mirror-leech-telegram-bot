@@ -18,6 +18,16 @@ from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
 
+# Try to import GraphQL schema (Phase 3 optional)
+try:
+    from bot.core.graphql_api import schema as graphql_schema
+    GRAPHQL_AVAILABLE = True
+except Exception as e:
+    graphql_schema = None
+    GRAPHQL_AVAILABLE = False
+    LOGGER_INIT = getLogger(__name__)
+    LOGGER_INIT.warning(f"GraphQL API not available: {e}")
+
 getLogger("httpx").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
 
@@ -398,16 +408,63 @@ async def set_aria2(gid, selected_files):
         LOGGER.info(f"Verification Failed! Report! Gid: {gid}")
 
 
+@app.post("/graphql")
+@app.get("/graphql", response_class=HTMLResponse)
+async def graphql_endpoint(request: Request):
+    """GraphQL API endpoint (Phase 3)"""
+    if not GRAPHQL_AVAILABLE:
+        return JSONResponse({"error": "GraphQL API not available"}, status_code=503)
+    
+    if request.method == "POST":
+        data = await request.json()
+        query = data.get("query")
+        variables = data.get("variables", {})
+        
+        result = graphql_schema.execute(query, variable_values=variables)
+        
+        response = {
+            "data": result.data,
+        }
+        if result.errors:
+            response["errors"] = [str(err) for err in result.errors]
+        
+        return JSONResponse(response)
+    else:
+        # GraphQL Playground HTML for GET requests
+        return """
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>GraphQL Playground</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div id="root"></div>
+            <script src="https://cdn.jsdelivr.net/npm/graphql-playground-react@latest/umd/graphql-playground.min.js"></script>
+            <script>
+              GraphQLPlayground.init(document.getElementById('root'), {
+                endpoint: '/graphql',
+                settings: {
+                  'editor.theme': 'dark',
+                }
+              })
+            </script>
+          </body>
+        </html>
+        """
+
+
 @app.get("/", response_class=HTMLResponse)
-async def homepage():
-    return (
-        "<h1>See mirror-leech-telegram-bot "
-        "<a href='https://www.github.com/adirane45/mirror-leech-telegram-bot'>@GitHub</a> "
-        "By <a href='https://github.com/adirane45'>Aditya Rane</a> | "
-        "<a href='https://www.linkedin.com/in/aditya-rane-a912004r/'>LinkedIn</a> | "
-        "<a href='https://www.instagram.com/rane_adi45'>Instagram</a> | "
-        "<a href='https://t.me/rane_adi45'>Telegram</a></h1>"
-    )
+async def homepage(request: Request):
+    # Redirect to dashboard
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.exception_handler(Exception)

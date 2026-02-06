@@ -12,8 +12,8 @@ RUN apt-get update \
 
 RUN python3 -m venv mltbenv
 
-COPY requirements-enhanced.txt requirements-phase2.txt ./
-RUN /app/mltbenv/bin/pip install --no-cache-dir -r requirements-enhanced.txt -r requirements-phase2.txt
+COPY requirements.txt requirements-phase3.txt ./
+RUN /app/mltbenv/bin/pip install --no-cache-dir -r requirements.txt -r requirements-phase3.txt
 
 COPY . .
 
