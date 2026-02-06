@@ -1,89 +1,255 @@
+# ============================================================================
+# Mirror-Leech Telegram Bot - Git Ignore Configuration
+# ============================================================================
+
+# PYTHON BUILD & DEPENDENCIES
+# ============================================================================
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+*.egg
 *.egg-info/
+dist/
+build/
+*.whl
+*.tar.gz
+*.zip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# VIRTUAL ENVIRONMENTS
+# ============================================================================
 venv/
-.venv/
 env/
+.venv/
+ENV/
+build/
 mltbenv/
+*.egg-info/
 
-*.log
-log.txt
-bot_output.log
+# PYTHON TESTING & COVERAGE
+# ============================================================================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.prof
+*.pstat
+.tox/
+.hypothesis/
+test_output_*.txt
 
+# IDE & EDITOR FILES
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.pydevproject
+.settings/
+.sublime-project
+.sublime-workspace
+# Emacs
+*~
+.#*
+# Vim
+.vim
+# PyCharm
+.graddle
+# VS Code specific
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+
+# OS & SYSTEM FILES
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+*.lnk
+*Thumbs.db
+
+# SENSITIVE & CONFIGURATION FILES
+# ============================================================================
+# Environment variables
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
 !.env.security.example
 
+# Credentials & Secrets
 credentials.json
 config.py
 token.pickle
 rclone.conf
 .netrc
+accounts/
+tokens/
 cfg.zip
 cookies.txt
 list_drives.txt
 *.session
+.session
 *.pem
 *.key
 *.p12
 *.pfx
 *.crt
+*.p8
+*.jks
+secrets.txt
+secrets.yml
+secrets.yaml
 
-accounts/
+# RUNTIME DATA & LOGS
+# ============================================================================
+# Logs
+*.log
+log.txt
+logs/
+bot_output.log
+*.log.*
+
+# Running data
 downloads/
 rclone/
 sabnzbd/
 thumbnails/
-tokens/
 runtime/
+*.pid
+.pid
 
-# Temporary deployment and documentation files
-deploy-production.sh
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# DOCKER & DEPLOYMENT
+# ============================================================================
 docker-compose.production.yml
-requirements-phase2.txt
-requirements-enhanced.txt
-PHASE2_VERIFICATION.md
-PHASE2_COMPLETION_SUMMARY.txt
-INTEGRATION_SUMMARY.md
-DEPLOYMENT_GUIDE.md
+docker-compose.local.yml
+Dockerfile.local
+.dockerignore
 
-# CodeScene Analysis
-.codescene/reports/
-.codescene/.token
-.codescene/*.json
-# Generated reports and artifacts
-*.coverage
-.coverage
-coverage.xml
-htmlcov/
-.pytest_cache/
-*.prof
-*.pstat
-
-# Deployment artifacts
+# BUILD & DISTRIBUTION ARTIFACTS
+# ============================================================================
 build/
 dist/
+*.egg-info/
 *.egg
 *.whl
-*.tar.gz
-*.zip
+MANIFEST
+pip-log.txt
 
-# Temporary test and metric files
-test_output_*.txt
+# CACHE & TEMP FILES
+# ============================================================================
+.cache/
+*.cache
+*.tmp
+*.temp
+*.bak
+*_backup.*
+*~
+.~*
+*.swp
+*.swo
+
+# GENERATED REPORTS & ARTIFACTS
+# ============================================================================
+# Performance & Metrics
 metrics_snapshot_*.json
 performance_report_*.html
 health_check_report_*.txt
 
-# Generated graphs and visualizations
+# CodeScene Analysis
+.codescene/
+.codescene/reports/
+.codescene/.token
+.codescene/*.json
+
+# Generated Documentation
 *.png
 *.jpg
 *.jpeg
+*.gif
 *.svg
 
-# Temporary configuration files  
-*.bak
-*.tmp
-*.temp
-*_backup.yml
-*_production.yml
+# TEMPORARY PROJECT FILES (can be removed)
+# ============================================================================
+deploy-production.sh
+requirements-phase*.txt
+requirements-enhanced.txt
+PHASE*.md
+INTEGRATION_SUMMARY.md
+DEPLOYMENT_GUIDE.md
+*_VERIFICATION.md
+*_COMPLETION_*.txt
+
+# NODE & FRONTEND (if applicable)
+# ============================================================================
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+.eslintcache
+
+# MISC
+# ============================================================================
+*.local
+*.private
+*.backup
+.bundle/
+.byebug_history
+.ruby-version
+Gemfile.lock
+
+# Git
+.git/
+.gitignore
+
+# IDE Workspace
+.workspace
+workspace.xml
+
+# MacOS Specific
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows Specific
+*.lnk
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# VENV-specific for different Python versions
+venv3.8/
+venv3.9/
+venv3.10/
+venv3.11/
+venv3.12/
+venv3.13/
+
+# Development tools
+.env.development
+develop_notes.md
+scratch/
+temp/
+tmp/

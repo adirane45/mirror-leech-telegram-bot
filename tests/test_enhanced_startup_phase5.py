@@ -1,12 +1,13 @@
 """
-Tests for Phase 5 Enhanced Startup Module
+Tests for Phase 5 Enhanced Startup Module (Consolidated)
+Tests for all Phase 1-5 features now consolidated in enhanced_startup.py
 """
 
 import pytest
 from datetime import datetime
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from bot.core.enhanced_startup_phase5 import (
+from bot.core.enhanced_startup import (
     initialize_phase5_services,
     shutdown_phase5_services,
     get_phase5_status,
@@ -85,7 +86,7 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_health_monitor_only(self):
         """Test initialization with only health monitor"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = AsyncMock()
             mock_health.get_instance.return_value = mock_instance
             
@@ -111,14 +112,14 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_all_components_enabled(self):
         """Test initialization with all components"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health, \
-             patch('bot.core.enhanced_startup_phase5.ClusterManager') as mock_cluster, \
-             patch('bot.core.enhanced_startup_phase5.FailoverManager') as mock_failover, \
-             patch('bot.core.enhanced_startup_phase5.ReplicationManager') as mock_replication, \
-             patch('bot.core.enhanced_startup_phase5.DistributedStateManager') as mock_state, \
-             patch('bot.core.enhanced_startup_phase5.TaskCoordinator') as mock_coordinator, \
-             patch('bot.core.enhanced_startup_phase5.PerformanceOptimizer') as mock_optimizer, \
-             patch('bot.core.enhanced_startup_phase5.ApiGateway') as mock_gateway:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health, \
+             patch('bot.core.enhanced_startup.ClusterManager') as mock_cluster, \
+             patch('bot.core.enhanced_startup.FailoverManager') as mock_failover, \
+             patch('bot.core.enhanced_startup.ReplicationManager') as mock_replication, \
+             patch('bot.core.enhanced_startup.DistributedStateManager') as mock_state, \
+             patch('bot.core.enhanced_startup.TaskCoordinator') as mock_coordinator, \
+             patch('bot.core.enhanced_startup.PerformanceOptimizer') as mock_optimizer, \
+             patch('bot.core.enhanced_startup.ApiGateway') as mock_gateway:
             
             # Setup all mocks
             for mock in [mock_health, mock_cluster, mock_failover, mock_replication,
@@ -152,7 +153,7 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_component_failure(self):
         """Test handling of component initialization failure"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = AsyncMock()
             mock_instance.enable = AsyncMock()
             mock_instance.enable.side_effect = Exception("Connection refused")
@@ -180,8 +181,8 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_partial_initialization(self):
         """Test partial initialization with some components failing"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health, \
-             patch('bot.core.enhanced_startup_phase5.TaskCoordinator') as mock_coordinator:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health, \
+             patch('bot.core.enhanced_startup.TaskCoordinator') as mock_coordinator:
             
             # Health monitor succeeds
             mock_health_instance = AsyncMock()
@@ -214,7 +215,7 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_config_override(self):
         """Test configuration override"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = AsyncMock()
             mock_instance.enable = AsyncMock()  # Health monitor uses enable()
             mock_health.get_instance.return_value = mock_instance
@@ -241,7 +242,7 @@ class TestInitializePhase5:
     @pytest.mark.asyncio
     async def test_cluster_node_parsing(self):
         """Test cluster node address parsing"""
-        with patch('bot.core.enhanced_startup_phase5.ClusterManager') as mock_cluster:
+        with patch('bot.core.enhanced_startup.ClusterManager') as mock_cluster:
             mock_instance = AsyncMock()
             mock_cluster.get_instance.return_value = mock_instance
             
@@ -297,14 +298,14 @@ class TestShutdownPhase5:
             'api_gateway': True
         }
         
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health, \
-             patch('bot.core.enhanced_startup_phase5.ClusterManager') as mock_cluster, \
-             patch('bot.core.enhanced_startup_phase5.FailoverManager') as mock_failover, \
-             patch('bot.core.enhanced_startup_phase5.ReplicationManager') as mock_replication, \
-             patch('bot.core.enhanced_startup_phase5.DistributedStateManager') as mock_state, \
-             patch('bot.core.enhanced_startup_phase5.TaskCoordinator') as mock_coordinator, \
-             patch('bot.core.enhanced_startup_phase5.PerformanceOptimizer') as mock_optimizer, \
-             patch('bot.core.enhanced_startup_phase5.ApiGateway') as mock_gateway:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health, \
+             patch('bot.core.enhanced_startup.ClusterManager') as mock_cluster, \
+             patch('bot.core.enhanced_startup.FailoverManager') as mock_failover, \
+             patch('bot.core.enhanced_startup.ReplicationManager') as mock_replication, \
+             patch('bot.core.enhanced_startup.DistributedStateManager') as mock_state, \
+             patch('bot.core.enhanced_startup.TaskCoordinator') as mock_coordinator, \
+             patch('bot.core.enhanced_startup.PerformanceOptimizer') as mock_optimizer, \
+             patch('bot.core.enhanced_startup.ApiGateway') as mock_gateway:
             
             # Setup all mocks
             for mock in [mock_health, mock_cluster, mock_failover, mock_replication,
@@ -335,8 +336,8 @@ class TestShutdownPhase5:
             'task_coordinator': True
         }
         
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health, \
-             patch('bot.core.enhanced_startup_phase5.TaskCoordinator') as mock_coordinator:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health, \
+             patch('bot.core.enhanced_startup.TaskCoordinator') as mock_coordinator:
             
             # Health monitor shutdown succeeds
             mock_health_instance = AsyncMock()
@@ -362,7 +363,7 @@ class TestShutdownPhase5:
         _phase5_status.components = {'health_monitor': True}
         _phase5_status.errors = {'cluster': 'Error'}
         
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = AsyncMock()
             mock_health.get_instance.return_value = mock_instance
             
@@ -421,7 +422,7 @@ class TestGetPhase5Status:
         _phase5_status.initialized_at = datetime.utcnow()
         _phase5_status.components = {'health_monitor': True}
         
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = MagicMock()
             mock_instance.components = {
                 'comp1': MagicMock(status=MagicMock(value='healthy')),
@@ -443,7 +444,7 @@ class TestGetPhase5Status:
         _phase5_status.enabled = True
         _phase5_status.components = {'health_monitor': True}
         
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_health.get_instance.side_effect = Exception("Not available")
             
             result = await get_phase5_detailed_status()
@@ -539,7 +540,7 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_full_lifecycle(self):
         """Test complete initialization and shutdown cycle"""
-        with patch('bot.core.enhanced_startup_phase5.HealthMonitor') as mock_health:
+        with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:
             mock_instance = AsyncMock()
             mock_instance.enable = AsyncMock()  # Health monitor uses enable()
             mock_instance.disable = AsyncMock()  # Health monitor uses disable()

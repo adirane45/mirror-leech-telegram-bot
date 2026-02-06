@@ -40,7 +40,7 @@ HEALTH_MONITOR_ENABLED = True
 **Step 2: Initialize in bot**
 ```python
 # In bot/__main__.py
-from bot.core.enhanced_startup_phase5 import initialize_phase5
+from bot.core.enhanced_startup import initialize_phase5
 from config.main_config import load_user_config
 
 # Load config
@@ -163,7 +163,7 @@ def load_user_config():
 **In `bot/__main__.py`:**
 ```python
 import asyncio
-from bot.core.enhanced_startup_phase5 import (
+from bot.core.enhanced_startup import (
     initialize_phase5,
     get_phase5_status,
     shutdown_phase5
@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
 **In `web/wserver.py`:**
 ```python
-from bot.core.enhanced_startup_phase5 import get_phase5_status
+from bot.core.enhanced_startup import get_phase5_status
 
 @app.get("/health")
 async def health_endpoint():
@@ -237,7 +237,7 @@ async def health_endpoint():
 ```python
 async def ha_status_command(client, message):
     """Show High Availability status"""
-    from bot.core.enhanced_startup_phase5 import get_phase5_status
+    from bot.core.enhanced_startup import get_phase5_status
     
     status = await get_phase5_status()
     

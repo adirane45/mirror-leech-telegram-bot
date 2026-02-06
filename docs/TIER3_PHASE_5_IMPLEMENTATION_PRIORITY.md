@@ -405,7 +405,7 @@ if lock_id:
 
 **Implementation Checklist:**
 ```
-[ ] Create bot/core/enhanced_startup_phase5.py (300+ lines)
+[ ] Create bot/core/enhanced_startup.py (300+ lines)
     ├─ initialize_phase5(config)
     │   ├─ Validate config
     │   ├─ Initialize health monitor
@@ -423,7 +423,7 @@ if lock_id:
 
 **Key API:**
 ```python
-from bot.core.enhanced_startup_phase5 import (
+from bot.core.enhanced_startup import (
     initialize_phase5,
     get_phase5_status,
     shutdown_phase5
@@ -441,7 +441,7 @@ await shutdown_phase5()
 ```
 
 **Files to Create:**
-- `bot/core/enhanced_startup_phase5.py` (300+ lines)
+- `bot/core/enhanced_startup.py` (300+ lines)
 
 ---
 

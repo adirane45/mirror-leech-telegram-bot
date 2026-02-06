@@ -19,7 +19,7 @@ config = PHASE5_PRESETS['distributed']      # 5+ nodes
 
 **2. Initialize in Bot:**
 ```python
-from bot.core.enhanced_startup_phase5 import initialize_phase5
+from bot.core.enhanced_startup import initialize_phase5
 
 await initialize_phase5(config)
 ```
