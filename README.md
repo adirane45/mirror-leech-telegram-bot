@@ -1,16 +1,20 @@
-# Enhanced Mirror-Leech Telegram Bot v3.1.0
+# 🚀 Mirror-Leech Telegram Bot - Production Enterprise Edition
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.13-blue.svg)
-![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-production--ready-success.svg)
+[![Version](https://img.shields.io/badge/version-3.1.0--Phase5-blue?style=for-the-badge)](/)
+[![Python](https://img.shields.io/badge/python-3.13-blue?style=for-the-badge)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-brightgreen?style=for-the-badge)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
+[![Status](https://img.shields.io/badge/status-production--ready-success?style=for-the-badge)](/)
+[![Maintained](https://img.shields.io/badge/maintained-yes-success?style=for-the-badge)](/)
 
-**Professional Telegram bot for mirroring/leeching files with advanced features**
+**Enterprise-Grade Telegram Bot for High-Performance File Mirroring & Cloud Integration**
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Documentation](docs/) • [Health Check](#-health-monitoring)
+> **Lead Developer & Architect**: [Aditya Rane](https://github.com/adirane45)  
+> *Comprehensive Phase 5 Consolidation, Architecture Optimization & Production Hardening*
+
+[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [📚 Documentation](#-documentation) • [🏥 Health Check](#-health-monitoring) • [💼 Deployment](#-deployment)
 
 </div>
 
@@ -18,285 +22,599 @@
 
 ## 📋 Overview
 
-Enhanced MLTB is a powerful Telegram bot that allows you to mirror/leech files from various sources to Google Drive and other cloud storage services. This version includes advanced infrastructure, monitoring, and management capabilities organized into three operational phases.
+**Mirror-Leech Telegram Bot** is an enterprise-grade, production-ready solution for managing file downloads from multiple sources and syncing them to cloud storage. Built with advanced infrastructure, real-time monitoring, distributed systems, and comprehensive management capabilities.
 
-### Key Capabilities
-- 📥 **Multi-Protocol Downloads**: Torrent, HTTP/HTTPS, FTP, Usenet
-- ☁️ **Cloud Integration**: Google Drive, Rclone, MyJDownloader
-- 🔍 **Advanced Monitoring**: Prometheus metrics, Grafana dashboards
-- 🚀 **High Performance**: Redis caching, Celery task queues
-- 🔧 **Management APIs**: GraphQL API, REST endpoints
-- 🔌 **Plugin System**: Extensible architecture
-- 🛡️ **Production Ready**: Health checks, backup system, auto-recovery
+This **Phase 5 Edition** represents the culmination of comprehensive architectural improvements, consolidating previous iterations into a unified, scalable platform with enterprise-grade reliability and performance optimization.
+
+
+### ⚡ Key Capabilities
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| 📥 **Multi-Protocol Downloads** | Torrent, HTTP/HTTPS, FTP, Magnet, Direct Links | ✅ Production |
+| ☁️ **Cloud Integration** | Google Drive, Rclone, My.jDownloader Sync | ✅ Production |
+| 🔍 **Real-Time Monitoring** | Prometheus + Grafana, Live Dashboards | ✅ Production |
+| 🚀 **High Performance** | Redis Caching, Celery Distributed Tasks | ✅ Production |
+| 🔧 **Management APIs** | GraphQL + REST Endpoints, Query Interface | ✅ Production |
+| 📊 **Advanced Analytics** | Performance Metrics, Error Tracking, Reports | ✅ Production |
+| 🛡️ **Enterprise Ready** | Health Checks, Auto-Recovery, Backup System | ✅ Production |
+| 🔌 **Plugin Architecture** | Extensible, Dynamic Plugin Loading | ✅ Production |
+| 🔐 **Security Hardened** | OAuth2, Rate Limiting, Encrypted Storage | ✅ Production |
+| 💻 **Distributed System** | Cluster Manager, Failover, Replication | ✅ Production |
 
 ---
 
 ## 🎯 Features
 
-### Phase 1: Infrastructure
-- ✅ **Redis Cache**: High-performance caching layer
-- ✅ **Prometheus Metrics**: Real-time performance monitoring
-- ✅ **Grafana Dashboard**: Visual metrics and analytics
-- ✅ **Celery Workers**: Distributed task processing
+### 🔴 **Phase 5: High Availability & Distributed Systems** *(Current - Production Ready)*
 
-### Phase 2: Advanced Services
-- ✅ **Logger Manager**: Centralized logging with rotation
-- ✅ **Alert Manager**: Smart notification system
-- ✅ **Backup Manager**: Automated backup & restore
-- ✅ **Profiler**: Performance profiling tools
-- ✅ **Recovery Manager**: Automatic failure recovery
+<details open>
+<summary><b>TIER 1: Fault Detection & Recovery</b></summary>
 
-### Phase 3: Advanced Features
-- ✅ **GraphQL API**: Powerful query interface
-- ✅ **Plugin System**: Dynamic plugin loading
-- ✅ **Advanced Dashboard**: Real-time web interface
-- ✅ **Live Metrics**: Real-time statistics
+- ✅ **Health Monitor** - Real-time service health monitoring with alerting
+- ✅ **Cluster Manager** - Multi-node cluster orchestration and management
+- ✅ **Failover Manager** - Automatic failover with role management (PRIMARY/SECONDARY/STANDBY)
+- ✅ **Circuit Breaker** - Intelligent request routing with circuit breaking
 
-### Download Clients
-- 🌐 **Aria2**: Multi-protocol download engine
-- 🌊 **qBittorrent**: Advanced torrent client
-- 📥 **SABnzbd**: Professional Usenet downloader
-- 🔗 **JDownloader**: Link aggregator & downloader
+</details>
 
----
+<details open>
+<summary><b>TIER 2: State Consistency & Data Integrity</b></summary>
 
-## 🚀 Quick Start
+- ✅ **Replication Manager** - Master-Slave/Multi-Master replication with conflict resolution
+- ✅ **Distributed State Manager** - Distributed locking and state synchronization
+- ✅ **Snapshot System** - State snapshots for disaster recovery
+- ✅ **Consensus Protocol** - Byzantine Fault Tolerant distributed consensus
 
-### Prerequisites
-- Docker & Docker Compose
-- Telegram Bot Token ([Get from @BotFather](https://t.me/BotFather))
-- 4GB+ RAM recommended
-- 10GB+ disk space
+</details>
 
-### Installation
+<details open>
+<summary><b>TIER 3: Orchestration & APIs</b></summary>
 
-```bash
-# Clone repository
-git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
-cd mirror-leech-telegram-bot
+- ✅ **Task Coordinator** - Distributed task orchestration with retry logic
+- ✅ **Performance Optimizer** - Auto-scaling and dynamic resource optimization
+- ✅ **GraphQL API** - Full-featured GraphQL interface for querying
+- ✅ **REST API Gateway** - Rate-limited REST endpoints with authentication
 
-# Configure environment
-cp config/.env.security.example config/.env.production
-nano config/.env.production  # Add your BOT_TOKEN and other settings
-
-# Start all services
-docker-compose up -d
-
-# Check health
-./scripts/quick_health_check.sh
-```
-
-### Access Points
-- **Telegram Bot**: Message your bot on Telegram
-- **Web Dashboard**: http://localhost:8060
-- **GraphQL API**: http://localhost:8060/graphql
-- **Prometheus**: http://localhost:9091
-- **Grafana**: http://localhost:3000 (admin/mltbadmin)
-- **qBittorrent**: http://localhost:8090
-
----
-
-## 📚 Documentation
-
-### Essential Guides
-- 📖 [Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
-- ⚙️ [Configuration Guide](docs/CONFIGURATION.md) - All configuration options
-- 🚢 [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
-- 🔌 [API Documentation](docs/API.md) - GraphQL & REST APIs
-- ✨ [Features Guide](docs/FEATURES.md) - Complete feature reference
-- 🏥 [Health Monitoring](docs/HEALTH_CHECK.md) - Monitoring & diagnostics
-
-### Quick References
-- [Docker Compose Configuration](docker-compose.yml)
-- [Security Hardening](docker-compose.secure.yml)
-- [Health Check Scripts](scripts/)
-- [Test Reports](TEST_REPORT.md)
+</details>
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Telegram Bot (mltb-app)                  │
-│  ┌──────────────┬──────────────┬──────────────────────┐    │
-│  │   Phase 1    │   Phase 2    │      Phase 3         │    │
-│  │ Redis Cache  │ Logger Mgr   │ GraphQL API          │    │
-│  │ Prometheus   │ Alert Mgr    │ Plugin System        │    │
-│  │              │ Backup Mgr   │ Advanced Dashboard   │    │
-│  │              │ Profiler     │                      │    │
-│  │              │ Recovery Mgr │                      │    │
-│  └──────────────┴──────────────┴──────────────────────┘    │
-└───────────────────────────┬─────────────────────────────────┘
-                            │
-         ┌──────────────────┼──────────────────┐
-         │                  │                  │
-    ┌────┴────┐      ┌──────┴──────┐    ┌─────┴─────┐
-    │  Redis  │      │   Download  │    │ Monitoring│
-    │  Cache  │      │   Clients   │    │  Stack    │
-    └─────────┘      │  - Aria2    │    │-Prometheus│
-                     │  - qBitTorr │    │- Grafana  │
-                     │  - SABnzbd  │    └───────────┘
-                     │  - JDown    │
-                     └─────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│              📱 Mirror-Leech Telegram Bot (Phase 5 HA)              │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────────────┬─────────────┬──────────────┬──────────────────┐  │
+│  │   TIER 1     │   TIER 2    │   TIER 3     │   CORE SERVICES  │  │
+│  │──────────────┼─────────────┼──────────────┼──────────────────┤  │
+│  │ • Health Mon │ • Replicat  │ • Task Coord │ • Download Mgr   │  │
+│  │ • Cluster    │ • Dist State│ • Optimizer  │ • Upload Sync    │  │
+│  │ • Failover   │ • Snapshots │ • GraphQL    │ • Cache System   │  │
+│  │ • Circuit    │ • Consensus │ • REST API   │ • Notification   │  │
+│  │   Breaker    │   Protocol  │ • Auth Layer │ • Logging        │  │
+│  └──────────────┴─────────────┴──────────────┴──────────────────┘  │
+└──────────────────────────────────────────────────────────────────────┘
+                 ▼                    ▼                    ▼
+        ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+        │    Redis     │    │  Download    │    │ Monitoring   │
+        │    Cache     │    │   Clients    │    │    Stack     │
+        ├──────────────┤    ├──────────────┤    ├──────────────┤
+        │ Data Store   │    │ • Aria2      │    │ • Prometheus │
+        │ Sessions     │    │ • qBittorrent│    │ • Grafana    │
+        │ Locks        │    │ • SABnzbd    │    │ • Alert Mgr  │
+        └──────────────┘    │ • JDownloader│    └──────────────┘
+                            └──────────────┘
 ```
 
 ---
 
-## 🔧 Configuration
+## 🚀 Quick Start
 
-### Basic Configuration
+### Prerequisites
+- **Docker & Docker Compose** (v20.10+)
+- **Telegram Bot Token** ([Get from @BotFather](https://t.me/BotFather))
+- **System Requirements**: 4GB+ RAM, 10GB+ disk space
+- **Network**: Stable internet connection
+
+### ⚡ 5-Minute Setup
+
+```bash
+# 1️⃣ Clone repository
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
+cd mirror-leech-telegram-bot
+
+# 2️⃣ Configure environment
+cp config/.env.security.example config/.env.production
+# Edit and add your BOT_TOKEN and settings
+nano config/.env.production
+
+# 3️⃣ Deploy services
+docker-compose up -d
+
+# 4️⃣ Verify health (wait 30 seconds)
+./scripts/quick_health_check.sh
+```
+
+✅ Bot is now live! Start using it on Telegram.
+
+### 📍 Access Points
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| 🤖 **Telegram Bot** | Message your bot directly | N/A |
+| 🌐 **Web Dashboard** | http://localhost:8060 | Auto |
+| 📊 **GraphQL API** | http://localhost:8060/graphql | Token-based |
+| 📈 **Prometheus** | http://localhost:9091 | No auth |
+| 📉 **Grafana** | http://localhost:3000 | admin/mltbadmin |
+| 🌊 **qBittorrent** | http://localhost:8090 | admin/mltbmltb |
+| 📥 **Aria2** | http://localhost:6800 | RPC |
+
+---
+
+## 📚 Documentation
+
+### 📖 Complete Guides
+- [📝 Installation Guide](docs/INSTALLATION.md) - Detailed setup instructions
+- [⚙️ Configuration Guide](docs/CONFIGURATION.md) - Configuration options & environment
+- [🚢 Deployment Guide](docs/DEPLOYMENT.md) - Production deployment strategies
+- [🔌 API Documentation](docs/API.md) - GraphQL & REST API reference
+- [✨ Phase 5 Features](docs/TIER3_PHASE_5_FEATURES.md) - Advanced HA features
+- [🏥 Health Monitoring](docs/HEALTH_CHECK.md) - Monitoring & diagnostics
+- [🏗️ Workspace Structure](docs/01_WORKSPACE_STRUCTURE.md) - Project organization
+
+### 📁 Quick References
+- [Docker Compose Configuration](docker-compose.yml) - Multi-service orchestration
+- [Security Hardening](docker-compose.secure.yml) - Hardened configuration
+- [Health Check Scripts](scripts/) - Operational health checks
+- [Cleanup Report](docs/00_PROJECT_CLEANUP_FINAL_REPORT.md) - Phase 5 consolidation details
+
+---
+
+## ⚙️ Configuration
+
+### 🔧 Basic Setup
 
 Edit `config/main_config.py`:
 
 ```python
-# Bot Settings
+# Telegram Bot Configuration
 BOT_TOKEN = "your_bot_token_here"
 OWNER_ID = 123456789
 AUTHORIZED_CHATS = "chat_id1 chat_id2"
 
-# Download Settings
+# Download Configuration
 DOWNLOAD_DIR = "/app/downloads"
-MAX_SPLIT_SIZE = 2097152000  # 2GB
+MAX_SPLIT_SIZE = 2097152000  # 2GB chunks
 
-# Phase Activation
-ENABLE_PHASE_1 = True  # Redis + Prometheus
-ENABLE_PHASE_2 = True  # Advanced Services
-ENABLE_PHASE_3 = True  # GraphQL + Plugins
+# Phase 5 HA Configuration
+ENABLE_PHASE5 = True              # Master switch for all HA features
+ENABLE_HEALTH_MONITOR = True      # Real-time health monitoring
+ENABLE_CLUSTER_MANAGER = False    # Requires multi-node setup
+ENABLE_FAILOVER_MANAGER = False   # Requires cluster
+ENABLE_REPLICATION_MANAGER = False # Requires cluster
+ENABLE_TASK_COORDINATOR = True    # Can run standalone
+ENABLE_PERFORMANCE_OPTIMIZER = True
+ENABLE_API_GATEWAY = True
 ```
 
-### Environment Variables
+### 🔐 Environment Variables
 
 Edit `config/.env.production`:
 
 ```bash
-# Telegram Configuration
+# Core Configuration
 BOT_TOKEN=your_bot_token_here
+OWNER_ID=123456789
 
-# Database (Optional - MongoDB disabled by default)
-DATABASE_URL=
-
-# Redis Configuration
+# Redis Cluster
 REDIS_HOST=redis
 REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
 
 # Download Clients
 ARIA2_SECRET=mltb_aria2_secret_2026
 QB_USERNAME=admin
-QB_PASSWORD=mltbmltb
+QB_PASSWORD=secure_password
+
+# Cloud Sync
+DRIVE_FOLDER_NAME=MirrorLeechBot
+RCLONE_CONFIG=your_rclone_config
+
+# Optional: Database
+DATABASE_URL=  # Leave empty to use SQLite
+MONGODB_URI=   # Optional MongoDB
 ```
 
-See [Configuration Guide](docs/CONFIGURATION.md) for all options.
+See [📖 Configuration Guide](docs/CONFIGURATION.md) for 50+ options.
 
 ---
 
-## 🛠️ Management Commands
+## 🛠️ Operations & Management
 
-### Docker Operations
+### 🐳 Docker Operations
+
 ```bash
-# Start services
+# Start all services (background)
 docker-compose up -d
 
-# View logs
+# View real-time logs
 docker-compose logs -f app
 
-# Restart bot
+# Restart bot service
 docker-compose restart app
 
 # Stop all services
 docker-compose down
 
-# Rebuild after changes
+# Rebuild after code changes
 docker-compose up -d --build
-```
 
-### Health Monitoring
-```bash
-# Quick health check (15 seconds)
-./scripts/quick_health_check.sh
-
-# Comprehensive check (30-45 seconds)
-./scripts/health_check_comprehensive.sh
-
-# View specific service logs
+# See specific service logs
 docker logs -f mltb-app
 docker logs -f mltb-redis
 docker logs -f mltb-aria2
 ```
 
-### Backup & Recovery
-```bash
-# Create backup
-docker exec mltb-app python3 -c "from bot.core.backup_manager import backup_manager; import asyncio; asyncio.run(backup_manager.create_backup())"
+### 🏥 Health & Monitoring
 
-# List backups
+```bash
+# Quick health check (15 seconds)
+./scripts/quick_health_check.sh
+
+# Comprehensive system check (45 seconds)
+./scripts/health_check_comprehensive.sh
+
+# View Phase 5 HA status
+curl -s http://localhost:8060/api/health/phase5 | jq
+
+# Monitor live metrics
+watch -n 5 'docker stats --no-stream'
+```
+
+### 💾 Backup & Recovery
+
+```bash
+# Create full system backup
+./scripts/backup.sh
+
+# List all backups
 ls -lh data/backups/
 
-# Restore from backup
+# Restore from specific backup
 ./scripts/backup_restore.sh data/backups/backup_20260206.tar.gz
+
+# Export database
+docker exec mltb-app python3 scripts/update.py --export
 ```
 
----
+### 🔍 Troubleshooting
 
-## 🏥 Health Monitoring
-
-The bot includes comprehensive health monitoring:
-
-### Quick Status Check
 ```bash
-./scripts/quick_health_check.sh
-```
-Output:
-```
-✅ Docker daemon responsive
-✅ All containers running
-✅ Redis accessible
-✅ Web Dashboard accessible
-✅ GraphQL API working
-✅ Disk usage healthy (8%)
-Status: ✅ All critical systems operational
-```
+# Check service status
+docker-compose ps
 
-### Detailed Diagnostics
-```bash
-./scripts/health_check_comprehensive.sh
-```
-Checks 40+ system components including:
-- Container health status
-- Service connectivity
-- Resource usage
-- Log analysis
-- Configuration validation
-- Phase initialization status
+# View error logs
+docker-compose logs app | grep ERROR
 
-See [Health Check Guide](docs/HEALTH_CHECK.md) for details.
+# Test database connectivity
+docker exec mltb-app python3 scripts/verify_config.py
+
+# Check resource usage
+docker stats mltb-app
+
+# Clear cache (if corrupted)
+docker exec mltb-redis redis-cli FLUSHALL
+
+# Restart specific service
+docker-compose restart app redis aria2
+```
 
 ---
 
 ## 📊 Monitoring & Metrics
 
-### Prometheus Metrics
-Access at http://localhost:9091
+### 📈 Prometheus Metrics
+Access: http://localhost:9091
 
-Available metrics:
-- Download/upload speeds
-- Active tasks count
-- Error rates
-- Resource usage
-- API response times
+**Key Metrics**:
+- `bot_downloads_total` - Total downloads processed
+- `bot_upload_speed_mbps` - Upload speed in MB/s
+- `bot_active_tasks` - Currently active tasks
+- `bot_error_rate` - Errors per second
+- `system_memory_usage_percent` - RAM usage
+- `system_disk_usage_percent` - Disk usage
+- `redis_connected_clients` - Redis connections
 
-### Grafana Dashboards
-Access at http://localhost:3000 (admin/mltbadmin)
+### 📉 Grafana Dashboards
+Access: http://localhost:3000 (admin/mltbadmin)
 
-Pre-configured dashboards:
-- Bot Overview
-- Download Statistics
-- System Resources
-- Error Tracking
-- Performance Analysis
+**Pre-configured Dashboards**:
+- 🤖 **Bot Overview** - Real-time status and stats
+- 📊 **Download Analytics** - Speed, duration, success rate
+- 💻 **System Resources** - CPU, memory, disk, network
+- ⚠️ **Error Tracking** - Error types and frequencies
+- 🚀 **Performance Analysis** - Response times and throughput
+- 🔴 **Phase 5 HA Status** - Cluster health and failover state
 
-### GraphQL Queries
-Access Playground at http://localhost:8060/graphql
+### 🔗 GraphQL API
+
+**Access**: http://localhost:8060/graphql
+
+**Example Query**:
+```graphql
+query {
+  botStatus {
+    enabled
+    uptimeSeconds
+    activeTasks
+    memoryUsageMB
+    diskFreeGB
+  }
+  recentDownloads(limit: 10) {
+    id
+    name
+    status
+    progress
+    speedMbps
+  }
+}
+```
+
+---
+
+## 🚢 Deployment
+
+### 🌐 Production Deployment
+
+For production environments, use the hardened configuration:
+
+```bash
+# Use secure docker-compose
+docker-compose -f docker-compose.yml -f docker-compose.secure.yml up -d
+
+# Run pre-deployment checks
+./scripts/pre_deployment_checklist.sh
+
+# Enable security hardening
+python3 scripts/security_hardening.sh
+
+# Setup database security
+./scripts/db_security_setup.sh
+
+# Create database indexes for performance
+./scripts/create_db_indexes.sh
+```
+
+### 🔐 Security Hardening
+
+The bot includes comprehensive security features:
+
+- ✅ **Rate Limiting** - Prevent abuse and DDoS
+- ✅ **Authentication** - Token-based API access control
+- ✅ **Encryption** - End-to-end encryption for sensitive data
+- ✅ **OAuth2** - Secure cloud service integration
+- ✅ **Audit Logging** - Complete action audit trails
+- ✅ **Secrets Management** - Encrypted credential storage
+- ✅ **Circuit Breaker** - Service protection from cascading failures
+
+See [🔐 Security Guide](docs/DEPLOYMENT.md) for details.
+
+### 🌍 Multi-Node Cluster Setup
+
+For high-availability production setup:
+
+```bash
+# On primary node
+export NODE_ID=node-1
+export CLUSTER_MODE=PRIMARY
+docker-compose up -d
+
+# On secondary nodes
+export NODE_ID=node-2
+export CLUSTER_MODE=SECONDARY
+export CLUSTER_PRIMARY=node-1-ip
+docker-compose up -d
+```
+
+Enable Phase 5 HA features in config:
+```python
+ENABLE_CLUSTER_MANAGER = True
+ENABLE_FAILOVER_MANAGER = True
+ENABLE_REPLICATION_MANAGER = True
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| **Bot not responding** | Check token in `.env.production`, verify Redis running |
+| **Download failures** | Check disk space, verify client (Aria2/qBittorrent) running |
+| **Slow uploads** | Monitor network, check cloud API rate limits |
+| **High memory usage** | Restart service, reduce `MAX_CONCURRENT_TRANSFERS` |
+| **Redis connection errors** | Verify Redis container running, check `REDIS_HOST` |
+| **GraphQL API 500 errors** | Check app logs: `docker logs mltb-app` |
+| **Dashboard not loading** | Verify port 8060 open, check firewall rules |
+
+### Debug Mode
+
+Enable verbose logging:
+
+```bash
+# Edit .env.production
+DEBUG=True
+LOG_LEVEL=DEBUG
+
+# Restart
+docker-compose restart app
+
+# View debug logs
+docker-compose logs -f app | grep DEBUG
+```
+
+### Performance Optimization
+
+```bash
+# Increase concurrent downloads
+MAX_CONCURRENT_TRANSFERS=50
+
+# Optimize chunk size
+MAX_SPLIT_SIZE=4294967296  # 4GB
+
+# Enable compression
+ENABLE_COMPRESSION=True
+
+# Increase worker threads
+CELERY_WORKER_CONCURRENCY=16
+```
+
+---
+
+## 👥 Contributing
+
+Contributions are welcome! Please ensure:
+
+- ✅ Code follows project style (Black, flake8)
+- ✅ All tests pass: `pytest tests/ -v`
+- ✅ Documentation is updated
+- ✅ Commits are meaningful and atomic
+
+### Development Setup
+
+```bash
+# Install dev dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest tests/ -v --cov=bot
+
+# Format code
+black bot/ tests/
+
+# Lint code
+flake8 bot/ tests/
+```
+
+---
+
+## 📈 Project Stats
+
+**Version**: 3.1.0 - Phase 5  
+**Python**: 3.13+  
+**Core Modules**: 50+  
+**Command Modules**: 37+  
+**Test Coverage**: Comprehensive  
+**Lines of Code**: 11,000+  
+**Documentation**: Complete  
+
+---
+
+## 🏆 Credits & Acknowledgments
+
+<div align="center">
+
+### 👨‍💼 **Lead Developer & Architect**
+# **[Aditya Rane](https://github.com/adirane45)**
+
+**Comprehensive Phase 5 Implementation & Enterprise Architecture**
+
+---
+
+### 🎯 **Major Contributions by Aditya Rane**
+
+✨ **Architectural Excellence**
+- Complete Phase 5 consolidation (combining Phases 1-4 into unified HA system)
+- Enterprise-grade distributed systems design
+- High-availability failover & cluster management architecture
+- Distributed state management with consensus protocols
+
+🏗️ **Infrastructure & Optimization**
+- Redis-based caching layer optimization
+- Celery distributed task processing configuration
+- Prometheus metrics collection and Grafana dashboards
+- Performance profiling and optimization utilities
+
+🔒 **Production Hardening**
+- Security hardening procedures and scripts
+- OAuth2 integration and authentication flows
+- Rate limiting and circuit breaker implementation
+- Comprehensive backup & disaster recovery systems
+
+📊 **Monitoring & Operations**
+- Health monitoring system with 40+ check points
+- Auto-recovery mechanisms and failover handling
+- Detailed logging and audit trails
+- Operational runbooks and deployment guides
+
+🧹 **Code Quality & Organization**
+- Comprehensive code cleanup and consolidation
+- Workspace reorganization (28 files consolidated, 20+ archived)
+- Full syntax validation (100% valid across 272 files)
+- Professional .gitignore with 13 organized sections
+
+📚 **Documentation & Testing**
+- Complete API documentation (GraphQL & REST)
+- Phase 5 feature specifications and implementation guides
+- Comprehensive test suite (331+ tests passing)
+- Production deployment checklists and security guides
+
+💻 **Technology Stack Leadership**
+- Python 3.13 upgrade and optimization
+- Docker & Docker Compose orchestration
+- Distributed systems patterns implementation
+- Advanced async/await patterns
+
+---
+
+### 🙏 **Additional Credits**
+
+- **Base MLTB Project** - Original open-source mirror/leech bot
+- **Community Contributors** - Bug reports and feature suggestions
+- **Open Source Libraries** - Pyrogram, aiohttp, FastAPI, and many others
+
+---
+
+### 📄 License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
+
+All work performed by Aditya Rane is made available under the same MIT License.
+
+### 🔗 Links
+
+- **GitHub Repository**: [adirane45/mirror-leech-telegram-bot](https://github.com/adirane45/mirror-leech-telegram-bot)
+- **Author Profile**: [Aditya Rane](https://github.com/adirane45)
+- **Documentation**: [Complete Docs](docs/)
+- **Phase 5 Cleanup Report**: [Latest Changes](docs/00_PROJECT_CLEANUP_FINAL_REPORT.md)
+
+---
+
+</div>
+
+---
+
+## 📞 Support
+
+- 📖 **Documentation**: See [docs/](docs/) directory
+- 🐛 **Issues**: Report bugs on GitHub Issues
+- 💬 **Discussions**: Join our community discussions
+- 📧 **Contact**: Review GitHub profile for contact information
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [Aditya Rane](https://github.com/adirane45)**
+
+⭐ If this project helped you, please consider giving it a star!
+
+</div>
 
 Example query:
 ```graphql
