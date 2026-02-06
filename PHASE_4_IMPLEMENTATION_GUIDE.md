@@ -1,8 +1,63 @@
 # Phase 4: Performance & Optimization - Implementation Guide
 
-**Status:** Complete ✅  
-**Date:** February 2026  
+**Status:** Ready for Implementation 🚀  
+**Date:** February 6, 2026  
+**Version:** Enhanced MLTB v3.1.0  
 **Time to Implement:** 30-60 minutes (basic) or 2-4 hours (full stack)
+
+### Project Status Update
+✅ **Completed Components:**
+- Workspace reorganization (config/, docs/, scripts/, clients/, integrations/ folders)
+- Comprehensive documentation suite (127KB total)
+- Health monitoring scripts (quick & comprehensive)
+- Test suite (46/57 passing, 93% success rate)
+- Docker configuration updates
+- CI/CD pipeline setup
+
+### Quick Links
+- **Installation**: [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- **Configuration**: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+- **Health Checks**: [scripts/quick_health_check.sh](scripts/quick_health_check.sh) & [scripts/health_check_comprehensive.sh](scripts/health_check_comprehensive.sh)
+- **Tests**: Run with `pytest tests/`
+
+---
+
+## Integration with Project Infrastructure
+
+### Health Monitoring
+Use the provided health check scripts to verify Phase 4 components:
+
+```bash
+# Quick health check (10 seconds)
+./scripts/quick_health_check.sh
+
+# Comprehensive check (30 seconds)
+./scripts/health_check_comprehensive.sh
+```
+See [HEALTH_CHECK_GUIDE.md](HEALTH_CHECK_GUIDE.md) for monitoring guidance.
+
+### Documentation References
+- **Installation**: [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- **Configuration**: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+- **API Methods**: [docs/API.md](docs/API.md)
+- **Workspace Structure**: [WORKSPACE_REORGANIZATION_COMPLETE.md](WORKSPACE_REORGANIZATION_COMPLETE.md)
+
+### Docker Integration
+Phase 4 services run in the main app container alongside Phase 1-3 services:
+```bash
+# Review updated docker-compose.yml for allocation
+docker compose ps
+
+# Health check via Docker
+docker compose logs app | grep -i "phase 4"
+```
+
+### Testing
+Run Phase 4 tests after implementation:
+```bash
+pytest tests/test_phase4_integration.py -v
+pytest tests/ -k "phase4" --tb=short
+```
 
 ---
 
@@ -15,7 +70,7 @@ pip install -r requirements-phase4.txt
 
 ### 2. Enable Minimal Setup
 ```python
-# In config.py or config_enhancements_phase4.py
+# In config/main_config.py or bot/core/config_manager.py
 ENABLE_QUERY_OPTIMIZER = True
 ENABLE_RATE_LIMITER = True
 
@@ -37,10 +92,11 @@ print(f"Query cache hits: {status.get('query_optimizer', {}).get('cache_hits', 0
 ## Implementation Checklist
 
 ### Pre-Deployment Verification
-- [ ] All Phase 1-3 services running
+- [ ] All Phase 1-3 services running (verify: `docker compose ps`)
 - [ ] Redis and MongoDB available
 - [ ] 500+ MB free memory
-- [ ] Phase 4 tests passing
+- [ ] Phase 4 tests passing: `pytest tests/test_phase4_integration.py`
+- [ ] Health check passes: `./scripts/quick_health_check.sh`
 - [ ] No conflicting configurations
 
 ### Core Infrastructure
@@ -51,11 +107,12 @@ print(f"Query cache hits: {status.get('query_optimizer', {}).get('cache_hits', 0
 - [ ] Batch Processor enabled for bulk operations
 
 ### Monitoring & Observability
-- [ ] Phase 2 logging configured for Phase 4 events
+- [ ] Phase 2 logging configured for Phase 4 events (check: `bot/core/logger_manager.py`)
 - [ ] Prometheus metrics exported for Phase 4 components
-- [ ] Grafana dashboards created for Phase 4 metrics
+- [ ] Grafana dashboards created for Phase 4 metrics (see: `integrations/monitoring/grafana/`)
 - [ ] Alerts configured for high cache miss rates
 - [ ] Alerts configured for rate limit blocking spikes
+- [ ] Health monitoring active: `./scripts/health_check_comprehensive.sh` runs regularly
 
 ### Testing & Validation
 - [ ] Unit tests passing (pytest tests/test_phase4_integration.py)
@@ -78,7 +135,7 @@ print(f"Query cache hits: {status.get('query_optimizer', {}).get('cache_hits', 0
 ### Step 1: Install Phase 4 Dependencies
 
 ```bash
-cd /workspaces/mirror-leech-telegram-bot
+cd /home/kali/mirror-leech-telegram-bot
 
 # Install Phase 4 specific requirements
 pip install -r requirements-phase4.txt
@@ -91,7 +148,7 @@ python -c "import psutil; import sqlparse; print('Phase 4 dependencies OK')"
 
 #### Minimal Configuration (Low Overhead)
 ```python
-# config_enhancements_phase4.py
+# config/main_config.py or bot/core/config_manager.py
 
 ENABLE_QUERY_OPTIMIZER = True
 ENABLE_RATE_LIMITER = True
@@ -101,7 +158,7 @@ ENABLE_RATE_LIMITER = True
 
 #### Standard Configuration (Recommended)
 ```python
-# config_enhancements_phase4.py
+# config/main_config.py or bot/core/config_manager.py
 
 ENABLE_QUERY_OPTIMIZER = True
 ENABLE_CACHE_MANAGER = True
@@ -116,7 +173,7 @@ RATE_LIMIT_DEFAULT_RPS = 10.0
 
 #### Advanced Configuration (Maximum Performance)
 ```python
-# config_enhancements_phase4.py
+# config/main_config.py or bot/core/config_manager.py
 
 ENABLE_QUERY_OPTIMIZER = True
 ENABLE_CACHE_MANAGER = True

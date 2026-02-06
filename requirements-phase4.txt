@@ -1,7 +1,11 @@
 # Phase 4: Performance & Optimization - Python Requirements
+# Enhanced MLTB v3.1.0 - Advanced Features Implementation
 
-# Core dependencies (already in requirements.txt)
-# These are additional dependencies for Phase 4 features
+# Install this alongside config/requirements.txt
+# Usage: pip install -r requirements-phase4.txt
+#
+# This file contains additional dependencies for Phase 4 features
+# Core dependencies are in config/requirements.txt
 
 # Query optimization & analysis
 sqlparse>=0.4.4  # SQL query parsing and analysis
