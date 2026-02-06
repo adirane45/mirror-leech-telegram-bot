@@ -16,6 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'integrations'))
 
 
+# Configure pytest-asyncio mode
+def pytest_configure(config):
+    """Configure pytest"""
+    config.option.asyncio_mode = "auto"
+
+
 @pytest.fixture
 def mock_config():
     """Mock configuration for testing"""
