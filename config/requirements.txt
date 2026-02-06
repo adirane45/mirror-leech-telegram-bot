@@ -5,6 +5,7 @@ anytree
 apscheduler
 aioaria2
 aioqbt
+celery
 cloudscraper
 dnspython
 fastapi
@@ -12,6 +13,7 @@ feedparser
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
+graphene
 gunicorn
 httpx
 jinja2
@@ -19,10 +21,12 @@ lxml
 natsort
 par2cmdline-turbo
 pillow
+prometheus-client
 psutil
 pymongo
 kurigram
 python-magic
+redis
 requests
 speedtest-cli
 telegraph
