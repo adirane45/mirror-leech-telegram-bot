@@ -9,7 +9,6 @@
 
 # Query optimization & analysis
 sqlparse>=0.4.4  # SQL query parsing and analysis
-queryparser>=1.0  # Additional query parsing
 
 # Performance monitoring
 psutil>=5.9.5  # System performance metrics
@@ -34,7 +33,6 @@ isort>=5.12.0  # Import sorting
 
 # Load testing
 locust>=2.15.0  # Load testing framework
-apache-benchmark>=1.0  # AB testing
 
 # Monitoring & metrics
 prometheus-client>=0.17.0  # Prometheus metrics (already in Phase 1)

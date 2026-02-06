@@ -166,7 +166,8 @@ class MediaInfoExtractor:
             try:
                 num, den = map(int, stream['r_frame_rate'].split('/'))
                 fps = num / den if den != 0 else 0
-            except:
+            except (ValueError, ZeroDivisionError, AttributeError) as e:
+                logger.debug(f"Could not parse frame rate {stream.get('r_frame_rate')}: {e}")
                 fps = 0
         
         return {

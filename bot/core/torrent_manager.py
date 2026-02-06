@@ -92,16 +92,19 @@ class TorrentManager:
 
     @classmethod
     async def aria2_remove(cls, download):
+        """Remove download from aria2 client"""
         if download.get("status", "") in ["active", "paused", "waiting"]:
             await cls.aria2.forceRemove(download.get("gid", ""))
         else:
             try:
                 await cls.aria2.removeDownloadResult(download.get("gid", ""))
-            except:
+            except Exception as e:
+                LOGGER.debug(f"Could not remove download result {download.get('gid')}: {e}")
                 pass
 
     @classmethod
     async def remove_all(cls):
+        """Remove all active downloads from both clients"""
         await cls.pause_all()
         await gather(
             cls.qbittorrent.torrents.delete("all", False),
@@ -117,7 +120,8 @@ class TorrentManager:
         )
         try:
             await gather(*tasks)
-        except:
+        except Exception as e:
+            LOGGER.warning(f"Error removing some downloads: {e}")
             pass
 
     @classmethod

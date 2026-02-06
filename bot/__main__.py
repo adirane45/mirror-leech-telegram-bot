@@ -74,6 +74,22 @@ async def main():
     except Exception as e:
         LOGGER.info(f"⚠️  Phase 3 initialization skipped: {e}")
 
+    # Initialize Phase 4 Services (optional, non-breaking)
+    try:
+        from .core.enhanced_startup_phase4 import initialize_phase4_services
+        phase4_status = await initialize_phase4_services()
+        if phase4_status.get('success'):
+            services_count = len(phase4_status.get('services_initialized', []))
+            LOGGER.info(f"✅ Phase 4: {services_count} performance optimization services enabled")
+        else:
+            errors = phase4_status.get('errors', [])
+            if errors:
+                LOGGER.info(f"⚠️  Phase 4 initialization: {errors[0]}")
+            else:
+                LOGGER.info("⚠️  Phase 4 initialization skipped")
+    except Exception as e:
+        LOGGER.info(f"⚠️  Phase 4 initialization skipped: {e}")
+
     LOGGER.info("Loading settings...")
     await load_settings()
     LOGGER.info("✅ Settings loaded")
@@ -172,6 +188,19 @@ async def main():
 
 
 bot_loop.run_until_complete(main())
+
+# Register Phase 4 shutdown handler
+import atexit
+
+def shutdown_phase4():
+    """Shutdown Phase 4 services on exit"""
+    try:
+        from .core.enhanced_startup_phase4 import shutdown_phase4_services
+        bot_loop.run_until_complete(shutdown_phase4_services())
+    except Exception as e:
+        LOGGER.debug(f"Phase 4 shutdown error: {e}")
+
+atexit.register(shutdown_phase4)
 
 from .helper.ext_utils.bot_utils import create_help_buttons
 from .helper.listeners.aria2_listener import add_aria2_callbacks

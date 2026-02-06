@@ -1,0 +1,117 @@
+# Alert Rules for Mirror Leech Telegram Bot
+# Defines critical, warning, and info alerts
+
+groups:
+  - name: mltb_performance
+    interval: 30s
+    rules:
+      # Phase 4 Cache Performance
+      - alert: CacheLowHitRate
+        expr: |
+          mltb_cache_hit_rate{instance="mltb-app"} < 0.60
+        for: 5m
+        annotations:
+          summary: "Cache hit rate below 60%"
+          description: "Cache efficiency is poor ({{ $value | humanizePercentage }})"
+
+      - alert: CacheHighEvictions
+        expr: |
+          rate(mltb_cache_evictions_total[5m]) > 100
+        for: 5m
+        annotations:
+          summary: "Cache evicting entries too frequently"
+          description: "{{ $value }} evictions/sec - increase cache size"
+
+      # Phase 4 Rate Limiting
+      - alert: HighBlockRate
+        expr: |
+          mltb_rate_limiter_blocked_requests / 
+          (mltb_rate_limiter_blocked_requests + mltb_rate_limiter_allowed_requests) > 0.30
+        for: 5m
+        annotations:
+          summary: "30%+ of requests are rate-limited"
+          description: "Possible abuse or legitimate traffic spike"
+
+      # Database Connection Pool
+      - alert: PoolExhaustion
+        expr: |
+          mltb_connection_pool_active / mltb_connection_pool_max > 0.9
+        for: 5m
+        annotations:
+          summary: "Connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of connections in use"
+
+      - alert: PoolAcquisitionSlow
+        expr: |
+          mltb_connection_pool_avg_wait_ms > 100
+        for: 5m
+        annotations:
+          summary: "Connection acquisition > 100ms"
+          description: "Database performance degrading"
+
+  - name: mltb_system
+    interval: 30s
+    rules:
+      # Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{name="mltb-app"} / 
+          container_spec_memory_limit_bytes{name="mltb-app"} > 0.85
+        for: 5m
+        annotations:
+          summary: "Container memory usage > 85%"
+          description: "Consider memory tuning or scaling"
+
+      - alert: HighSwapUsage
+        expr: |
+          node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes < 0.20
+        for: 5m
+        annotations:
+          summary: "Swap usage > 80%"
+          description: "System running out of memory"
+
+      # CPU Usage
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        annotations:
+          summary: "CPU usage > 80%"
+          description: "{{ $value | humanize }}% CPU utilization"
+
+      # Disk Usage
+      - alert: HighDiskUsage
+        expr: |
+          disk_used_percent{path="/app/downloads"} > 85
+        for: 5m
+        annotations:
+          summary: "Download disk > 85% full"
+          description: "Clean up old downloads"
+
+  - name: mltb_availability
+    interval: 30s
+    rules:
+      # API Availability
+      - alert: APIDown
+        expr: |
+          up{job="mltb-app"} == 0
+        for: 1m
+        annotations:
+          summary: "MLTB API is down"
+          description: "Container health check failing"
+
+      - alert: RedisDown
+        expr: |
+          up{job="redis"} == 0
+        for: 1m
+        annotations:
+          summary: "Redis is down"
+          description: "Cache and session storage unavailable"
+
+      - alert: MetricsDown
+        expr: |
+          up{job="prometheus"} == 0
+        for: 1m
+        annotations:
+          summary: "Prometheus metrics unavailable"
+          description: "Monitoring data not being collected"

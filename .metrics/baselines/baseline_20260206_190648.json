@@ -1,0 +1,148 @@
+{
+  "timestamp": "2026-02-06T19:06:42.229178",
+  "tests": {
+    "cache_performance": 0.0,
+    "rate_limiter_throughput": 0.0,
+    "test_duration_seconds": 0.77,
+    "success": true
+  },
+  "system": {
+    "cpu_percent": {},
+    "memory": {
+      "total": "9.5Gi",
+      "used": "5.3Gi",
+      "free": "639Mi"
+    },
+    "containers": [
+      {
+        "name": "7319f56f5095",
+        "cpu": "mltb-grafana",
+        "memory": "0.46%",
+        "memory_limit": "237.1MiB"
+      },
+      {
+        "name": "d7c3b2ac09ce",
+        "cpu": "mltb-celery-worker",
+        "memory": "0.19%",
+        "memory_limit": "146MiB"
+      },
+      {
+        "name": "ac05c1c8c60c",
+        "cpu": "mltb-celery-beat",
+        "memory": "0.00%",
+        "memory_limit": "48.22MiB"
+      },
+      {
+        "name": "51cd41701668",
+        "cpu": "mltb-prometheus",
+        "memory": "1.78%",
+        "memory_limit": "37.5MiB"
+      },
+      {
+        "name": "047381f6f8a6",
+        "cpu": "mltb-qbittorrent",
+        "memory": "0.07%",
+        "memory_limit": "21.34MiB"
+      },
+      {
+        "name": "4cbca6a7af03",
+        "cpu": "mltb-redis",
+        "memory": "0.96%",
+        "memory_limit": "10.18MiB"
+      },
+      {
+        "name": "f4742f77760a",
+        "cpu": "mltb-aria2",
+        "memory": "0.01%",
+        "memory_limit": "3.707MiB"
+      }
+    ]
+  },
+  "database": {
+    "redis": {
+      "total_connections_received": "2455",
+      "total_commands_processed": "29261",
+      "instantaneous_ops_per_sec": "1",
+      "total_net_input_bytes": "8546584",
+      "total_net_output_bytes": "4356910",
+      "total_net_repl_input_bytes": "0",
+      "total_net_repl_output_bytes": "0",
+      "instantaneous_input_kbps": "0.66",
+      "instantaneous_output_kbps": "0.46",
+      "instantaneous_input_repl_kbps": "0.00",
+      "instantaneous_output_repl_kbps": "0.00",
+      "rejected_connections": "0",
+      "sync_full": "0",
+      "sync_partial_ok": "0",
+      "sync_partial_err": "0",
+      "expired_subkeys": "0",
+      "expired_keys": "0",
+      "expired_stale_perc": "0.00",
+      "expired_time_cap_reached_count": "0",
+      "expire_cycle_cpu_milliseconds": "479",
+      "evicted_keys": "0",
+      "evicted_clients": "0",
+      "evicted_scripts": "0",
+      "total_eviction_exceeded_time": "0",
+      "current_eviction_exceeded_time": "0",
+      "keyspace_hits": "682",
+      "keyspace_misses": "2734",
+      "pubsub_channels": "0",
+      "pubsub_patterns": "2",
+      "pubsubshard_channels": "0",
+      "latest_fork_usec": "776",
+      "total_forks": "19",
+      "migrate_cached_sockets": "0",
+      "slave_expires_tracked_keys": "0",
+      "active_defrag_hits": "0",
+      "active_defrag_misses": "0",
+      "active_defrag_key_hits": "0",
+      "active_defrag_key_misses": "0",
+      "total_active_defrag_time": "0",
+      "current_active_defrag_time": "0",
+      "tracking_total_keys": "0",
+      "tracking_total_items": "0",
+      "tracking_total_prefixes": "0",
+      "unexpected_error_replies": "0",
+      "total_error_replies": "322",
+      "dump_payload_sanitizations": "0",
+      "total_reads_processed": "26538",
+      "total_writes_processed": "29163",
+      "io_threaded_reads_processed": "0",
+      "io_threaded_writes_processed": "0",
+      "client_query_buffer_limit_disconnections": "0",
+      "client_output_buffer_limit_disconnections": "0",
+      "reply_buffer_shrinks": "1174",
+      "reply_buffer_expands": "0",
+      "eventloop_cycles": "122805",
+      "eventloop_duration_sum": "151270327",
+      "eventloop_duration_cmd_sum": "627191",
+      "instantaneous_eventloop_cycles_per_sec": "10",
+      "instantaneous_eventloop_duration_usec": "880",
+      "acl_access_denied_auth": "0",
+      "acl_access_denied_cmd": "0",
+      "acl_access_denied_key": "0",
+      "acl_access_denied_channel": "0"
+    }
+  },
+  "network": {
+    "Health Check": {
+      "response_time_ms": 15.3,
+      "http_status": "000"
+    },
+    "Metrics": {
+      "response_time_ms": 15.34,
+      "http_status": "000"
+    },
+    "API": {
+      "response_time_ms": 15.13,
+      "http_status": "000"
+    }
+  },
+  "summary": {
+    "baseline_timestamp": "2026-02-06T19:06:42.229178",
+    "phase4_tests_passed": true,
+    "system_okay": false,
+    "api_healthy": false
+  }
+}

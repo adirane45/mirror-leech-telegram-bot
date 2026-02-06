@@ -1,0 +1,94 @@
+# CodeScene Analysis Configuration
+# Mirror Leech Telegram Bot - Code Health Analysis
+
+project:
+  name: "mirror-leech-telegram-bot"
+  description: "Advanced Telegram bot for mirroring and leeching with performance optimization"
+
+# Analysis scope
+analysis:
+  # Directories to analyze
+  include:
+    - "bot/**/*.py"
+    - "tests/**/*.py"
+    - "scripts/**/*.py"
+    - "integrations/**/*.py"
+  
+  # Directories to exclude
+  exclude:
+    - "**/node_modules/**"
+    - "**/__pycache__/**"
+    - "**/venv/**"
+    - "**/mltbenv/**"
+    - "**/.pytest_cache/**"
+    - "**/data/**"
+    - "**/downloads/**"
+    - "**/logs/**"
+    - "**/backups/**"
+
+# Code quality thresholds
+thresholds:
+  # Code health score (0-10)
+  code_health_minimum: 7.0
+  
+  # Complexity thresholds
+  cognitive_complexity_warning: 15
+  cognitive_complexity_error: 25
+  
+  # File size
+  max_file_lines: 500
+  
+  # Function size
+  max_function_lines: 50
+  max_function_parameters: 5
+
+# Hotspot analysis
+hotspots:
+  # Files changed frequently with high complexity
+  enabled: true
+  min_revisions: 5
+  complexity_threshold: 10
+
+# Technical debt
+technical_debt:
+  # Calculate technical debt
+  enabled: true
+  
+  # Priority areas
+  focus_areas:
+    - "bot/core/*.py"
+    - "bot/modules/*.py"
+    - "bot/helper/**/*.py"
+
+# Change coupling analysis
+change_coupling:
+  # Files that change together
+  enabled: true
+  min_coupling_degree: 0.3
+  min_revisions: 3
+
+# Team patterns
+team_patterns:
+  # Analyze contribution patterns
+  enabled: true
+  knowledge_distribution: true
+  fragmentation_analysis: true
+
+# Output configuration
+output:
+  format: "json"
+  path: ".codescene/reports/"
+  include_recommendations: true
+  include_trends: true
+
+# Integration settings
+integration:
+  # Git repository
+  repository:
+    type: "git"
+    branch: "main"
+  
+  # Analysis frequency
+  schedule:
+    enabled: false  # Manual for now
+    cron: "0 2 * * *"  # Daily at 2 AM

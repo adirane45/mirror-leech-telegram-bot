@@ -21,7 +21,10 @@ class MyLogger:
         self._listener = listener
 
     def debug(self, msg):
-        # Hack to fix changing extension
+        # Extract and track filename changes when yt-dlp merges formats or extracts audio
+        # yt-dlp may change the output extension during format merging or audio extraction,
+        # so we capture the final filename from the merge/extract log messages and update
+        # the listener with the correct filename for proper status tracking
         if not self._obj.is_playlist:
             if match := re_search(
                 r".Merger..Merging formats into..(.*?).$", msg

@@ -91,7 +91,8 @@ async def get_recent_logs(limit: int = 100):
             for line in f.readlines()[-limit:]:
                 try:
                     logs.append(json.loads(line))
-                except:
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.debug(f"Could not parse log line: {e}")
                     pass
         
         return {"status": "success", "logs": logs}

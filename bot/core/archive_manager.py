@@ -379,7 +379,8 @@ class ArchiveManager:
                 file_path = os.path.join(root, file)
                 try:
                     total += os.path.getsize(file_path)
-                except:
+                except (OSError, IOError) as e:
+                    logger.debug(f"Could not get size of {file_path}: {e}")
                     pass
         return total
     

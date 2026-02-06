@@ -47,3 +47,43 @@ PHASE2_VERIFICATION.md
 PHASE2_COMPLETION_SUMMARY.txt
 INTEGRATION_SUMMARY.md
 DEPLOYMENT_GUIDE.md
+
+# CodeScene Analysis
+.codescene/reports/
+.codescene/.token
+.codescene/*.json
+# Generated reports and artifacts
+*.coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+*.prof
+*.pstat
+
+# Deployment artifacts
+build/
+dist/
+*.egg
+*.whl
+*.tar.gz
+*.zip
+
+# Temporary test and metric files
+test_output_*.txt
+metrics_snapshot_*.json
+performance_report_*.html
+health_check_report_*.txt
+
+# Generated graphs and visualizations
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# Temporary configuration files  
+*.bak
+*.tmp
+*.temp
+*_backup.yml
+*_production.yml
