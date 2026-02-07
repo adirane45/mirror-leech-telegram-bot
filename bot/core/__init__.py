@@ -4,7 +4,7 @@ Centralized imports for core components
 """
 
 from logging import getLogger
-from bot.core.config_manager import Config
+from config.main_config import Config
 
 LOGGER = getLogger(__name__)
 

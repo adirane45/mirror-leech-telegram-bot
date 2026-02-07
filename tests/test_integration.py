@@ -63,7 +63,7 @@ class TestBackwardCompatibility:
     
     def test_config_loading(self):
         """Test that original config still loads"""
-        from bot.core.config_manager import Config
+        from config.main_config import Config
         
         # Should have all original attributes
         assert hasattr(Config, 'BOT_TOKEN')
@@ -72,7 +72,7 @@ class TestBackwardCompatibility:
     
     def test_optional_enhancements(self):
         """Test that enhancements are truly optional"""
-        from bot.core.config_manager import Config
+        from config.main_config import Config
         
         # New configs should have defaults
         redis_enabled = getattr(Config, 'ENABLE_REDIS_CACHE', False)
