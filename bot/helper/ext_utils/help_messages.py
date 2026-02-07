@@ -453,6 +453,14 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.ExecCommand}: Exec sync functions (Only Owner).
 /{BotCommands.ClearLocalsCommand}: Clear {BotCommands.AExecCommand} or {BotCommands.ExecCommand} locals (Only Owner).
 /{BotCommands.RssCommand}: RSS Menu.
+/{BotCommands.EnhancedStatsCommand}: Enhanced system statistics with visual dashboard.
+/{BotCommands.EnhancedDashCommand}: Detailed comprehensive dashboard with all metrics.
+/{BotCommands.EnhancedQuickCommand}: Quick status overview with minimal info.
+/{BotCommands.EnhancedAnalyticsCommand}: Task analytics and combined statistics.
+/{BotCommands.ResourceMonitorCommand}: Detailed resource monitoring (CPU, RAM, Disk, Network).
+/{BotCommands.SystemHealthCommand}: System health report with status indicators.
+/{BotCommands.ProgressSummaryCommand}: Progress summary of all active tasks.
+/{BotCommands.ComparisonStatsCommand}: Compare statistics with recommendations.
 """
 
 # Enhanced with Interactive UI/UX and Queue Manager

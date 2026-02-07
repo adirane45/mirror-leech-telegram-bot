@@ -37,6 +37,14 @@ async def set_bot_commands():
         BotCommand(f"settings{i}", "Configure bot settings"),
         BotCommand(f"cancel{i}", "Cancel a task"),
         BotCommand(f"stats{i}", "Show bot statistics"),
+        BotCommand(f"estats{i}", "Enhanced statistics dashboard"),
+        BotCommand(f"edash{i}", "Enhanced detailed dashboard"),
+        BotCommand(f"equick{i}", "Quick status overview"),
+        BotCommand(f"eanalytics{i}", "Task analytics"),
+        BotCommand(f"rmon{i}", "Resource monitor"),
+        BotCommand(f"health{i}", "System health report"),
+        BotCommand(f"psummary{i}", "Progress summary"),
+        BotCommand(f"cstats{i}", "Comparison stats"),
     ]
     
     try:
