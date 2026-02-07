@@ -18,7 +18,7 @@ RUN /app/mltbenv/bin/pip install --no-cache-dir -r requirements.txt -r requireme
 COPY . .
 
 RUN sed -i 's/\r$//' *.sh 2>/dev/null || true
-RUN rm -rf /app/config.py /app/.env.production 2>/dev/null || true
+RUN cp -f config/main_config.py config.py 2>/dev/null || true
 
 ENV PATH="/app/mltbenv/bin:$PATH"
 CMD ["python3", "-m", "bot"]
