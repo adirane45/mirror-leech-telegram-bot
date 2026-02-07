@@ -104,7 +104,6 @@ async def get_telegraph_list(telegraph_content):
 
 
 def arg_parser(items, arg_base):
-
     if not items:
         return
 
@@ -132,65 +131,71 @@ def arg_parser(items, arg_base):
         "-bt",
     }
 
+    def _is_bool_arg(arg):
+        return arg in bool_arg_set
+
+    def _is_direct_bool(arg):
+        return arg in [
+            "-s",
+            "-j",
+            "-f",
+            "-fd",
+            "-fu",
+            "-sync",
+            "-hl",
+            "-doc",
+            "-med",
+            "-ut",
+            "-bt",
+        ]
+
     while i < total:
         part = items[i]
 
-        if part in arg_base:
-            if arg_start == -1:
-                arg_start = i
+        if part not in arg_base:
+            i += 1
+            continue
 
-            if (
-                i + 1 == total
-                and part in bool_arg_set
-                or part
-                in [
-                    "-s",
-                    "-j",
-                    "-f",
-                    "-fd",
-                    "-fu",
-                    "-sync",
-                    "-hl",
-                    "-doc",
-                    "-med",
-                    "-ut",
-                    "-bt",
-                ]
-            ):
-                arg_base[part] = True
-            else:
-                sub_list = []
-                for j in range(i + 1, total):
-                    if items[j] in arg_base:
-                        if part == "-c" and items[j] == "-c":
-                            sub_list.append(items[j])
-                            continue
-                        if part in bool_arg_set and not sub_list:
-                            arg_base[part] = True
-                            break
-                        if not sub_list:
-                            break
-                        check = " ".join(sub_list).strip()
-                        if part != "-ff":
-                            break
-                        if check.startswith("[") and check.endswith("]"):
-                            break
-                        elif not check.startswith("["):
-                            break
+        if arg_start == -1:
+            arg_start = i
+
+        if (i + 1 == total and _is_bool_arg(part)) or _is_direct_bool(part):
+            arg_base[part] = True
+            i += 1
+            continue
+
+        sub_list = []
+        for j in range(i + 1, total):
+            if items[j] in arg_base:
+                if part == "-c" and items[j] == "-c":
                     sub_list.append(items[j])
-                if sub_list:
-                    value = " ".join(sub_list)
-                    if part == "-ff":
-                        if not value.strip().startswith("["):
-                            arg_base[part].add(value)
-                        else:
-                            try:
-                                arg_base[part].add(tuple(eval(value)))
-                            except:
-                                pass
-                    else:
-                        arg_base[part] = value
-                    i += len(sub_list)
+                    continue
+                if _is_bool_arg(part) and not sub_list:
+                    arg_base[part] = True
+                    break
+                if not sub_list:
+                    break
+                check = " ".join(sub_list).strip()
+                if part != "-ff":
+                    break
+                if check.startswith("[") and check.endswith("]"):
+                    break
+                if not check.startswith("["):
+                    break
+            sub_list.append(items[j])
+        if sub_list:
+            value = " ".join(sub_list)
+            if part == "-ff":
+                if not value.strip().startswith("["):
+                    arg_base[part].add(value)
+                else:
+                    try:
+                        arg_base[part].add(tuple(eval(value)))
+                    except:
+                        pass
+            else:
+                arg_base[part] = value
+            i += len(sub_list)
         i += 1
     if "link" in arg_base:
         link_items = items[:arg_start] if arg_start != -1 else items
