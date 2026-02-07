@@ -8,6 +8,7 @@ aioqbt
 celery
 cloudscraper
 dnspython
+python-dotenv
 fastapi
 feedparser
 google-api-python-client

@@ -6,6 +6,10 @@ All configuration is now centralized in config/main_config.py which reads from .
 """
 
 # Import Config class from centralized config location
-from config.main_config import Config
+# Try local import first, then Docker fallback
+try:
+    from config.main_config import Config
+except (ImportError, ModuleNotFoundError):
+    from config import Config
 
 __all__ = ["Config"]

@@ -546,6 +546,11 @@ class Config:
     """Configuration wrapper - provides access to all module-level config variables"""
     
     @classmethod
+    def load(cls):
+        """No-op for backward compatibility - config is loaded on module import"""
+        pass
+    
+    @classmethod
     def _get_all_vars(cls):
         """Get all configuration variables"""
         return {k: v for k, v in globals().items() if not k.startswith('_') and k.isupper()}
