@@ -32,6 +32,8 @@ from ..helper.telegram_helper.message_utils import (
     delete_message,
     send_status_message,
 )
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.bot_commands import BotCommands
 
 
 class Clone(TaskListener):
@@ -109,9 +111,16 @@ class Clone(TaskListener):
         await self.run_multi(input_list, Clone)
 
         if len(self.link) == 0:
-            await send_message(
-                self.message, COMMAND_USAGE["clone"][0], COMMAND_USAGE["clone"][1]
+            buttons = ButtonMaker()
+            buttons.data_button("Help Menu", "help menu")
+            buttons.data_button("Clone Options", "help clone main")
+            buttons.data_button("Settings", "quick_settings")
+            prompt = (
+                "<b>📂 Clone</b>\n\n"
+                "Send a drive link or rclone path, or reply to one.\n"
+                f"Example: <code>/{BotCommands.CloneCommand} https://drive.google.com/...</code>"
             )
+            await send_message(self.message, prompt, buttons.build_menu(2))
             return
         LOGGER.info(self.link)
         try:

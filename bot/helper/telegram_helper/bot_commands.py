@@ -4,12 +4,15 @@ i = Config.CMD_SUFFIX
 
 class BotCommands:
     StartCommand = f"start{i}"
+    StartCommandList = [StartCommand, f"hi{i}" ]
     MirrorCommand = [f"mirror{i}", f"m{i}"]
+    MirrorCommand += [f"download{i}", f"dl{i}"]
     QbMirrorCommand = [f"qbmirror{i}", f"qm{i}"]
     JdMirrorCommand = [f"jdmirror{i}", f"jm{i}"]
     YtdlCommand = [f"ytdl{i}", f"y{i}"]
     NzbMirrorCommand = [f"nzbmirror{i}", f"nm{i}"]
     LeechCommand = [f"leech{i}", f"l{i}"]
+    LeechCommand += [f"upload{i}", f"ul{i}"]
     QbLeechCommand = [f"qbleech{i}", f"ql{i}"]
     JdLeechCommand = [f"jdleech{i}", f"jl{i}"]
     YtdlLeechCommand = [f"ytdlleech{i}", f"yl{i}"]
@@ -23,6 +26,7 @@ class BotCommands:
     ListCommand = f"list{i}"
     SearchCommand = f"search{i}"
     StatusCommand = f"status{i}"
+    StatusCommandList = [StatusCommand, f"st{i}"]
     UsersCommand = f"users{i}"
     AuthorizeCommand = f"auth{i}"
     UnAuthorizeCommand = f"unauth{i}"
@@ -40,6 +44,7 @@ class BotCommands:
     CategoryCommand = f"category{i}"
     CategorizeCommand = f"categorize{i}"
     QueueCommand = f"queue{i}"
+    QueueCommandList = [QueueCommand, f"tasks{i}"]
     PauseCommand = f"pqueue{i}"
     ResumeCommand = f"rqueue{i}"
     PriorityCommand = f"prqueue{i}"
@@ -51,9 +56,11 @@ class BotCommands:
     FilterTasksCommand = f"filtertasks{i}"
     HistoryCommand = f"history{i}"
     SettingsUICommand = f"settings{i}"
+    SettingsUICommandList = [SettingsUICommand, f"prefs{i}", f"preferences{i}"]
     ViewToggleCommand = f"viewtoggle{i}"
     SetAlertsCommand = f"setalerts{i}"
     HelpCommand = f"help{i}"
+    HelpCommandList = [HelpCommand, f"menu{i}", f"commands{i}"]
     LogCommand = f"log{i}"
     ShellCommand = f"shell{i}"
     AExecCommand = f"aexec{i}"

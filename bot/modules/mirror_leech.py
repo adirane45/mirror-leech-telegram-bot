@@ -10,6 +10,7 @@ from ..helper.ext_utils.bot_utils import (
     arg_parser,
     COMMAND_USAGE,
 )
+from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.ext_utils.exceptions import DirectDownloadLinkException
 from ..helper.ext_utils.links_utils import (
     is_url,
@@ -40,6 +41,7 @@ from ..helper.mirror_leech_utils.download_utils.telegram_download import (
     TelegramDownloadHelper,
 )
 from ..helper.telegram_helper.message_utils import send_message, get_tg_link_message
+from ..helper.telegram_helper.button_build import ButtonMaker
 
 
 class Mirror(TaskListener):
@@ -292,9 +294,18 @@ class Mirror(TaskListener):
             and not is_gdrive_id(self.link)
             and not is_gdrive_link(self.link)
         ):
-            await send_message(
-                self.message, COMMAND_USAGE["mirror"][0], COMMAND_USAGE["mirror"][1]
+            buttons = ButtonMaker()
+            buttons.data_button("Help Menu", "help menu")
+            buttons.data_button("Mirror Options", "help mirror main")
+            buttons.data_button("YT-DLP Options", "help yt main")
+            buttons.data_button("Settings", "quick_settings")
+            prompt = (
+                "<b>📥 Mirror/Leech</b>\n\n"
+                "Send a link or reply to a file/message.\n"
+                f"Example: <code>/{BotCommands.MirrorCommand[0]} https://example.com/file.zip</code>\n"
+                f"Leech: <code>/{BotCommands.LeechCommand[0]} https://example.com/file.zip</code>"
             )
+            await send_message(self.message, prompt, buttons.build_menu(2))
             await self.remove_from_same_dir()
             return
 

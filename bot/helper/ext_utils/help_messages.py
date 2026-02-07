@@ -1,6 +1,179 @@
 from ..telegram_helper.bot_commands import BotCommands
 from ...core.telegram_manager import TgClient
 
+
+def _cmd_list(cmd):
+  return list(cmd) if isinstance(cmd, (list, tuple)) else [cmd]
+
+
+def _cmd_primary(cmd):
+  return _cmd_list(cmd)[0]
+
+
+def _cmd_aliases(cmd):
+  return _cmd_list(cmd)[1:]
+
+
+def format_command(cmd):
+  primary = _cmd_primary(cmd)
+  aliases = _cmd_aliases(cmd)
+  alias_text = ""
+  if aliases:
+    alias_text = " (aka " + ", ".join(f"/{alias}" for alias in aliases) + ")"
+  return f"/{primary}{alias_text}"
+
+
+HELP_CATEGORIES = {
+  "downloads": {
+    "title": "Downloads & Uploads",
+    "items": [
+      {"name": "Mirror", "cmd": BotCommands.MirrorCommand, "desc": "Mirror links to cloud"},
+      {"name": "Leech", "cmd": BotCommands.LeechCommand, "desc": "Upload to Telegram"},
+      {"name": "Qbit Mirror", "cmd": BotCommands.QbMirrorCommand, "desc": "Torrents via qBittorrent"},
+      {"name": "Qbit Leech", "cmd": BotCommands.QbLeechCommand, "desc": "Leech torrents"},
+      {"name": "JDownloader", "cmd": BotCommands.JdMirrorCommand, "desc": "Use JDownloader"},
+      {"name": "YT-DLP", "cmd": BotCommands.YtdlCommand, "desc": "Video downloads"},
+    ],
+  },
+  "drive": {
+    "title": "Drive & Rclone",
+    "items": [
+      {"name": "Clone", "cmd": BotCommands.CloneCommand, "desc": "Copy drive/rclone paths"},
+      {"name": "Count", "cmd": BotCommands.CountCommand, "desc": "Count drive folder"},
+      {"name": "Delete", "cmd": BotCommands.DeleteCommand, "desc": "Delete drive item"},
+      {"name": "List", "cmd": BotCommands.ListCommand, "desc": "Search in drive"},
+    ],
+  },
+  "queue": {
+    "title": "Queue & Status",
+    "items": [
+      {"name": "Status", "cmd": BotCommands.StatusCommandList, "desc": "Show task status"},
+      {"name": "Queue", "cmd": BotCommands.QueueCommandList, "desc": "Manage active tasks"},
+      {"name": "Pause", "cmd": BotCommands.PauseCommand, "desc": "Pause a task"},
+      {"name": "Resume", "cmd": BotCommands.ResumeCommand, "desc": "Resume a task"},
+      {"name": "Cancel", "cmd": BotCommands.CancelTaskCommand, "desc": "Cancel a task"},
+    ],
+  },
+  "search": {
+    "title": "Search & History",
+    "items": [
+      {"name": "Search", "cmd": BotCommands.SearchCommand, "desc": "Search torrents"},
+      {"name": "Task Search", "cmd": BotCommands.SearchTasksCommand, "desc": "Find tasks"},
+      {"name": "Filter Tasks", "cmd": BotCommands.FilterTasksCommand, "desc": "Filter by status"},
+      {"name": "History", "cmd": BotCommands.HistoryCommand, "desc": "Download history"},
+    ],
+  },
+  "settings": {
+    "title": "Settings",
+    "items": [
+      {"name": "User Settings", "cmd": BotCommands.UserSetCommand, "desc": "Per-user preferences"},
+      {"name": "Bot Settings", "cmd": BotCommands.BotSetCommand, "desc": "Owner settings"},
+      {"name": "UI Settings", "cmd": BotCommands.SettingsUICommandList, "desc": "UI & alerts"},
+    ],
+  },
+  "system": {
+    "title": "System & Tools",
+    "items": [
+      {"name": "Stats", "cmd": BotCommands.StatsCommand, "desc": "Server stats"},
+      {"name": "Speedtest", "cmd": BotCommands.SpeedCommand, "desc": "Network speed"},
+      {"name": "Schedule", "cmd": BotCommands.ScheduleCommand, "desc": "Schedule tasks"},
+      {"name": "Schedules", "cmd": BotCommands.SchedulesCommand, "desc": "List schedules"},
+    ],
+  },
+  "dashboard": {
+    "title": "Dashboards",
+    "items": [
+      {"name": "Dashboard", "cmd": BotCommands.DashboardCommand, "desc": "System dashboard"},
+      {"name": "Quick Status", "cmd": BotCommands.EnhancedQuickCommand, "desc": "Quick overview"},
+      {"name": "Analytics", "cmd": BotCommands.EnhancedAnalyticsCommand, "desc": "Task analytics"},
+    ],
+  },
+  "admin": {
+    "title": "Admin",
+    "items": [
+      {"name": "Authorize", "cmd": BotCommands.AuthorizeCommand, "desc": "Authorize users"},
+      {"name": "Unauthorize", "cmd": BotCommands.UnAuthorizeCommand, "desc": "Remove access"},
+      {"name": "Add Sudo", "cmd": BotCommands.AddSudoCommand, "desc": "Add sudo"},
+      {"name": "Restart", "cmd": BotCommands.RestartCommand, "desc": "Restart bot"},
+    ],
+  },
+}
+
+
+HELP_CATEGORY_ORDER = [
+  "downloads",
+  "drive",
+  "queue",
+  "search",
+  "settings",
+  "system",
+  "dashboard",
+  "admin",
+]
+
+
+HELP_CATEGORY_ALIASES = {
+  "downloads": "downloads",
+  "download": "downloads",
+  "uploads": "downloads",
+  "drive": "drive",
+  "rclone": "drive",
+  "queue": "queue",
+  "status": "queue",
+  "search": "search",
+  "history": "search",
+  "settings": "settings",
+  "prefs": "settings",
+  "system": "system",
+  "dashboard": "dashboard",
+  "admin": "admin",
+}
+
+
+def build_help_home_text():
+  return (
+    "<b>📘 Command Center</b>\n"
+    "Pick a category or search.\n\n"
+    "<b>Quick Start</b>\n"
+    f"1) Mirror a link: <code>/{_cmd_primary(BotCommands.MirrorCommand)} [link]</code>\n"
+    f"2) Leech to Telegram: <code>/{_cmd_primary(BotCommands.LeechCommand)} [link]</code>\n"
+    f"3) View tasks: <code>/{_cmd_primary(BotCommands.StatusCommandList)}</code>\n\n"
+    "Tip: Use aliases like /dl or /ul for faster commands."
+  )
+
+
+def build_help_category_text(category_key):
+  cat = HELP_CATEGORIES.get(category_key)
+  if not cat:
+    return "❌ Category not found."
+  lines = [f"<b>📂 {cat['title']}</b>"]
+  for item in cat["items"]:
+    cmd_text = format_command(item["cmd"])
+    lines.append(f"• {cmd_text} — {item['desc']}")
+  return "\n".join(lines)
+
+
+def search_help(term):
+  needle = term.lower().strip()
+  if not needle:
+    return "❌ Please enter a search keyword."
+  matches = []
+  for cat_key in HELP_CATEGORY_ORDER:
+    cat = HELP_CATEGORIES[cat_key]
+    for item in cat["items"]:
+      cmd_text = " ".join(_cmd_list(item["cmd"])).lower()
+      hay = f"{item['name']} {item['desc']} {cmd_text}".lower()
+      if needle in hay:
+        matches.append((cat["title"], item))
+  if not matches:
+    return f"❌ No commands matched <code>{term}</code>."
+  lines = [f"<b>🔎 Results for:</b> <code>{term}</code>"]
+  for cat_title, item in matches[:12]:
+    lines.append(
+      f"• <b>{cat_title}</b>: {format_command(item['cmd'])} — {item['desc']}"
+    )
+  return "\n".join(lines)
+
 mirror = """<b>Send link along with command line or </b>
 
 /cmd link
@@ -393,75 +566,7 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 }
 
 
-help_string = f"""
-NOTE: Try each command without any argument to see more detalis.
-/{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Start mirroring to cloud.
-/{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Start Mirroring to cloud using qBittorrent.
-/{BotCommands.JdMirrorCommand[0]} or /{BotCommands.JdMirrorCommand[1]}: Start Mirroring to cloud using JDownloader.
-/{BotCommands.NzbMirrorCommand[0]} or /{BotCommands.NzbMirrorCommand[1]}: Start Mirroring to cloud using Sabnzbd.
-/{BotCommands.YtdlCommand[0]} or /{BotCommands.YtdlCommand[1]}: Mirror yt-dlp supported link.
-/{BotCommands.LeechCommand[0]} or /{BotCommands.LeechCommand[1]}: Start leeching to Telegram.
-/{BotCommands.QbLeechCommand[0]} or /{BotCommands.QbLeechCommand[1]}: Start leeching using qBittorrent.
-/{BotCommands.JdLeechCommand[0]} or /{BotCommands.JdLeechCommand[1]}: Start leeching using JDownloader.
-/{BotCommands.NzbLeechCommand[0]} or /{BotCommands.NzbLeechCommand[1]}: Start leeching using Sabnzbd.
-/{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Leech yt-dlp supported link.
-/{BotCommands.CloneCommand} [drive_url]: Copy file/folder to Google Drive.
-/{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
-/{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
-/{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Users settings.
-/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[1]} [query]: Bot settings.
-/{BotCommands.SelectCommand}: Select files from torrents or nzb by gid or reply.
-/{BotCommands.CancelTaskCommand[0]} or /{BotCommands.CancelTaskCommand[1]} [gid]: Cancel task by gid or reply.
-/{BotCommands.ForceStartCommand[0]} or /{BotCommands.ForceStartCommand[1]} [gid]: Force start task by gid or reply.
-/{BotCommands.CancelAllCommand} [query]: Cancel all [status] tasks.
-/{BotCommands.ListCommand} [query]: Search in Google Drive(s).
-/{BotCommands.SearchCommand} [query]: Search for torrents with API.
-/{BotCommands.StatusCommand}: Shows a status of all the downloads.
-/{BotCommands.StatsCommand}: Show stats of the machine where the bot is hosted in.
-/{BotCommands.SpeedCommand}: Run speedtest to check server's internet speed.
-/{BotCommands.ScheduleCommand}: Schedule a mirror/leech task.
-/{BotCommands.SchedulesCommand}: List your scheduled tasks.
-/{BotCommands.UnscheduleCommand}: Cancel a scheduled task.
-/{BotCommands.LimitCommand}: Set global bandwidth limit (Only Owner & Sudo).
-/{BotCommands.LimitTaskCommand}: Set task bandwidth limit (Only Owner & Sudo).
-/{BotCommands.CategoryCommand}: Manage task categories.
-/{BotCommands.CategorizeCommand}: Assign category to a task by gid.
-/{BotCommands.QueueCommand}: Show all active tasks with queue management options.
-/{BotCommands.PauseCommand} [gid]: Pause a specific task (or reply to task message).
-/{BotCommands.ResumeCommand} [gid]: Resume a paused task (or reply to task message).
-/{BotCommands.PriorityCommand} [gid] [priority]: Set task priority (-1/0/1 = low/normal/high).
-/{BotCommands.PauseAllCommand}: Pause all active tasks (Only Owner).
-/{BotCommands.ResumeAllCommand}: Resume all paused tasks (Only Owner).
-/{BotCommands.DashboardCommand}: Show comprehensive dashboard with system stats and active tasks.
-/{BotCommands.TaskDetailsCommand} [gid]: Show detailed information about a specific task.
-/{BotCommands.SearchTasksCommand} [query]: Search tasks by name or GID.
-/{BotCommands.FilterTasksCommand} [status]: Filter tasks by status (download/upload/paused/queued/all).
-/{BotCommands.HistoryCommand}: View download history with success/failure stats.
-/{BotCommands.SettingsUICommand}: Open settings panel for auto-pause configuration.
-/{BotCommands.ViewToggleCommand} [mode]: Toggle view mode (compact/detailed).
-/{BotCommands.SetAlertsCommand} [option]: Configure notification alerts.
-/{BotCommands.PingCommand}: Check how long it takes to Ping the Bot (Only Owner & Sudo).
-/{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
-/{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
-/{BotCommands.UsersCommand}: show users settings (Only Owner & Sudo).
-/{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
-/{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
-/{BotCommands.RestartCommand}: Restart and update the bot (Only Owner & Sudo).
-/{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
-/{BotCommands.ShellCommand}: Run shell commands (Only Owner).
-/{BotCommands.AExecCommand}: Exec async functions (Only Owner).
-/{BotCommands.ExecCommand}: Exec sync functions (Only Owner).
-/{BotCommands.ClearLocalsCommand}: Clear {BotCommands.AExecCommand} or {BotCommands.ExecCommand} locals (Only Owner).
-/{BotCommands.RssCommand}: RSS Menu.
-/{BotCommands.EnhancedStatsCommand}: Enhanced system statistics with visual dashboard.
-/{BotCommands.EnhancedDashCommand}: Detailed comprehensive dashboard with all metrics.
-/{BotCommands.EnhancedQuickCommand}: Quick status overview with minimal info.
-/{BotCommands.EnhancedAnalyticsCommand}: Task analytics and combined statistics.
-/{BotCommands.ResourceMonitorCommand}: Detailed resource monitoring (CPU, RAM, Disk, Network).
-/{BotCommands.SystemHealthCommand}: System health report with status indicators.
-/{BotCommands.ProgressSummaryCommand}: Progress summary of all active tasks.
-/{BotCommands.ComparisonStatsCommand}: Compare statistics with recommendations.
-"""
+help_string = build_help_home_text()
 
 # Enhanced with Interactive UI/UX and Queue Manager
 # Modified by: justadi

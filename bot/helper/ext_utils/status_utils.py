@@ -306,6 +306,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         else:
             msg = f"No Active {status} Tasks!\n\n"
     buttons = ButtonMaker()
+    buttons.data_button("Queue", "quick_queue", position="header")
+    buttons.data_button("Settings", "quick_settings", position="header")
+    buttons.data_button("Help", "help menu", position="header")
     msg = (
         f"<b>📌 Status Overview:</b> ▶️ {counts['download']} | ⬆️ {counts['upload']} | "
         f"⏸️ {counts['paused']} | ⏳ {counts['queued']} | ⚙️ {counts['other']}\n\n"
