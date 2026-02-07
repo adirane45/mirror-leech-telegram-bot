@@ -11,7 +11,7 @@ from .. import LOGGER
 from ..helper.ext_utils.bot_utils import cmd_exec, new_task
 from .telegram_manager import TgClient
 from .config_manager import Config
-from myjd import MyJdApi
+from integrations.myjd import MyJdApi
 
 
 class JDownloader(MyJdApi):

@@ -7,7 +7,7 @@ from aiofiles.os import path as aiopath, remove
 from aiofiles import open as aiopen
 from base64 import b64encode
 from secrets import token_urlsafe
-from myjd.exception import MYJDException
+from integrations.myjd.exception import MYJDException
 
 from .... import (
     task_dict,
