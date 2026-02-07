@@ -17,7 +17,7 @@ from logging import (
     WARNING,
     ERROR,
 )
-from sabnzbdapi import SabnzbdClient
+from integrations.sabnzbdapi import SabnzbdClient
 from time import time
 from os import cpu_count
 

@@ -10,7 +10,7 @@ from asyncio import sleep
 from time import time
 from os import environ
 import psutil
-from sabnzbdapi import SabnzbdClient
+from integrations.sabnzbdapi import SabnzbdClient
 from aioaria2 import Aria2HttpClient
 from aioqbt.client import create_client
 from aiohttp.client_exceptions import ClientError
