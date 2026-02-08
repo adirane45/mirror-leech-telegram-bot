@@ -12,85 +12,20 @@ All components depend on this for health status visibility.
 
 import asyncio
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
+from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Set
 from logging import getLogger
 
+# Import models from refactored health_models module
+from .health_models import (
+    HealthStatus,
+    ComponentType,
+    HealthCheckResult,
+    ComponentHealth,
+    HealthCheck,
+)
+
 logger = getLogger(__name__)
-
-
-# ============================================================================
-# ENUMS & TYPES
-# ============================================================================
-
-class HealthStatus(str, Enum):
-    """Health status of a component"""
-    HEALTHY = "healthy"
-    DEGRADED = "degraded"
-    UNHEALTHY = "unhealthy"
-    UNKNOWN = "unknown"
-
-
-class ComponentType(str, Enum):
-    """Type of component"""
-    NODE = "node"
-    DATABASE = "database"
-    CACHE = "cache"
-    QUEUE = "queue"
-    STORAGE = "storage"
-    API = "api"
-    SERVICE = "service"
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class HealthCheckResult:
-    """Result of a health check"""
-    status: HealthStatus
-    timestamp: datetime = field(default_factory=datetime.now)
-    error: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
-    latency_ms: float = 0.0
-
-
-@dataclass
-class ComponentHealth:
-    """Health status of a single component"""
-    component_id: str
-    component_type: ComponentType
-    component_name: str
-    status: HealthStatus = HealthStatus.UNKNOWN
-    last_check: Optional[datetime] = None
-    failure_count: int = 0
-    consecutive_failures: int = 0
-    last_error: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
-    latency_ms: float = 0.0
-
-
-@dataclass
-class HealthCheck:
-    """Configuration for a health check"""
-    check_id: str
-    component_type: ComponentType
-    component_name: str
-    check_fn: Callable
-    interval_seconds: int = 30
-    timeout_seconds: int = 5
-    failure_threshold: int = 3
-    enabled: bool = True
-    last_check_time: Optional[datetime] = None
-    consecutive_failures: int = 0
-
-
-# ============================================================================
-# HEALTH MONITOR
-# ============================================================================
 
 class HealthMonitor:
     """
