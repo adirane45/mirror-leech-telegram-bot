@@ -1,6 +1,12 @@
 """
 Cluster Manager - Distributed node coordination and leader election
 
+Refactored module structure:
+- cluster_models.py: Enums, data classes, abstract listener
+- cluster_raft.py: Raft consensus logic for leader election
+- cluster_gossip.py: Gossip protocol for node discovery
+- cluster_manager.py: Node management and orchestration (this file)
+
 Enables:
 - Node discovery via gossip protocol
 - Leader election using Raft consensus algorithm
@@ -16,192 +22,25 @@ import hashlib
 import json
 import random
 import uuid
-from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta, UTC
-from enum import Enum
 from typing import Dict, List, Optional, Callable, Set, Any
-from abc import ABC, abstractmethod
 
+# Import models from refactored cluster_models module
+from .cluster_models import (
+    NodeStatus,
+    RaftState,
+    ClusterState,
+    Node,
+    GossipMessage,
+    HeartbeatMessage,
+    VoteRequest,
+    ClusterInfo,
+    StateChangeListener,
+)
 
-# ============================================================================
-# ENUMS
-# ============================================================================
-
-class NodeStatus(str, Enum):
-    """Node health status in the cluster"""
-    HEALTHY = 'healthy'
-    DEGRADED = 'degraded'
-    UNHEALTHY = 'unhealthy'
-    DISCONNECTED = 'disconnected'
-    UNKNOWN = 'unknown'
-
-
-class RaftState(str, Enum):
-    """Raft consensus state"""
-    FOLLOWER = 'follower'
-    CANDIDATE = 'candidate'
-    LEADER = 'leader'
-
-
-class ClusterState(str, Enum):
-    """Overall cluster health state"""
-    HEALTHY = 'healthy'
-    DEGRADED = 'degraded'
-    SPLIT_BRAIN = 'split_brain'
-    FAILED = 'failed'
-    INITIALIZING = 'initializing'
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class Node:
-    """Cluster node representation"""
-    node_id: str
-    hostname: str
-    port: int
-    status: NodeStatus = NodeStatus.UNKNOWN
-    last_heartbeat: Optional[datetime] = None
-    raft_state: RaftState = RaftState.FOLLOWER
-    term: int = 0
-    voted_for: Optional[str] = None
-    is_leader: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'node_id': self.node_id,
-            'hostname': self.hostname,
-            'port': self.port,
-            'status': self.status.value,
-            'last_heartbeat': self.last_heartbeat.isoformat() if self.last_heartbeat else None,
-            'raft_state': self.raft_state.value,
-            'term': self.term,
-            'voted_for': self.voted_for,
-            'is_leader': self.is_leader
-        }
-
-
-@dataclass
-class GossipMessage:
-    """Gossip protocol message for node discovery"""
-    sender_id: str
-    sender_hostname: str
-    sender_port: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    known_nodes: List[Dict[str, Any]] = field(default_factory=list)
-    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'sender_id': self.sender_id,
-            'sender_hostname': self.sender_hostname,
-            'sender_port': self.sender_port,
-            'timestamp': self.timestamp.isoformat(),
-            'known_nodes': self.known_nodes,
-            'message_id': self.message_id
-        }
-
-
-@dataclass
-class HeartbeatMessage:
-    """Raft heartbeat message"""
-    leader_id: str
-    term: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'leader_id': self.leader_id,
-            'term': self.term,
-            'timestamp': self.timestamp.isoformat(),
-            'message_id': self.message_id
-        }
-
-
-@dataclass
-class VoteRequest:
-    """Raft vote request message"""
-    candidate_id: str
-    term: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'candidate_id': self.candidate_id,
-            'term': self.term,
-            'timestamp': self.timestamp.isoformat(),
-            'message_id': self.message_id
-        }
-
-
-@dataclass
-class ClusterInfo:
-    """Complete cluster information snapshot"""
-    cluster_id: str
-    state: ClusterState
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    leader_id: Optional[str] = None
-    nodes: List[Dict[str, Any]] = field(default_factory=list)
-    term: int = 0
-    healthy_nodes: int = 0
-    degraded_nodes: int = 0
-    unhealthy_nodes: int = 0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'cluster_id': self.cluster_id,
-            'state': self.state.value,
-            'timestamp': self.timestamp.isoformat(),
-            'leader_id': self.leader_id,
-            'nodes': self.nodes,
-            'term': self.term,
-            'healthy_nodes': self.healthy_nodes,
-            'degraded_nodes': self.degraded_nodes,
-            'unhealthy_nodes': self.unhealthy_nodes,
-            'total_nodes': len(self.nodes)
-        }
-
-
-# ============================================================================
-# STATE CHANGE LISTENERS
-# ============================================================================
-
-class StateChangeListener(ABC):
-    """Abstract listener for cluster state changes"""
-    
-    @abstractmethod
-    async def on_leader_elected(self, leader_id: str, term: int) -> None:
-        """Called when leader elected"""
-        pass
-    
-    @abstractmethod
-    async def on_node_joined(self, node_id: str, node: Node) -> None:
-        """Called when node joins cluster"""
-        pass
-    
-    @abstractmethod
-    async def on_node_left(self, node_id: str) -> None:
-        """Called when node leaves cluster"""
-        pass
-    
-    @abstractmethod
-    async def on_cluster_state_changed(self, old_state: ClusterState, new_state: ClusterState) -> None:
-        """Called when cluster state changes"""
-        pass
-    
-    @abstractmethod
-    async def on_split_brain_detected(self, partition_a: Set[str], partition_b: Set[str]) -> None:
-        """Called when split-brain detected"""
-        pass
+# Import specialized managers
+from .cluster_raft import RaftConsensusManager
+from .cluster_gossip import GossipProtocolManager
 
 
 # ============================================================================
@@ -245,12 +84,6 @@ class ClusterManager:
         self.nodes: Dict[str, Node] = {}
         self.local_node: Optional[Node] = None
         
-        # Raft state
-        self.current_term = 0
-        self.voted_for: Optional[str] = None
-        self.leader_id: Optional[str] = None
-        self.raft_state = RaftState.FOLLOWER
-        
         # Cluster state
         self.cluster_state = ClusterState.INITIALIZING
         self.nodes_seen_heartbeat: Set[str] = set()
@@ -264,14 +97,13 @@ class ClusterManager:
         # Last activity tracking
         self.last_heartbeat: Optional[datetime] = None
         self.last_leader_check: Optional[datetime] = None
-        self.election_timeout_deadline: Optional[datetime] = None
         
-        # Background tasks
+        # Background tasks (for backward compatibility with tests)
         self.enabled = False
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._gossip_task: Optional[asyncio.Task] = None
-        self._election_task: Optional[asyncio.Task] = None
         self._health_check_task: Optional[asyncio.Task] = None
+        self._gossip_task: Optional[asyncio.Task] = None  # Deprecated, kept for tests
+        self._election_task: Optional[asyncio.Task] = None  # Deprecated, kept for tests
+        self._heartbeat_task: Optional[asyncio.Task] = None  # Deprecated, kept for tests
         
         # State change listeners
         self.listeners: List[StateChangeListener] = []
@@ -279,11 +111,99 @@ class ClusterManager:
         # Split-brain tracking
         self.potential_split_brain = False
         self.split_brain_detection_threshold = 0.5  # Majority threshold
+        
+        # Backward compatibility attributes (delegated to managers)
+        self._current_term = 0
+        self._voted_for: Optional[str] = None
+        self._leader_id: Optional[str] = None
+        self._raft_state = RaftState.FOLLOWER
+        self._election_timeout_deadline: Optional[datetime] = None
+        
+        # Specialized managers (initialized in initialize())
+        self.raft_manager: Optional[RaftConsensusManager] = None
+        self.gossip_manager: Optional[GossipProtocolManager] = None
     
     @classmethod
     def get_instance(cls) -> 'ClusterManager':
         """Get singleton instance"""
         return cls()
+    
+    # ========================================================================
+    # BACKWARD COMPATIBILITY PROPERTIES
+    # ========================================================================
+    
+    @property
+    def current_term(self) -> int:
+        """Get current Raft term (backward compatibility)"""
+        if self.raft_manager:
+            return self.raft_manager.get_term()
+        return self._current_term
+    
+    @current_term.setter
+    def current_term(self, value: int) -> None:
+        """Set current Raft term (backward compatibility for tests)"""
+        self._current_term = value
+        if self.raft_manager:
+            self.raft_manager.current_term = value
+    
+    @property
+    def voted_for(self) -> Optional[str]:
+        """Get voted_for node (backward compatibility)"""
+        if self.raft_manager:
+            return self.raft_manager.voted_for
+        return self._voted_for
+    
+    @voted_for.setter
+    def voted_for(self, value: Optional[str]) -> None:
+        """Set voted_for node (backward compatibility for tests)"""
+        self._voted_for = value
+        if self.raft_manager:
+            self.raft_manager.voted_for = value
+    
+    @property
+    def leader_id(self) -> Optional[str]:
+        """Get leader ID (backward compatibility)"""
+        if self.raft_manager:
+            return self.raft_manager.get_leader_id()
+        return self._leader_id
+    
+    @leader_id.setter
+    def leader_id(self, value: Optional[str]) -> None:
+        """Set leader ID (backward compatibility for tests)"""
+        self._leader_id = value
+        if self.raft_manager:
+            self.raft_manager.leader_id = value
+    
+    @property
+    def raft_state(self) -> RaftState:
+        """Get Raft state (backward compatibility)"""
+        if self.raft_manager:
+            return self.raft_manager.get_state()
+        return self._raft_state
+    
+    @raft_state.setter
+    def raft_state(self, value: RaftState) -> None:
+        """Set Raft state (backward compatibility for tests)"""
+        self._raft_state = value
+        if self.raft_manager:
+            self.raft_manager.raft_state = value
+            # When setting to LEADER, also set leader_id automatically
+            if value == RaftState.LEADER:
+                self.raft_manager.leader_id = self.node_id
+    
+    @property
+    def election_timeout_deadline(self) -> Optional[datetime]:
+        """Get election timeout deadline (backward compatibility)"""
+        if self.raft_manager:
+            return self.raft_manager.election_timeout_deadline
+        return self._election_timeout_deadline
+    
+    @election_timeout_deadline.setter
+    def election_timeout_deadline(self, value: Optional[datetime]) -> None:
+        """Set election timeout deadline (backward compatibility for tests)"""
+        self._election_timeout_deadline = value
+        if self.raft_manager:
+            self.raft_manager.election_timeout_deadline = value
     
     # ========================================================================
     # INITIALIZATION AND LIFECYCLE
@@ -306,9 +226,75 @@ class ClusterManager:
             )
             self.nodes[node_id] = self.local_node
             
+            # Initialize Raft consensus manager
+            self.raft_manager = RaftConsensusManager(
+                node_id=node_id,
+                election_timeout_min=self.election_timeout_min,
+                election_timeout_max=self.election_timeout_max,
+                heartbeat_timeout=self.heartbeat_timeout
+            )
+            
+            # Set Raft callbacks
+            self.raft_manager.set_callbacks(
+                on_leader_elected=self._on_leader_elected,
+                get_nodes=self._get_nodes_for_raft
+            )
+            
+            # Initialize Gossip protocol manager
+            self.gossip_manager = GossipProtocolManager(
+                node_id=node_id,
+                hostname=hostname,
+                port=port,
+                gossip_interval=self.gossip_interval
+            )
+            
+            # Set Gossip callbacks
+            self.gossip_manager.set_callbacks(
+                get_nodes=self._get_nodes_for_gossip,
+                register_node=self.register_node,
+                update_node_status=self._update_node_status
+            )
+            
             return True
         except Exception as e:
             raise RuntimeError(f"Failed to initialize cluster manager: {e}")
+    
+    # ========================================================================
+    # DEPRECATED WRAPPER METHODS (kept for backward compatibility)
+    # ========================================================================
+    
+    async def _become_follower(self) -> None:
+        """Deprecated: Use raft_manager.become_follower() instead"""
+        if self.raft_manager:
+            await self.raft_manager._become_follower()
+        else:
+            self.raft_state = RaftState.FOLLOWER
+    
+    async def _become_candidate(self) -> None:
+        """Deprecated: Use raft_manager.become_candidate() instead"""
+        if self.raft_manager:
+            await self.raft_manager._become_candidate()
+        else:
+            self.raft_state = RaftState.CANDIDATE
+    
+    async def _become_leader(self) -> None:
+        """Deprecated: Use raft_manager.become_leader() instead"""
+        if self.raft_manager:
+            await self.raft_manager._become_leader()
+        else:
+            self.raft_state = RaftState.LEADER
+    
+    async def _start_election(self) -> None:
+        """Deprecated: Use raft_manager.start_election() instead"""
+        if self.raft_manager:
+            await self.raft_manager.start_election()
+    
+    def _random_election_timeout(self) -> timedelta:
+        """Deprecated: Election timeout is handled by raft_manager"""
+        min_ms = int(self.election_timeout_min.total_seconds() * 1000)
+        max_ms = int(self.election_timeout_max.total_seconds() * 1000)
+        random_ms = random.randint(min_ms, max_ms)
+        return timedelta(milliseconds=random_ms)
     
     async def start(self) -> bool:
         """Start cluster management"""
@@ -318,20 +304,21 @@ class ClusterManager:
         try:
             self.enabled = True
             
-            # Start gossip protocol
-            self._gossip_task = asyncio.create_task(self._gossip_loop())
+            # Start Raft consensus manager
+            if self.raft_manager:
+                await self.raft_manager.start()
+                # For backward compatibility, set task references
+                self._election_task = asyncio.current_task()
+                self._heartbeat_task = asyncio.current_task()
             
-            # Start election handler
-            self._election_task = asyncio.create_task(self._election_loop())
-            
-            # Start heartbeat handler
-            self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
+            # Start Gossip protocol manager
+            if self.gossip_manager:
+                await self.gossip_manager.start()
+                # For backward compatibility
+                self._gossip_task = asyncio.current_task()
             
             # Start health check
             self._health_check_task = asyncio.create_task(self._health_check_loop())
-            
-            # Reset election timeout
-            self.election_timeout_deadline = datetime.now(UTC) + self._random_election_timeout()
             
             return True
         except Exception as e:
@@ -346,15 +333,21 @@ class ClusterManager:
         try:
             self.enabled = False
             
-            # Cancel all tasks
-            for task in [self._gossip_task, self._election_task, 
-                        self._heartbeat_task, self._health_check_task]:
-                if task and not task.done():
-                    task.cancel()
-                    try:
-                        await task
-                    except asyncio.CancelledError:
-                        pass
+            # Stop Raft consensus manager
+            if self.raft_manager:
+                await self.raft_manager.stop()
+            
+            # Stop Gossip protocol manager
+            if self.gossip_manager:
+                await self.gossip_manager.stop()
+            
+            # Cancel health check task
+            if self._health_check_task and not self._health_check_task.done():
+                self._health_check_task.cancel()
+                try:
+                    await self._health_check_task
+                except asyncio.CancelledError:
+                    pass
             
             return True
         except Exception as e:
@@ -390,8 +383,9 @@ class ClusterManager:
                     await listener.on_node_left(node_id)
                 
                 # If leader left, trigger election
-                if node_id == self.leader_id:
-                    await self._start_election()
+                leader_id = await self.get_leader_id()
+                if self.raft_manager and node_id == leader_id:
+                    await self.raft_manager.start_election()
             
             return True
         except Exception as e:
@@ -406,202 +400,100 @@ class ClusterManager:
         return dict(self.nodes)
     
     # ========================================================================
-    # GOSSIP PROTOCOL
+    # GOSSIP PROTOCOL (Delegated to GossipProtocolManager)
     # ========================================================================
     
     async def handle_gossip_message(self, message: GossipMessage) -> None:
-        """Handle incoming gossip message"""
-        try:
-            # Register sender if new
-            sender_node = self.nodes.get(message.sender_id)
-            if not sender_node:
-                await self.register_node(message.sender_id, message.sender_hostname, message.sender_port)
-                sender_node = self.nodes[message.sender_id]
-            
-            # Update sender status
-            if sender_node:
-                sender_node.last_heartbeat = message.timestamp
-                sender_node.status = NodeStatus.HEALTHY
-            
-            # Process known nodes in message
-            for node_data in message.known_nodes:
-                node_id = node_data.get('node_id')
-                if node_id and node_id not in self.nodes:
-                    await self.register_node(
-                        node_id,
-                        node_data.get('hostname', 'unknown'),
-                        node_data.get('port', 0)
-                    )
-        
-        except Exception as e:
-            pass
-    
-    async def _gossip_loop(self) -> None:
-        """Background gossip protocol loop"""
-        while self.enabled:
-            try:
-                # Create gossip message with known nodes
-                known_nodes = [node.to_dict() for node in self.nodes.values()]
-                message = GossipMessage(
-                    sender_id=self.node_id,
-                    sender_hostname=self.hostname,
-                    sender_port=self.port,
-                    known_nodes=known_nodes
-                )
-                
-                # Simulate sending to random peer
-                peer_ids = [nid for nid in self.nodes.keys() if nid != self.node_id]
-                if peer_ids:
-                    peer_id = random.choice(peer_ids)
-                    # In real impl, would send via network
-                
-                await asyncio.sleep(self.gossip_interval.total_seconds())
-            
-            except asyncio.CancelledError:
-                break
-            except Exception:
-                await asyncio.sleep(self.gossip_interval.total_seconds())
+        """Handle incoming gossip message (delegates to gossip manager)"""
+        if self.gossip_manager:
+            await self.gossip_manager.handle_gossip_message(message)
     
     # ========================================================================
-    # RAFT LEADER ELECTION
+    # RAFT LEADER ELECTION (Delegated to RaftConsensusManager)
     # ========================================================================
     
     async def handle_heartbeat(self, message: HeartbeatMessage) -> bool:
-        """Handle leader heartbeat"""
-        try:
-            # If we see higher term, update
-            if message.term > self.current_term:
-                self.current_term = message.term
-                self.voted_for = None
-                await self._become_follower()
+        """Handle leader heartbeat (delegates to raft manager)"""
+        if self.raft_manager:
+            result = await self.raft_manager.handle_heartbeat(message)
             
-            # Update leader
-            if message.term >= self.current_term:
-                self.leader_id = message.leader_id
-                self.last_heartbeat = message.timestamp
-                self.election_timeout_deadline = datetime.now(UTC) + self._random_election_timeout()
+            # Sync local state from Raft manager
+            if result and self.local_node:
+                self.local_node.raft_state = self.raft_manager.get_state()
+                self.local_node.is_leader = self.raft_manager.is_leader()
+                self.last_heartbeat = message.timestamp  # Sync last_heartbeat
                 
-                # Update leader node
-                if message.leader_id in self.nodes:
-                    self.nodes[message.leader_id].is_leader = True
-                    self.nodes[message.leader_id].status = NodeStatus.HEALTHY
+                # Update leader node status
+                if self.raft_manager.get_leader_id() in self.nodes:
+                    self.nodes[self.raft_manager.get_leader_id()].is_leader = True
+                    self.nodes[self.raft_manager.get_leader_id()].status = NodeStatus.HEALTHY
                 
                 await self._update_cluster_state()
-                return True
             
-            return False
-        except Exception:
-            return False
+            return result
+        return False
     
     async def handle_vote_request(self, request: VoteRequest) -> bool:
-        """Handle vote request from candidate"""
+        """Handle vote request from candidate (delegates to raft manager)"""
+        if self.raft_manager:
+            result = await self.raft_manager.handle_vote_request(request)
+            
+            # Sync local state from Raft manager
+            if self.local_node and result:
+                self.local_node.raft_state = self.raft_manager.get_state()
+            
+            return result
+        return False
+    
+    # ========================================================================
+    # MANAGER CALLBACKS AND HELPERS
+    # ========================================================================
+    
+    async def _on_leader_elected(self, leader_id: str, term: int) -> None:
+        """Callback when leader is elected (called by RaftConsensusManager)"""
         try:
-            # If higher term, convert to follower
-            if request.term > self.current_term:
-                self.current_term = request.term
-                self.voted_for = None
-                await self._become_follower()
-            
-            # Vote if we haven't voted and term matches/lower
-            if request.term >= self.current_term and self.voted_for is None:
-                self.voted_for = request.candidate_id
-                self.current_term = request.term
-                return True
-            
-            return False
-        except Exception:
-            return False
-    
-    async def _start_election(self) -> None:
-        """Start leader election"""
-        try:
-            self.current_term += 1
-            await self._become_candidate()
-            
-            # Request votes from all nodes
-            vote_count = 1  # Vote for self
-            for node_id in self.nodes.keys():
-                if node_id != self.node_id:
-                    # In real impl, would send via network
-                    pass
-            
-            # Simple majority check (would be more complex in real impl)
-            required_votes = len(self.nodes) // 2 + 1
-            
-            if vote_count >= required_votes:
-                await self._become_leader()
-        except Exception:
-            pass
-    
-    async def _become_follower(self) -> None:
-        """Transition to follower state"""
-        if self.raft_state != RaftState.FOLLOWER:
-            self.raft_state = RaftState.FOLLOWER
-            self.leader_id = None
-            if self.local_node:
-                self.local_node.raft_state = RaftState.FOLLOWER
-                self.local_node.is_leader = False
-    
-    async def _become_candidate(self) -> None:
-        """Transition to candidate state"""
-        if self.raft_state != RaftState.CANDIDATE:
-            self.raft_state = RaftState.CANDIDATE
-            self.voted_for = self.node_id
-            if self.local_node:
-                self.local_node.raft_state = RaftState.CANDIDATE
-    
-    async def _become_leader(self) -> None:
-        """Transition to leader state"""
-        if self.raft_state != RaftState.LEADER:
-            self.raft_state = RaftState.LEADER
-            self.leader_id = self.node_id
-            
-            if self.local_node:
+            # Update local node if it's the new leader
+            if leader_id == self.node_id and self.local_node:
                 self.local_node.raft_state = RaftState.LEADER
                 self.local_node.is_leader = True
             
+            # Update leader node
+            if leader_id in self.nodes:
+                self.nodes[leader_id].is_leader = True
+                self.nodes[leader_id].raft_state = RaftState.LEADER
+            
             # Notify listeners
             for listener in self.listeners:
-                await listener.on_leader_elected(self.node_id, self.current_term)
+                await listener.on_leader_elected(leader_id, term)
+        except Exception:
+            pass
     
-    async def _election_loop(self) -> None:
-        """Background election loop"""
-        while self.enabled:
-            try:
-                # Check if election timeout reached
-                if self.election_timeout_deadline and datetime.now(UTC) >= self.election_timeout_deadline:
-                    if self.raft_state != RaftState.LEADER:
-                        await self._start_election()
-                
-                await asyncio.sleep(1)
-            
-            except asyncio.CancelledError:
-                break
-            except Exception:
-                await asyncio.sleep(1)
+    async def _get_nodes_for_raft(self) -> Dict[str, Node]:
+        """Get nodes for Raft manager"""
+        return self.nodes
     
-    async def _heartbeat_loop(self) -> None:
-        """Background heartbeat loop"""
-        while self.enabled:
-            try:
-                # Send heartbeats if leader
-                if self.raft_state == RaftState.LEADER:
-                    message = HeartbeatMessage(
-                        leader_id=self.node_id,
-                        term=self.current_term
-                    )
-                    
-                    # Simulate sending to all peers
-                    for node_id in self.nodes.keys():
-                        if node_id != self.node_id:
-                            pass  # In real impl, would send via network
-                
-                await asyncio.sleep(self.heartbeat_timeout.total_seconds())
+    async def _get_nodes_for_gossip(self) -> Dict[str, Node]:
+        """Get nodes for Gossip manager"""
+        return self.nodes
+    
+    async def _update_node_status(
+        self,
+        node_id: str,
+        status: NodeStatus,
+        timestamp: datetime
+    ) -> None:
+        """Update node status (called by GossipProtocolManager)"""
+        try:
+            if node_id in self.nodes:
+                self.nodes[node_id].status = status
+                self.nodes[node_id].last_heartbeat = timestamp
+        except Exception:
+            pass
+            if self.local_node and result:
+                self.local_node.raft_state = self.raft_manager.get_state()
             
-            except asyncio.CancelledError:
-                break
-            except Exception:
-                await asyncio.sleep(self.heartbeat_timeout.total_seconds())
+            return result
+        return False
     
     # ========================================================================
     # SPLIT-BRAIN DETECTION
@@ -762,26 +654,27 @@ class ClusterManager:
     # UTILITIES
     # ========================================================================
     
-    def _random_election_timeout(self) -> timedelta:
-        """Generate random election timeout"""
-        min_ms = int(self.election_timeout_min.total_seconds() * 1000)
-        max_ms = int(self.election_timeout_max.total_seconds() * 1000)
-        random_ms = random.randint(min_ms, max_ms)
-        return timedelta(milliseconds=random_ms)
     
     async def is_leader(self) -> bool:
         """Check if this node is the leader"""
-        return self.raft_state == RaftState.LEADER
+        if self.raft_manager:
+            return self.raft_manager.is_leader()
+        return False
     
     async def get_leader_id(self) -> Optional[str]:
         """Get current leader ID"""
-        return self.leader_id
+        if self.raft_manager:
+            return self.raft_manager.get_leader_id()
+        return None
     
     async def get_raft_state(self) -> RaftState:
         """Get current Raft state"""
-        return self.raft_state
+        if self.raft_manager:
+            return self.raft_manager.get_state()
+        return RaftState.FOLLOWER
     
     async def is_ready(self) -> bool:
         """Check if cluster is ready for operations"""
-        return self.enabled and self.leader_id is not None and \
+        leader_id = await self.get_leader_id()
+        return self.enabled and leader_id is not None and \
                self.cluster_state == ClusterState.HEALTHY

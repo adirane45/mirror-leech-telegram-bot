@@ -11,30 +11,12 @@ Date: February 8, 2026
 """
 
 import re
-from enum import Enum
 from typing import Optional, Tuple, Dict, Any
 from datetime import datetime, timedelta
 import asyncio
 
 from .. import LOGGER
-
-
-class LinkType(Enum):
-    """Types of download links"""
-    DIRECT = "direct"            # HTTP/HTTPS direct downloads
-    TORRENT = "torrent"          # Magnet/torrent files
-    NZB = "nzb"                  # Usenet NZB files
-    GDRIVE = "gdrive"            # Google Drive
-    MEDIAFIRE = "mediafire"      # Mediafire
-    ZIP_ARCHIVE = "zip_archive"  # Zipped content
-    UNKNOWN = "unknown"
-
-
-class ClientType(Enum):
-    """Available download clients"""
-    ARIA2 = "aria2"              # Fast, lightweight (direct + torrents)
-    QBITTORRENT = "qbittorrent"  # Torrent specialist
-    SABNZBD = "sabnzbd"          # Usenet specialist
+from .client_selector_models import LinkType, ClientType
 
 
 class ClientMetrics:

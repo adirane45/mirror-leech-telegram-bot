@@ -51,8 +51,12 @@ def state_manager():
     manager.version_history.clear()
     manager.change_log.clear()
     manager.snapshots.clear()
-    manager.locks.clear()
-    manager.proposals.clear()
+    # Clear locks via lock_manager if available
+    if manager.lock_manager:
+        manager.lock_manager.locks.clear()
+    # Clear proposals via consensus_manager if available
+    if manager.consensus_manager:
+        manager.consensus_manager.proposals.clear()
     manager.peers.clear()
     manager.metrics = DistributedStateMetrics()
     manager.listeners.clear()

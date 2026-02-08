@@ -1,299 +1,46 @@
 """
 Distributed State Manager for cluster-wide state consistency
 
+Refactored module structure:
+- distributed_state_models.py: Enums, data classes, abstract base classes
+- distributed_state_locks.py: Lock management implementation
+- distributed_state_manager.py: Core manager implementation (this file)
+
 Implements:
 - State versioning with changelog
 - Consensus-based updates
-- Distributed locking
+- Distributed locking (delegated to DistributedLockManager)
 - State reconciliation
 - Snapshot/restore mechanism
 """
 
 import asyncio
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta, UTC
-from enum import Enum
-from typing import Dict, List, Set, Optional, Any, Callable
-from abc import ABC, abstractmethod
+from typing import Dict, List, Set, Optional, Any
 
+# Import refactored components from models module
+from .distributed_state_models import (
+    StateUpdateStrategy,
+    LockType,
+    LockState,
+    StateReconciliationReason,
+    StateVersion,
+    StateSnapshot,
+    StateChangeLog,
+    LockInfo,
+    ConsensusProposal,
+    StateReconciliationRequest,
+    DistributedStateMetrics,
+    DistributedStateProvider,
+    StateChangeListener,
+)
 
-# ============================================================================
-# ENUMS AND DATA CLASSES
-# ============================================================================
+# Import lock manager module
+from .distributed_state_locks import DistributedLockManager
 
-class StateUpdateStrategy(str, Enum):
-    """Strategies for applying state updates"""
-    CONSENSUS = "consensus"      # Requires quorum agreement
-    OPTIMISTIC = "optimistic"    # Apply immediately, replicate later
-    PESSIMISTIC = "pessimistic"  # Lock-based pessimistic updates
-    EVENTUAL = "eventual"        # Eventual consistency
-
-
-class LockType(str, Enum):
-    """Types of distributed locks"""
-    EXCLUSIVE = "exclusive"      # Only one writer
-    SHARED = "shared"           # Multiple readers, no writers
-    INTENT_EXCLUSIVE = "intent_exclusive"  # Allows shared reads
-
-
-class LockState(str, Enum):
-    """State of a distributed lock"""
-    PENDING = "pending"
-    ACQUIRED = "acquired"
-    RELEASED = "released"
-    CONTESTED = "contested"  # Multiple nodes want lock
-    TIMEOUT = "timeout"
-
-
-class StateReconciliationReason(str, Enum):
-    """Reasons for state reconciliation"""
-    VERSION_MISMATCH = "version_mismatch"
-    RECOVERY = "recovery"
-    SCHEDULED = "scheduled"
-    MANUAL = "manual"
-    CONFLICT = "conflict"
-
-
-@dataclass
-class StateVersion:
-    """Version information for state"""
-    version_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    version_number: int = 1
-    node_id: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    changes_count: int = 0
-    checksum: str = ""
-    parent_version: Optional[str] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'version_id': self.version_id,
-            'version_number': self.version_number,
-            'node_id': self.node_id,
-            'timestamp': self.timestamp.isoformat(),
-            'changes_count': self.changes_count,
-            'checksum': self.checksum,
-            'parent_version': self.parent_version
-        }
-
-
-@dataclass
-class StateSnapshot:
-    """Snapshot of state at a point in time"""
-    snapshot_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    version: StateVersion = field(default_factory=StateVersion)
-    state_data: Dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    size_bytes: int = 0
-    compressible: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'snapshot_id': self.snapshot_id,
-            'version': self.version.to_dict(),
-            'state_data': self.state_data,
-            'timestamp': self.timestamp.isoformat(),
-            'size_bytes': self.size_bytes,
-            'compressible': self.compressible
-        }
-
-
-@dataclass
-class StateChangeLog:
-    """Log entry for a state change"""
-    log_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    key: str = ""
-    old_value: Any = None
-    new_value: Any = None
-    operation_type: str = ""  # SET, DELETE, INCREMENT
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    applied_node: str = ""
-    applied_version: int = 0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'log_id': self.log_id,
-            'key': self.key,
-            'old_value': self.old_value,
-            'new_value': self.new_value,
-            'operation_type': self.operation_type,
-            'timestamp': self.timestamp.isoformat(),
-            'applied_node': self.applied_node,
-            'applied_version': self.applied_version
-        }
-
-
-@dataclass
-class LockInfo:
-    """Information about a distributed lock"""
-    lock_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    key: str = ""
-    lock_type: LockType = LockType.EXCLUSIVE
-    owner_node: str = ""
-    state: LockState = LockState.PENDING
-    acquired_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    contenders: Set[str] = field(default_factory=set)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'lock_id': self.lock_id,
-            'key': self.key,
-            'lock_type': self.lock_type.value,
-            'owner_node': self.owner_node,
-            'state': self.state.value,
-            'acquired_at': self.acquired_at.isoformat() if self.acquired_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'contenders': list(self.contenders)
-        }
-
-
-@dataclass
-class ConsensusProposal:
-    """Proposal for state update via consensus"""
-    proposal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    key: str = ""
-    value: Any = None
-    proposer_node: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    votes_for: Set[str] = field(default_factory=set)
-    votes_against: Set[str] = field(default_factory=set)
-    state: str = "pending"  # pending, approved, rejected, applied
-    consensus_threshold: float = 0.5
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'proposal_id': self.proposal_id,
-            'key': self.key,
-            'value': self.value,
-            'proposer_node': self.proposer_node,
-            'timestamp': self.timestamp.isoformat(),
-            'votes_for': list(self.votes_for),
-            'votes_against': list(self.votes_against),
-            'state': self.state,
-            'consensus_threshold': self.consensus_threshold
-        }
-
-
-@dataclass
-class StateReconciliationRequest:
-    """Request for state reconciliation"""
-    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    initiator_node: str = ""
-    target_node: str = ""
-    reason: StateReconciliationReason = StateReconciliationReason.SCHEDULED
-    local_version: int = 0
-    remote_version: int = 0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
-    completed: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'request_id': self.request_id,
-            'initiator_node': self.initiator_node,
-            'target_node': self.target_node,
-            'reason': self.reason.value,
-            'local_version': self.local_version,
-            'remote_version': self.remote_version,
-            'timestamp': self.timestamp.isoformat(),
-            'completed': self.completed
-        }
-
-
-@dataclass
-class DistributedStateMetrics:
-    """Metrics for distributed state management"""
-    total_state_updates: int = 0
-    consensual_updates: int = 0
-    optimistic_updates: int = 0
-    reconciliations: int = 0
-    lock_acquisitions: int = 0
-    lock_contentions: int = 0
-    snapshots_created: int = 0
-    state_size_bytes: int = 0
-    version_count: int = 0
-    average_consistency_lag_ms: float = 0.0
-    last_updated: datetime = field(default_factory=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dict"""
-        return {
-            'total_state_updates': self.total_state_updates,
-            'consensual_updates': self.consensual_updates,
-            'optimistic_updates': self.optimistic_updates,
-            'reconciliations': self.reconciliations,
-            'lock_acquisitions': self.lock_acquisitions,
-            'lock_contentions': self.lock_contentions,
-            'snapshots_created': self.snapshots_created,
-            'state_size_bytes': self.state_size_bytes,
-            'version_count': self.version_count,
-            'average_consistency_lag_ms': round(self.average_consistency_lag_ms, 2),
-            'last_updated': self.last_updated.isoformat()
-        }
-
-
-# ============================================================================
-# ABSTRACT CLASSES
-# ============================================================================
-
-class DistributedStateProvider(ABC):
-    """Abstract provider for distributed state operations"""
-    
-    @abstractmethod
-    async def get_state(self, key: str) -> Any:
-        """Get state value for key"""
-        pass
-    
-    @abstractmethod
-    async def set_state(self, key: str, value: Any) -> bool:
-        """Set state value for key"""
-        pass
-    
-    @abstractmethod
-    async def acquire_lock(self, key: str, lock_type: LockType) -> bool:
-        """Acquire lock on key"""
-        pass
-    
-    @abstractmethod
-    async def release_lock(self, key: str) -> bool:
-        """Release lock on key"""
-        pass
-
-
-class StateChangeListener(ABC):
-    """Abstract listener for state changes"""
-    
-    @abstractmethod
-    async def on_state_changed(self, key: str, old_value: Any, new_value: Any) -> None:
-        """Called when state changes"""
-        pass
-    
-    @abstractmethod
-    async def on_reconciliation_started(self, request: StateReconciliationRequest) -> None:
-        """Called when reconciliation starts"""
-        pass
-    
-    @abstractmethod
-    async def on_reconciliation_completed(self, request: StateReconciliationRequest) -> None:
-        """Called when reconciliation completes"""
-        pass
-    
-    @abstractmethod
-    async def on_consensus_reached(self, proposal: ConsensusProposal) -> None:
-        """Called when consensus is reached"""
-        pass
-    
-    @abstractmethod
-    async def on_lock_acquired(self, lock: LockInfo) -> None:
-        """Called when lock is acquired"""
-        pass
+# Import consensus manager module
+from .distributed_state_consensus import DistributedConsensusManager
 
 
 # ============================================================================
@@ -322,22 +69,36 @@ class DistributedStateManager:
         self.version_history: List[StateVersion] = []
         self.change_log: List[StateChangeLog] = []
         self.snapshots: Dict[str, StateSnapshot] = {}
-        self.locks: Dict[str, LockInfo] = {}
-        self.proposals: Dict[str, ConsensusProposal] = {}
         self.peers: Set[str] = set()
         self.metrics = DistributedStateMetrics()
         self.listeners: List[StateChangeListener] = []
         self.current_version = 1
         self.update_strategy = StateUpdateStrategy.EVENTUAL
         self.consensus_threshold = 0.5
-        self.lock_timeout_seconds = 30
         self.reconciliation_interval = 60
         self.snapshot_retention_count = 10
         
+        # Manager instances
+        self.lock_manager: Optional[DistributedLockManager] = None
+        self.consensus_manager: Optional[DistributedConsensusManager] = None
+        
         # Background tasks
         self._reconciliation_task: Optional[asyncio.Task] = None
-        self._lock_monitor_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
+    
+    @property
+    def locks(self) -> Dict[str, LockInfo]:
+        """Get locks dict from lock manager (backward compatibility)"""
+        if self.lock_manager:
+            return self.lock_manager.locks
+        return {}
+    
+    @property
+    def proposals(self) -> Dict[str, ConsensusProposal]:
+        """Get proposals dict from consensus manager (backward compatibility)"""
+        if self.consensus_manager:
+            return self.consensus_manager.proposals
+        return {}
     
     @classmethod
     def get_instance(cls) -> 'DistributedStateManager':
@@ -363,9 +124,27 @@ class DistributedStateManager:
             )
             self.version_history.append(root_version)
             
+            # Initialize and start lock manager
+            self.lock_manager = DistributedLockManager(
+                node_id=self.node_id,
+                lock_timeout_seconds=30
+            )
+            self.lock_manager.add_listener(self)
+            await self.lock_manager.start()
+            
+            # Initialize and start consensus manager
+            self.consensus_manager = DistributedConsensusManager(
+                node_id=self.node_id,
+                consensus_threshold=self.consensus_threshold
+            )
+            self.consensus_manager.add_listener(self)
+            # Register existing peers
+            for peer in self.peers:
+                self.consensus_manager.register_peer(peer)
+            await self.consensus_manager.start()
+            
             # Start background tasks
             self._reconciliation_task = asyncio.create_task(self._reconciliation_loop())
-            self._lock_monitor_task = asyncio.create_task(self._lock_monitor_loop())
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             
             return True
@@ -381,11 +160,15 @@ class DistributedStateManager:
         try:
             self.enabled = False
             
+            # Stop managers
+            if self.lock_manager:
+                await self.lock_manager.stop()
+            if self.consensus_manager:
+                await self.consensus_manager.stop()
+            
             # Cancel background tasks
             if self._reconciliation_task:
                 self._reconciliation_task.cancel()
-            if self._lock_monitor_task:
-                self._lock_monitor_task.cancel()
             if self._cleanup_task:
                 self._cleanup_task.cancel()
             
@@ -394,6 +177,11 @@ class DistributedStateManager:
             return True
         except Exception:
             return False
+    
+    async def clear_locks(self) -> None:
+        """Clear all locks (for testing/cleanup)"""
+        if self.lock_manager:
+            await self.lock_manager.clear_locks()
     
     # ========================================================================
     # STATE OPERATIONS
@@ -527,67 +315,33 @@ class DistributedStateManager:
     # ========================================================================
     
     async def acquire_lock(self, key: str, lock_type: LockType = LockType.EXCLUSIVE) -> bool:
-        """
-        Acquire distributed lock on key
-        """
-        if not self.enabled:
+        """Acquire distributed lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
             return False
         
-        try:
-            lock_id = f"lock_{uuid.uuid4().hex[:8]}"
-            lock = LockInfo(
-                lock_id=lock_id,
-                key=key,
-                lock_type=lock_type,
-                owner_node=self.node_id,
-                state=LockState.PENDING,
-                expires_at=datetime.now(UTC) + timedelta(seconds=self.lock_timeout_seconds)
-            )
-            
-            # Check for existing exclusive lock
-            existing = self.locks.get(key)
-            if existing and existing.lock_type == LockType.EXCLUSIVE:
-                if existing.owner_node != self.node_id:
-                    lock.state = LockState.CONTESTED
-                    lock.contenders.add(self.node_id)
-                    self.metrics.lock_contentions += 1
-                    self.locks[key] = lock
-                    return False
-            
-            # Acquire lock
-            lock.state = LockState.ACQUIRED
-            lock.acquired_at = datetime.now(UTC)
-            self.locks[key] = lock
-            self.metrics.lock_acquisitions += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_lock_acquired(lock)
-            
-            return True
-        except Exception:
-            return False
+        result = await self.lock_manager.acquire_lock(key, lock_type)
+        
+        # Copy metrics from lock manager
+        if self.lock_manager:
+            lock_metrics = self.lock_manager.get_metrics()
+            self.metrics.lock_acquisitions = lock_metrics['lock_acquisitions']
+            self.metrics.lock_contentions = lock_metrics['lock_contentions']
+        
+        return result
     
     async def release_lock(self, key: str) -> bool:
-        """Release distributed lock on key"""
-        if key not in self.locks:
+        """Release distributed lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
             return False
         
-        try:
-            lock = self.locks[key]
-            if lock.owner_node != self.node_id:
-                return False
-            
-            lock.state = LockState.RELEASED
-            self.locks.pop(key, None)
-            
-            return True
-        except Exception:
-            return False
+        return await self.lock_manager.release_lock(key)
     
     async def get_lock_info(self, key: str) -> Optional[LockInfo]:
-        """Get information about lock on key"""
-        return self.locks.get(key)
+        """Get information about lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
+            return None
+        
+        return await self.lock_manager.get_lock_info(key)
     
     # ========================================================================
     # CONSENSUS-BASED UPDATES
@@ -599,35 +353,29 @@ class DistributedStateManager:
         value: Any,
         old_value: Any
     ) -> bool:
-        """Apply state update using consensus"""
+        """Apply state update using consensus (delegated to DistributedConsensusManager)"""
+        if not self.enabled or not self.consensus_manager:
+            return False
+        
         try:
-            proposal = ConsensusProposal(
-                key=key,
-                value=value,
-                proposer_node=self.node_id,
-                consensus_threshold=self.consensus_threshold
-            )
+            # Create proposal
+            proposal = await self.consensus_manager.create_proposal(key, value, old_value)
+            if not proposal:
+                return False
             
-            self.proposals[proposal.proposal_id] = proposal
-            
-            # In real scenario, broadcast to peers
-            # For now, simulate local consensus
-            proposal.votes_for.add(self.node_id)
-            
-            # Check if consensus reached
-            if await self._check_consensus(proposal):
+            # Check if consensus reached (for single node or auto-approval)
+            if await self.consensus_manager.check_consensus(proposal):
                 proposal.state = "approved"
                 
                 # Apply the update
                 success = await self._apply_state_update(key, value, old_value)
                 
                 if success:
-                    proposal.state = "applied"
-                    self.metrics.consensual_updates += 1
-                
-                # Notify listeners
-                for listener in self.listeners:
-                    await listener.on_consensus_reached(proposal)
+                    await self.consensus_manager.mark_proposal_applied(proposal.proposal_id)
+                    # Copy metrics from consensus manager
+                    if self.consensus_manager:
+                        consensus_metrics = self.consensus_manager.get_metrics()
+                        self.metrics.consensual_updates = consensus_metrics['consensual_updates']
                 
                 return success
             
@@ -635,42 +383,17 @@ class DistributedStateManager:
         except Exception:
             return False
     
-    async def _check_consensus(self, proposal: ConsensusProposal) -> bool:
-        """Check if proposal has reached consensus"""
-        if not self.peers:
-            return True
-        
-        total_voters = len(self.peers) + 1  # +1 for self
-        votes_needed = int(total_voters * proposal.consensus_threshold)
-        votes_have = len(proposal.votes_for)
-        
-        return votes_have >= votes_needed
-    
     async def vote_on_proposal(
         self,
         proposal_id: str,
         vote_for: bool,
         from_node: str
     ) -> bool:
-        """Record vote on a proposal"""
-        if proposal_id not in self.proposals:
+        """Record vote on a proposal (delegated to DistributedConsensusManager)"""
+        if not self.enabled or not self.consensus_manager:
             return False
         
-        try:
-            proposal = self.proposals[proposal_id]
-            
-            if vote_for:
-                proposal.votes_for.add(from_node)
-            else:
-                proposal.votes_against.add(from_node)
-            
-            # Check if consensus now reached
-            if await self._check_consensus(proposal):
-                proposal.state = "approved"
-            
-            return True
-        except Exception:
-            return False
+        return await self.consensus_manager.vote_on_proposal(proposal_id, vote_for, from_node)
     
     # ========================================================================
     # VERSIONING
@@ -812,6 +535,9 @@ class DistributedStateManager:
         """Register peer node"""
         try:
             self.peers.add(peer_id)
+            # Sync with consensus manager
+            if self.consensus_manager:
+                self.consensus_manager.register_peer(peer_id)
             return True
         except Exception:
             return False
@@ -820,6 +546,9 @@ class DistributedStateManager:
         """Unregister peer node"""
         try:
             self.peers.discard(peer_id)
+            # Sync with consensus manager
+            if self.consensus_manager:
+                self.consensus_manager.unregister_peer(peer_id)
             return True
         except Exception:
             return False
@@ -882,24 +611,6 @@ class DistributedStateManager:
             except Exception:
                 await asyncio.sleep(self.reconciliation_interval)
     
-    async def _lock_monitor_loop(self) -> None:
-        """Background loop for monitoring locks"""
-        while self.enabled:
-            try:
-                # Check for expired locks
-                expired_keys = []
-                for key, lock in self.locks.items():
-                    if lock.expires_at and lock.expires_at < datetime.now(UTC):
-                        expired_keys.append(key)
-                
-                # Release expired locks
-                for key in expired_keys:
-                    self.locks[key].state = LockState.TIMEOUT
-                    self.locks.pop(key, None)
-                
-                await asyncio.sleep(5)
-            except Exception:
-                await asyncio.sleep(5)
     
     async def _cleanup_loop(self) -> None:
         """Background loop for cleanup"""
