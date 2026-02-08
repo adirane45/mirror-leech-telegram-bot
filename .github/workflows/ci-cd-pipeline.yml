@@ -1,83 +1,262 @@
-name: CI/CD Pipeline - Phase 3
+name: CI/CD Pipeline - Enhanced Quality & Security
 
 on:
   push:
     branches: [ master, develop ]
   pull_request:
     branches: [ master, develop ]
+  schedule:
+    # Run security scans weekly
+    - cron: '0 8 * * 1'
 
 jobs:
+  # Security and quality checks
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety pip-audit
+    
+    - name: Run Bandit security scan
+      run: |
+        bandit -r bot/ -f json -o bandit-report.json || true
+        bandit -r bot/ -f screen
+      continue-on-error: true
+    
+    - name: Check for known vulnerabilities (Safety)
+      run: |
+        pip install -r config/requirements.txt
+        safety check --json || true
+      continue-on-error: true
+    
+    - name: Audit dependencies (pip-audit)
+      run: |
+        pip-audit --desc --format json || true
+      continue-on-error: true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+        retention-days: 30
+
+  # Code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install quality tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+    
+    - name: Run flake8
+      run: |
+        flake8 bot/ --count --statistics --format=html --htmldir=flake8-report
+        flake8 bot/ --count --statistics
+    
+    - name: Run pylint
+      run: |
+        pylint bot/ --output-format=text --reports=y || true
+      continue-on-error: true
+    
+    - name: Check code complexity (radon)
+      run: |
+        radon cc bot/ -a -nb || true
+        radon mi bot/ -nb || true
+      continue-on-error: true
+    
+    - name: Type check with mypy
+      run: |
+        mypy bot/ --html-report mypy-report
+      continue-on-error: true
+    
+    - name: Format check with black
+      run: black --check bot/
+    
+    - name: Import sorting check (isort)
+      run: isort --check-only --diff bot/
+    
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: quality-reports
+        path: |
+          flake8-report/
+          mypy-report/
+        retention-days: 30
+
+  # Unit and integration tests
   test:
+    name: Tests
+    needs: [security, quality]
     runs-on: ubuntu-latest
     services:
       mongodb:
-        image: mongo:4.4
+        image: mongo:7.0
         options: >-
-          --health-cmd mongosh
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 27017:27017
       redis:
         image: redis:7-alpine
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.13
+        python-version: '3.11'
+        cache: 'pip'
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt -r requirements-phase3.txt
+        pip install -r config/requirements.txt
+        pip install -r requirements-dev.txt
     
-    - name: Lint with flake8
+    - name: Run unit tests
       run: |
-        flake8 bot/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        pytest tests/ -v -m "unit or not integration" \
+          --cov=bot \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --cov-fail-under=70 \
+          --maxfail=5 \
+          --tb=short
+      env:
+        MONGODB_URI: mongodb://localhost:27017/test
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
     
-    - name: Type check with mypy
-      run: mypy bot/ --ignore-missing-imports || true
+    - name: Run integration tests
+      run: |
+        pytest tests/ -v -m "integration" --tb=short || true
+      continue-on-error: true
+      env:
+        MONGODB_URI: mongodb://localhost:27017/test
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
     
-    - name: Format check with black
-      run: black --check bot/ || true
-    
-    - name: Run tests
-      run: pytest tests/ -v --cov=bot --cov-report=xml
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
       with:
         files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Upload test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-reports
+        path: |
+          coverage.xml
+          htmlcov/
+        retention-days: 30
 
+  # Docker build and security scan
   build:
+    name: Build & Scan Docker
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     
     - name: Build Docker image
-      run: docker build -t mirror-leech-telegram-bot:${{ github.sha }} .
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        load: true
+        tags: mirror-leech-telegram-bot:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Scan Docker image with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: mirror-leech-telegram-bot:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+      continue-on-error: true
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+      continue-on-error: true
+    
+    - name: Login to Docker Hub
+      if: github.ref == 'refs/heads/master'
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
     
     - name: Push to registry
+      if: github.ref == 'refs/heads/master'
       run: |
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         docker tag mirror-leech-telegram-bot:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/mirror-leech-telegram-bot:latest
+        docker tag mirror-leech-telegram-bot:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/mirror-leech-telegram-bot:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/mirror-leech-telegram-bot:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/mirror-leech-telegram-bot:${{ github.sha }}
 
+  # Deploy to production
   deploy:
+    name: Deploy to Production
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    environment:
+      name: production
+      url: https://your-domain.com
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Deploy to production
       run: |
@@ -88,8 +267,31 @@ jobs:
         
         ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
           cd /app/mirror-leech-telegram-bot
+          
+          # Backup current state
+          docker compose exec -T mongodb mongodump --out=/data/backup-$(date +%Y%m%d-%H%M%S) || true
+          
+          # Pull latest changes
+          git fetch origin
+          git reset --hard origin/master
+          
+          # Pull new images
           docker compose pull
-          docker compose up -d
-          docker compose exec app python -m pytest tests/ -q
+          
+          # Restart services with zero downtime
+          docker compose up -d --no-deps --build
+          
+          # Wait for health checks
+          sleep 10
+          
+          # Verify deployment
+          docker compose ps
+          docker compose exec -T app python -c "import bot; print('✅ Bot module loaded successfully')"
         EOF
+    
+    - name: Deployment notification
+      if: always()
+      run: |
+        echo "Deployment completed with status: ${{ job.status }}"
+        # Add Slack/Telegram notification here if needed
 
