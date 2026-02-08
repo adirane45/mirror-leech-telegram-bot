@@ -251,20 +251,22 @@ async def join_files(opath):
     results = []
     exists = False
     for file_ in files:
-        if re_search(r"\.0+2$", file_) and await sync_to_async(
-            get_mime_type, f"{opath}/{file_}"
-        ) not in ["application/x-7z-compressed", "application/zip"]:
-            exists = True
-            final_name = file_.rsplit(".", 1)[0]
-            fpath = f"{opath}/{final_name}"
-            cmd = f'cat "{fpath}."* > "{fpath}"'
-            _, stderr, code = await cmd_exec(cmd, True)
-            if code != 0:
-                LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
-                if await aiopath.isfile(fpath):
-                    await remove(fpath)
-            else:
-                results.append(final_name)
+        if not re_search(r"\.0+2$", file_):
+            continue
+        mime_type = await sync_to_async(get_mime_type, f"{opath}/{file_}")
+        if mime_type in ["application/x-7z-compressed", "application/zip"]:
+            continue
+        exists = True
+        final_name = file_.rsplit(".", 1)[0]
+        fpath = f"{opath}/{final_name}"
+        cmd = f'cat "{fpath}."* > "{fpath}"'
+        _, stderr, code = await cmd_exec(cmd, True)
+        if code != 0:
+            LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
+            if await aiopath.isfile(fpath):
+                await remove(fpath)
+            continue
+        results.append(final_name)
 
     if not exists:
         LOGGER.warning("No files to join!")
@@ -296,7 +298,7 @@ async def split_file(f_path, split_size, listener):
     if code == -9:
         listener.is_cancelled = True
         return False
-    elif code != 0:
+    if code != 0:
         try:
             stderr = stderr.decode().strip()
         except:
@@ -323,6 +325,18 @@ class SevenZ:
         pattern = (
             r"(\d+)\s+bytes|Total Physical Size\s*=\s*(\d+)|Physical Size\s*=\s*(\d+)"
         )
+        async def _update_from_line(line_text):
+            if "%" in line_text:
+                perc = line_text.split("%", 1)[0]
+                if perc.isdigit():
+                    self._percentage = f"{perc}%"
+                    self._processed_bytes = (int(perc) / 100) * self._listener.subsize
+                else:
+                    self._percentage = "0%"
+                return
+            if match := re_search(pattern, line_text):
+                self._listener.subsize = int(match[1] or match[2] or match[3])
+
         while not (
             self._listener.subproc.returncode is not None
             or self._listener.is_cancelled
@@ -333,16 +347,7 @@ class SevenZ:
             except:
                 break
             line = line.decode().strip()
-            if "%" in line:
-                perc = line.split("%", 1)[0]
-                if perc.isdigit():
-                    self._percentage = f"{perc}%"
-                    self._processed_bytes = (int(perc) / 100) * self._listener.subsize
-                else:
-                    self._percentage = "0%"
-                continue
-            if match := re_search(pattern, line):
-                self._listener.subsize = int(match[1] or match[2] or match[3])
+            await _update_from_line(line)
         s = b""
         while not (
             self._listener.is_cancelled
@@ -369,6 +374,23 @@ class SevenZ:
 
         self._processed_bytes = 0
         self._percentage = "0%"
+
+    def _build_zip_cmd(self, dl_path, up_path, pswd, split_size):
+        cmd = [
+            "7z",
+            f"-v{split_size}b",
+            "a",
+            "-mx=0",
+            f"-p{pswd}",
+            up_path,
+            dl_path,
+            "-bsp1",
+            "-bse1",
+            "-bb3",
+        ]
+        if not pswd:
+            del cmd[4]
+        return cmd
 
     async def extract(self, f_path, t_path, pswd):
         cmd = [
@@ -415,26 +437,11 @@ class SevenZ:
             split_size = (size // parts) + (size % parts)
         else:
             split_size = self._listener.split_size
-        cmd = [
-            "7z",
-            f"-v{split_size}b",
-            "a",
-            "-mx=0",
-            f"-p{pswd}",
-            up_path,
-            dl_path,
-            "-bsp1",
-            "-bse1",
-            "-bb3",
-        ]
+        cmd = self._build_zip_cmd(dl_path, up_path, pswd, split_size)
         if self._listener.is_leech and int(size) > self._listener.split_size:
-            if not pswd:
-                del cmd[4]
             LOGGER.info(f"Zip: orig_path: {dl_path}, zip_path: {up_path}.0*")
         else:
             del cmd[1]
-            if not pswd:
-                del cmd[3]
             LOGGER.info(f"Zip: orig_path: {dl_path}, zip_path: {up_path}")
         if self._listener.is_cancelled:
             return False

@@ -24,198 +24,168 @@ user_agent = (
 )
 
 
+# Domain to handler mapping - single domain mappings
+SINGLE_DOMAIN_HANDLERS = {
+    "buzzheavier.com": "buzzheavier",
+    "devuploads": "devuploads",
+    "lulacloud.com": "lulacloud",
+    "uploadhaven": "uploadhaven",
+    "fuckingfast.co": "fuckingfast_dl",
+    "mediafile.cc": "mediafile",
+    "mediafire.com": "mediafire",
+    "osdn.net": "osdn",
+    "github.com": "github",
+    "transfer.it": "transfer_it",
+    "hxfile.co": "hxfile",
+    "1drv.ms": "onedrive",
+    "racaty": "racaty",
+    "1fichier.com": "fichier",
+    "solidfiles.com": "solidfiles",
+    "krakenfiles.com": "krakenfiles",
+    "upload.ee": "uploadee",
+    "gofile.io": "gofile",
+    "send.cm": "send_cm",
+    "tmpsend.com": "tmpsend",
+    "easyupload.io": "easyupload",
+    "streamvid.net": "streamvid",
+    "shrdsk.me": "shrdsk",
+    "u.pcloud.link": "pcloud",
+    "qiwi.gg": "qiwi",
+    "mp4upload.com": "mp4upload",
+    "berkasdrive.com": "berkasdrive",
+    "swisstransfer.com": "swisstransfer",
+}
+
+# One-to-many domain mappings
+MULTI_DOMAIN_HANDLERS = {
+    ("pixeldrain.com", "pixeldra.in"): "pixeldrain",
+    ("akmfiles.com", "akmfls.xyz"): "akmfiles",
+    ("dood.watch", "doodstream.com", "dood.to", "dood.so", "dood.cx", "dood.la",
+     "dood.ws", "dood.sh", "doodstream.co", "dood.pm", "dood.wf", "dood.re",
+     "dood.video", "dooood.com", "dood.yt", "doods.yt", "dood.stream",
+     "doods.pro", "ds2play.com", "d0o0d.com", "ds2video.com", "do0od.com", "d000d.com"): "doods",
+    ("streamtape.com", "streamtape.co", "streamtape.cc", "streamtape.to",
+     "streamtape.net", "streamta.pe", "streamtape.xyz"): "streamtape",
+    ("wetransfer.com", "we.tl"): "wetransfer",
+    ("terabox.com", "nephobox.com", "4funbox.com", "mirrobox.com", "momerybox.com",
+     "teraboxapp.com", "1024tera.com", "terabox.app", "gibibox.com", "goaibox.com",
+     "terasharelink.com", "teraboxlink.com", "freeterabox.com", "1024terabox.com",
+     "teraboxshare.com", "terafileshare.com", "terabox.club"): "terabox",
+    ("filelions.co", "filelions.site", "filelions.live", "filelions.to", "mycloudz.cc",
+     "cabecabean.lol", "filelions.online", "embedwish.com", "kitabmarkaz.xyz",
+     "wishfast.top", "streamwish.to", "kissmovies.net"): "filelions_and_streamwish",
+    ("streamhub.ink", "streamhub.to"): "streamhub",
+    ("linkbox.to", "lbx.to", "teltobx.net", "telbx.net", "linkbox.cloud"): "linkBox",
+    ("anonfiles.com", "zippyshare.com", "letsupload.io", "hotfile.io", "bayfiles.com",
+     "megaupload.nz", "letsupload.cc", "filechan.org", "myfile.is", "vshare.is",
+     "rapidshare.nu", "lolabits.se", "openload.cc", "share-online.is", "upvid.cc",
+     "uptobox.com", "uptobox.fr"): "deprecated",
+}
+
+
+def _get_handler_for_domain(domain):
+    """Get handler function name for a domain using O(1) lookup"""
+    if handler := SINGLE_DOMAIN_HANDLERS.get(domain):
+        return handler
+    
+    for domains, handler in MULTI_DOMAIN_HANDLERS.items():
+        if any(d in domain for d in domains):
+            return handler
+    
+    return None
+
+
+# Helper Functions - reduce complexity in main handlers
+def _parse_url_component(url, separator, index):
+    """Extract URL component safely with error handling"""
+    try:
+        return url.split(separator)[index]
+    except (IndexError, AttributeError) as e:
+        raise DirectDownloadLinkException(f"ERROR: Invalid URL format - {e.__class__.__name__}") from e
+
+
+def _extract_password(url, separator="::"):
+    """Extract and remove password from URL if present (guard clause style)"""
+    if separator not in url:
+        return url, ""
+    
+    parts = url.split(separator)
+    if len(parts) != 2:
+        return url, ""
+    
+    return parts[0], parts[1]
+
+
+def _create_session_with_retries(max_retries=10):
+    """Create session with retry logic"""
+    session = create_scraper()
+    adapter = HTTPAdapter(
+        max_retries=Retry(total=max_retries, read=max_retries, connect=max_retries, backoff_factor=0.3)
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+def _validate_json_response(json_data, error_key="message", ok_status="ok"):
+    """Validate API response with guard clauses"""
+    if isinstance(json_data, dict):
+        if "status" in json_data and json_data["status"] != ok_status:
+            raise DirectDownloadLinkException(f"ERROR: API returned status {json_data['status']}")
+        if error_key in json_data:
+            raise DirectDownloadLinkException(f"ERROR: {json_data[error_key]}")
+    return True
+
+
+def _make_api_request(session, method, url, use_scraper=False, **kwargs):
+    """Make API request with unified error handling"""
+    try:
+        if use_scraper:
+            session = create_scraper()
+        
+        if method.lower() == "get":
+            response = session.get(url, **kwargs)
+        elif method.lower() == "post":
+            response = session.post(url, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {method}")
+        
+        return response
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+
 def direct_link_generator(link):
-    """direct links generator"""
-    domain = urlparse(link).hostname
+    """direct links generator using Strategy Pattern for clean domain routing"""
+    parsed = urlparse(link)
+    domain = parsed.hostname
+    
+    # Guard clauses for early returns
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
-    elif "yadi.sk" in link or "disk.yandex." in link:
+    
+    # Special case: Yandex Disk (uses link pattern, not just domain)
+    if "yadi.sk" in link or "disk.yandex." in link:
         return yandex_disk(link)
-    elif "buzzheavier.com" in domain:
-        return buzzheavier(link)
-    elif "devuploads" in domain:
-        return devuploads(link)
-    elif "lulacloud.com" in domain:
-        return lulacloud(link)
-    elif "uploadhaven" in domain:
-        return uploadhaven(link)
-    elif "fuckingfast.co" in domain:
-        return fuckingfast_dl(link)
-    elif "mediafile.cc" in domain:
-        return mediafile(link)
-    elif "mediafire.com" in domain:
-        return mediafire(link)
-    elif "osdn.net" in domain:
-        return osdn(link)
-    elif "github.com" in domain:
-        return github(link)
-    elif "transfer.it" in domain:
-        return transfer_it(link)
-    elif "hxfile.co" in domain:
-        return hxfile(link)
-    elif "1drv.ms" in domain:
-        return onedrive(link)
-    elif any(x in domain for x in ["pixeldrain.com", "pixeldra.in"]):
-        return pixeldrain(link)
-    elif "racaty" in domain:
-        return racaty(link)
-    elif "1fichier.com" in domain:
-        return fichier(link)
-    elif "solidfiles.com" in domain:
-        return solidfiles(link)
-    elif "krakenfiles.com" in domain:
-        return krakenfiles(link)
-    elif "upload.ee" in domain:
-        return uploadee(link)
-    elif "gofile.io" in domain:
-        return gofile(link)
-    elif "send.cm" in domain:
-        return send_cm(link)
-    elif "tmpsend.com" in domain:
-        return tmpsend(link)
-    elif "easyupload.io" in domain:
-        return easyupload(link)
-    elif "streamvid.net" in domain:
-        return streamvid(link)
-    elif "shrdsk.me" in domain:
-        return shrdsk(link)
-    elif "u.pcloud.link" in domain:
-        return pcloud(link)
-    elif "qiwi.gg" in domain:
-        return qiwi(link)
-    elif "mp4upload.com" in domain:
-        return mp4upload(link)
-    elif "berkasdrive.com" in domain:
-        return berkasdrive(link)
-    elif "swisstransfer.com" in domain:
-        return swisstransfer(link)
-    elif any(x in domain for x in ["akmfiles.com", "akmfls.xyz"]):
-        return akmfiles(link)
-    elif any(
-        x in domain
-        for x in [
-            "dood.watch",
-            "doodstream.com",
-            "dood.to",
-            "dood.so",
-            "dood.cx",
-            "dood.la",
-            "dood.ws",
-            "dood.sh",
-            "doodstream.co",
-            "dood.pm",
-            "dood.wf",
-            "dood.re",
-            "dood.video",
-            "dooood.com",
-            "dood.yt",
-            "doods.yt",
-            "dood.stream",
-            "doods.pro",
-            "ds2play.com",
-            "d0o0d.com",
-            "ds2video.com",
-            "do0od.com",
-            "d000d.com",
-        ]
-    ):
-        return doods(link)
-    elif any(
-        x in domain
-        for x in [
-            "streamtape.com",
-            "streamtape.co",
-            "streamtape.cc",
-            "streamtape.to",
-            "streamtape.net",
-            "streamta.pe",
-            "streamtape.xyz",
-        ]
-    ):
-        return streamtape(link)
-    elif any(x in domain for x in ["wetransfer.com", "we.tl"]):
-        return wetransfer(link)
-    elif any(
-        x in domain
-        for x in [
-            "terabox.com",
-            "nephobox.com",
-            "4funbox.com",
-            "mirrobox.com",
-            "momerybox.com",
-            "teraboxapp.com",
-            "1024tera.com",
-            "terabox.app",
-            "gibibox.com",
-            "goaibox.com",
-            "terasharelink.com",
-            "teraboxlink.com",
-            "freeterabox.com",
-            "1024terabox.com",
-            "teraboxshare.com",
-            "terafileshare.com",
-            "terabox.club",
-        ]
-    ):
-        return terabox(link)
-    elif any(
-        x in domain
-        for x in [
-            "filelions.co",
-            "filelions.site",
-            "filelions.live",
-            "filelions.to",
-            "mycloudz.cc",
-            "cabecabean.lol",
-            "filelions.online",
-            "embedwish.com",
-            "kitabmarkaz.xyz",
-            "wishfast.top",
-            "streamwish.to",
-            "kissmovies.net",
-        ]
-    ):
-        return filelions_and_streamwish(link)
-    elif any(x in domain for x in ["streamhub.ink", "streamhub.to"]):
-        return streamhub(link)
-    elif any(
-        x in domain
-        for x in [
-            "linkbox.to",
-            "lbx.to",
-            "teltobx.net",
-            "telbx.net",
-            "linkbox.cloud",
-        ]
-    ):
-        return linkBox(link)
-    elif is_share_link(link):
+    
+    # Special case: Share links (requires additional logic)
+    if is_share_link(link):
         return filepress(link) if "filepress" in domain else sharer_scraper(link)
-    elif any(
-        x in domain
-        for x in [
-            "anonfiles.com",
-            "zippyshare.com",
-            "letsupload.io",
-            "hotfile.io",
-            "bayfiles.com",
-            "megaupload.nz",
-            "letsupload.cc",
-            "filechan.org",
-            "myfile.is",
-            "vshare.is",
-            "rapidshare.nu",
-            "lolabits.se",
-            "openload.cc",
-            "share-online.is",
-            "upvid.cc",
-            "uptobox.com",
-            "uptobox.fr",
-        ]
-    ):
-        raise DirectDownloadLinkException(f"ERROR: R.I.P {domain}")
-    else:
-        raise DirectDownloadLinkException(f"No Direct link function found for {link}")
+    
+    # Special case: Deprecated hosts (raise informative error)
+    for domains in MULTI_DOMAIN_HANDLERS:
+        if MULTI_DOMAIN_HANDLERS[domains] == "deprecated" and any(d in domain for d in domains):
+            raise DirectDownloadLinkException(f"ERROR: R.I.P {domain}")
+    
+    # Main handler lookup using domain mapping (O(1) average case)
+    handler_name = _get_handler_for_domain(domain)
+    if handler_name:
+        handler = globals().get(handler_name)
+        if callable(handler):
+            return handler(link)
+    
+    # No handler found
+    raise DirectDownloadLinkException(f"No Direct link function found for {link}")
 
 
 def get_captcha_token(session, params):
@@ -442,64 +412,93 @@ def mediafile(url):
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
 
+def _mediafire_repair_download(url, session):
+    """Helper to handle mediafire redirect links"""
+    try:
+        html = HTML(session.get(url).text)
+        if new_link := html.xpath('//a[@id="continue-btn"]/@href'):
+            return mediafire(f"https://mediafire.com/{new_link[0]}")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+
+def _mediafire_validate_errors(html, session, url):
+    """Check for error messages and raise early (guard clause)"""
+    if error := html.xpath('//p[@class="notranslate"]/text()'):
+        session.close()
+        raise DirectDownloadLinkException(f"ERROR: {error[0]}")
+
+
+def _mediafire_handle_password(html, session, url, password):
+    """Handle password-protected files with guard clause"""
+    if not html.xpath("//div[@class='passwordPrompt']"):
+        return html
+    
+    # Guard: password required but not provided
+    if not password:
+        session.close()
+        raise DirectDownloadLinkException(f"ERROR: {PASSWORD_ERROR_MESSAGE}".format(url))
+    
+    # Try password
+    try:
+        html = HTML(session.post(url, data={"downloadp": password}).text)
+    except Exception as e:
+        session.close()
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    
+    # Guard: wrong password
+    if html.xpath("//div[@class='passwordPrompt']"):
+        session.close()
+        raise DirectDownloadLinkException("ERROR: Wrong password.")
+    
+    return html
+
+
 def mediafire(url, session=None):
+    # Guard: folder URLs
     if "/folder/" in url:
         return mediafireFolder(url)
-    if "::" in url:
-        _password = url.split("::")[-1]
-        url = url.split("::")[-2]
-    else:
-        _password = ""
-    if final_link := findall(
-        r"https?:\/\/download\d+\.mediafire\.com\/\S+\/\S+\/\S+", url
-    ):
+    
+    # Extract password if present
+    url, _password = _extract_password(url)
+    
+    # Guard: already have direct link
+    if final_link := findall(r"https?:\/\/download\d+\.mediafire\.com\/\S+\/\S+\/\S+", url):
         return final_link[0]
 
-    def _repair_download(url, session):
-        try:
-            html = HTML(session.get(url).text)
-            if new_link := html.xpath('//a[@id="continue-btn"]/@href'):
-                return mediafire(f"https://mediafire.com/{new_link[0]}")
-        except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-
+    # Setup session if needed
     if session is None:
         session = create_scraper()
         parsed_url = urlparse(url)
         url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+    
+    # Fetch page with error handling
     try:
         html = HTML(session.get(url).text)
     except Exception as e:
         session.close()
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if error := html.xpath('//p[@class="notranslate"]/text()'):
-        session.close()
-        raise DirectDownloadLinkException(f"ERROR: {error[0]}")
-    if html.xpath("//div[@class='passwordPrompt']"):
-        if not _password:
-            session.close()
-            raise DirectDownloadLinkException(
-                f"ERROR: {PASSWORD_ERROR_MESSAGE}".format(url)
-            )
-        try:
-            html = HTML(session.post(url, data={"downloadp": _password}).text)
-        except Exception as e:
-            session.close()
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-        if html.xpath("//div[@class='passwordPrompt']"):
-            session.close()
-            raise DirectDownloadLinkException("ERROR: Wrong password.")
+    
+    # Check for errors early (guard clauses)
+    _mediafire_validate_errors(html, session, url)
+    html = _mediafire_handle_password(html, session, url, _password)
+    
+    # Extract download link
     if not (final_link := html.xpath('//a[@aria-label="Download file"]/@href')):
+        # Guard: try repair if available
         if repair_link := html.xpath("//a[@class='retry']/@href"):
-            return _repair_download(repair_link[0], session)
-        raise DirectDownloadLinkException(
-            "ERROR: No links found in this page Try Again"
-        )
+            return _mediafire_repair_download(repair_link[0], session)
+        session.close()
+        raise DirectDownloadLinkException("ERROR: No links found in this page Try Again")
+    
+    # Handle protocol-relative URLs
     if final_link[0].startswith("//"):
         final_url = f"https://{final_link[0][2:]}"
         if _password:
             final_url += f"::{_password}"
+        session.close()
         return mediafire(final_url, session)
+    
     session.close()
     return final_link[0]
     
@@ -661,78 +660,88 @@ def racaty(url):
         raise DirectDownloadLinkException("ERROR: Direct link not found")
 
 
+def _fichier_check_wait_limit(error_text):
+    """Check and raise wait limit error with proper message"""
+    if "you must wait" not in error_text.lower():
+        return False
+    
+    if numbers := [int(word) for word in error_text.split() if word.isdigit()]:
+        raise DirectDownloadLinkException(f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute.")
+    
+    raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
+
+
+def _fichier_handle_warnings(ct_warn, link):
+    """Handle ct_warn error states with guard clauses"""
+    if not ct_warn:
+        raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
+    
+    # 3 warnings case
+    if len(ct_warn) == 3:
+        error_text = ct_warn[-1].text
+        
+        # Guard: wait limit
+        _fichier_check_wait_limit(error_text)
+        
+        # Guard: protect access (password)
+        if "protect access" in error_text.lower():
+            raise DirectDownloadLinkException(f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(link)}")
+        
+        # Guard: other errors
+        raise DirectDownloadLinkException("ERROR: Failed to generate Direct Link from 1fichier!")
+    
+    # 4 warnings case
+    if len(ct_warn) == 4:
+        error_text1 = ct_warn[-2].text
+        error_text2 = ct_warn[-1].text
+        
+        # Guard: wait limit
+        _fichier_check_wait_limit(error_text1)
+        
+        # Guard: bad password
+        if "bad password" in error_text2.lower():
+            raise DirectDownloadLinkException("ERROR: The password you entered is wrong!")
+    
+    # Default error
+    raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
+
+
 def fichier(link):
-    """1Fichier direct link generator
+    """1Fichier direct link generator - refactored with guard clauses
     Based on https://github.com/Maujar
     """
+    # Guard: validate URL format
     regex = r"^([http:\/\/|https:\/\/]+)?.*1fichier\.com\/\?.+"
-    gan = match(regex, link)
-    if not gan:
+    if not match(regex, link):
         raise DirectDownloadLinkException("ERROR: The link you entered is wrong!")
-    if "::" in link:
-        pswd = link.split("::")[-1]
-        url = link.split("::")[-2]
-    else:
-        pswd = None
-        url = link
+    
+    # Extract password if present
+    url, pswd = _extract_password(link)
+    
+    # Make request
     cget = create_scraper().request
     try:
-        if pswd is None:
-            req = cget("post", url)
+        if pswd:
+            req = cget("post", url, data={"pass": pswd})
         else:
-            pw = {"pass": pswd}
-            req = cget("post", url, data=pw)
+            req = cget("post", url)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    
+    # Guard: 404 error
     if req.status_code == 404:
-        raise DirectDownloadLinkException(
-            "ERROR: File not found/The link you entered is wrong!"
-        )
+        raise DirectDownloadLinkException("ERROR: File not found/The link you entered is wrong!")
+    
+    # Parse HTML
     html = HTML(req.text)
+    
+    # Guard: check for direct link first (happy path)
     if dl_url := html.xpath('//a[@class="ok btn-general btn-orange"]/@href'):
         return dl_url[0]
-    if not (ct_warn := html.xpath('//div[@class="ct_warn"]')):
-        raise DirectDownloadLinkException(
-            "ERROR: Error trying to generate Direct Link from 1fichier!"
-        )
-    if len(ct_warn) == 3:
-        str_2 = ct_warn[-1].text
-        if "you must wait" in str_2.lower():
-            if numbers := [int(word) for word in str_2.split() if word.isdigit()]:
-                raise DirectDownloadLinkException(
-                    f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute."
-                )
-            else:
-                raise DirectDownloadLinkException(
-                    "ERROR: 1fichier is on a limit. Please wait a few minutes/hour."
-                )
-        elif "protect access" in str_2.lower():
-            raise DirectDownloadLinkException(
-                f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(link)}"
-            )
-        else:
-            raise DirectDownloadLinkException(
-                "ERROR: Failed to generate Direct Link from 1fichier!"
-            )
-    elif len(ct_warn) == 4:
-        str_1 = ct_warn[-2].text
-        str_3 = ct_warn[-1].text
-        if "you must wait" in str_1.lower():
-            if numbers := [int(word) for word in str_1.split() if word.isdigit()]:
-                raise DirectDownloadLinkException(
-                    f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute."
-                )
-            else:
-                raise DirectDownloadLinkException(
-                    "ERROR: 1fichier is on a limit. Please wait a few minutes/hour."
-                )
-        elif "bad password" in str_3.lower():
-            raise DirectDownloadLinkException(
-                "ERROR: The password you entered is wrong!"
-            )
-    raise DirectDownloadLinkException(
-        "ERROR: Error trying to generate Direct Link from 1fichier!"
-    )
+    
+    # Check for error warnings and handle them
+    ct_warn = html.xpath('//div[@class="ct_warn"]')
+    _fichier_handle_warnings(ct_warn, link)
 
 
 def solidfiles(url):

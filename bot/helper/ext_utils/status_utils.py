@@ -91,32 +91,56 @@ async def get_task_by_gid(gid: str):
 
 
 async def get_specific_tasks(status, user_id):
-    if status == "All":
-        if user_id:
-            return [tk for tk in task_dict.values() if tk.listener.user_id == user_id]
-        else:
-            return list(task_dict.values())
     tasks_to_check = (
         [tk for tk in task_dict.values() if tk.listener.user_id == user_id]
         if user_id
         else list(task_dict.values())
     )
-    coro_tasks = []
-    coro_tasks.extend(tk for tk in tasks_to_check if iscoroutinefunction(tk.status))
+    if status == "All":
+        return tasks_to_check
+    coro_tasks = [tk for tk in tasks_to_check if iscoroutinefunction(tk.status)]
     coro_statuses = await gather(*[tk.status() for tk in coro_tasks])
+    coro_map = dict(zip(coro_tasks, coro_statuses))
     result = []
-    coro_index = 0
     for tk in tasks_to_check:
-        if tk in coro_tasks:
-            st = coro_statuses[coro_index]
-            coro_index += 1
-        else:
-            st = tk.status()
-        if (st == status) or (
+        st = coro_map.get(tk, tk.status())
+        if st == status or (
             status == MirrorStatus.STATUS_DOWNLOAD and st not in STATUSES.values()
         ):
             result.append(tk)
     return result
+
+
+def _get_view_mode(sid, is_user):
+    view_mode = "detailed"
+    if is_user:
+        view_mode = user_data.get(sid, {}).get("UI_VIEW", "detailed")
+    if sid in status_dict and status_dict[sid].get("view"):
+        view_mode = status_dict[sid]["view"]
+    return view_mode
+
+
+def _normalize_page(page_no, pages, sid):
+    if page_no > pages:
+        page_no = (page_no - 1) % pages + 1
+        status_dict[sid]["page_no"] = page_no
+    elif page_no < 1:
+        page_no = pages - (abs(page_no) % pages)
+        status_dict[sid]["page_no"] = page_no
+    return page_no
+
+
+def _update_counts(counts, tstatus):
+    if tstatus == MirrorStatus.STATUS_DOWNLOAD:
+        counts["download"] += 1
+    elif tstatus == MirrorStatus.STATUS_UPLOAD:
+        counts["upload"] += 1
+    elif tstatus == MirrorStatus.STATUS_PAUSED:
+        counts["paused"] += 1
+    elif tstatus in [MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
+        counts["queued"] += 1
+    else:
+        counts["other"] += 1
 
 
 async def get_all_tasks(req_status: str, user_id):
@@ -196,21 +220,12 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
 
     tasks = await get_specific_tasks(status, sid if is_user else None)
 
-    view_mode = "detailed"
-    if is_user:
-        view_mode = user_data.get(sid, {}).get("UI_VIEW", "detailed")
-    if sid in status_dict and status_dict[sid].get("view"):
-        view_mode = status_dict[sid]["view"]
+    view_mode = _get_view_mode(sid, is_user)
 
     STATUS_LIMIT = Config.STATUS_LIMIT
     tasks_no = len(tasks)
     pages = (max(tasks_no, 1) + STATUS_LIMIT - 1) // STATUS_LIMIT
-    if page_no > pages:
-        page_no = (page_no - 1) % pages + 1
-        status_dict[sid]["page_no"] = page_no
-    elif page_no < 1:
-        page_no = pages - (abs(page_no) % pages)
-        status_dict[sid]["page_no"] = page_no
+    page_no = _normalize_page(page_no, pages, sid)
     start_position = (page_no - 1) * STATUS_LIMIT
 
     counts = {
@@ -230,16 +245,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             tstatus = await task.status()
         else:
             tstatus = task.status()
-        if tstatus == MirrorStatus.STATUS_DOWNLOAD:
-            counts["download"] += 1
-        elif tstatus == MirrorStatus.STATUS_UPLOAD:
-            counts["upload"] += 1
-        elif tstatus == MirrorStatus.STATUS_PAUSED:
-            counts["paused"] += 1
-        elif tstatus in [MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
-            counts["queued"] += 1
-        else:
-            counts["other"] += 1
+        _update_counts(counts, tstatus)
 
         status_icon = STATUS_EMOJI.get(tstatus, "⚙️")
         if task.listener.is_super_chat:
@@ -306,6 +312,9 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         else:
             msg = f"No Active {status} Tasks!\n\n"
     buttons = ButtonMaker()
+    buttons.data_button("Queue", "quick_queue", position="header")
+    buttons.data_button("Settings", "quick_settings", position="header")
+    buttons.data_button("Help", "help menu", position="header")
     msg = (
         f"<b>📌 Status Overview:</b> ▶️ {counts['download']} | ⬆️ {counts['upload']} | "
         f"⏸️ {counts['paused']} | ⏳ {counts['queued']} | ⚙️ {counts['other']}\n\n"

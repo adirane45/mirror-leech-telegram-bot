@@ -12,6 +12,7 @@ from time import time
 from aioshutil import rmtree
 
 from ... import LOGGER, DOWNLOAD_DIR, threads, cores
+from ...core.config_manager import Config
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
@@ -61,13 +62,17 @@ async def get_media_info(path):
     return 0, None, None
 
 
-async def get_document_type(path):
-    is_video, is_audio, is_image = False, False, False
-    if (
+def _is_archive_like(path):
+    return (
         is_archive(path)
         or is_archive_split(path)
         or re_search(r".+(\.|_)(rar|7z|zip|bin)(\.0*\d+)?$", path)
-    ):
+    )
+
+
+async def get_document_type(path):
+    is_video, is_audio, is_image = False, False, False
+    if _is_archive_like(path):
         return is_video, is_audio, is_image
     mime_type = await sync_to_async(get_mime_type, path)
     if mime_type.startswith("image"):
@@ -110,6 +115,20 @@ async def get_document_type(path):
             elif stream.get("codec_type") == "audio":
                 is_audio = True
     return is_video, is_audio, is_image
+
+
+async def _extract_thumbnail(cmd, output, error_context):
+    try:
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
+        if code != 0 or not await aiopath.exists(output):
+            LOGGER.error(f"{error_context} stderr: {err}")
+            return None
+    except:
+        LOGGER.error(
+            f"{error_context}. Error: Timeout some issues with ffmpeg with specific arch!"
+        )
+        return None
+    return output
 
 
 async def take_ss(video_file, ss_nb) -> bool:
@@ -167,6 +186,15 @@ async def take_ss(video_file, ss_nb) -> bool:
 
 
 async def get_audio_thumbnail(audio_file):
+    if getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
+        try:
+            from ...core.thumbnail_manager import thumbnail_manager
+
+            cached = await thumbnail_manager.get_thumbnail(audio_file, width=320, height=320)
+            if cached:
+                return str(cached)
+        except Exception as e:
+            LOGGER.debug(f"Smart thumbnail fallback (audio): {e}")
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
@@ -187,22 +215,23 @@ async def get_audio_thumbnail(audio_file):
         f"{threads}",
         output,
     ]
-    try:
-        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
-        if code != 0 or not await aiopath.exists(output):
-            LOGGER.error(
-                f"Error while extracting thumbnail from audio. Name: {audio_file} stderr: {err}"
-            )
-            return None
-    except:
-        LOGGER.error(
-            f"Error while extracting thumbnail from audio. Name: {audio_file}. Error: Timeout some issues with ffmpeg with specific arch!"
-        )
-        return None
-    return output
+    return await _extract_thumbnail(
+        cmd,
+        output,
+        f"Error while extracting thumbnail from audio. Name: {audio_file}",
+    )
 
 
 async def get_video_thumbnail(video_file, duration):
+    if getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
+        try:
+            from ...core.thumbnail_manager import thumbnail_manager
+
+            cached = await thumbnail_manager.get_thumbnail(video_file, width=320, height=180)
+            if cached:
+                return str(cached)
+        except Exception as e:
+            LOGGER.debug(f"Smart thumbnail fallback (video): {e}")
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
@@ -233,19 +262,11 @@ async def get_video_thumbnail(video_file, duration):
         f"{threads}",
         output,
     ]
-    try:
-        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
-        if code != 0 or not await aiopath.exists(output):
-            LOGGER.error(
-                f"Error while extracting thumbnail from video. Name: {video_file} stderr: {err}"
-            )
-            return None
-    except:
-        LOGGER.error(
-            f"Error while extracting thumbnail from video. Name: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
-        )
-        return None
-    return output
+    return await _extract_thumbnail(
+        cmd,
+        output,
+        f"Error while extracting thumbnail from video. Name: {video_file}",
+    )
 
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):

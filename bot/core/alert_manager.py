@@ -8,70 +8,14 @@ Date: February 5, 2026
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, List, Optional, Callable
-from enum import Enum
 from logging import getLogger
 
 from .config_manager import Config
+from .alert_manager_models import AlertSeverity, AlertType, Alert
 
 LOGGER = getLogger(__name__)
-
-
-class AlertSeverity(Enum):
-    """Alert severity levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
-class AlertType(Enum):
-    """Alert types"""
-    DOWNLOAD_FAILED = "download_failed"
-    UPLOAD_FAILED = "upload_failed"
-    DISK_FULL = "disk_full"
-    MEMORY_HIGH = "memory_high"
-    API_ERROR = "api_error"
-    TIMEOUT = "timeout"
-    PERMISSION_DENIED = "permission_denied"
-    NETWORK_ERROR = "network_error"
-    CUSTOM = "custom"
-
-
-class Alert:
-    """Represents a single alert"""
-
-    def __init__(
-        self,
-        alert_type: AlertType,
-        severity: AlertSeverity,
-        title: str,
-        message: str,
-        task_id: Optional[str] = None,
-        details: Optional[Dict] = None,
-    ):
-        self.alert_type = alert_type
-        self.severity = severity
-        self.title = title
-        self.message = message
-        self.task_id = task_id
-        self.details = details or {}
-        self.timestamp = datetime.utcnow()
-        self.id = f"{self.timestamp.timestamp()}_{self.alert_type.value}"
-
-    def to_dict(self):
-        """Convert alert to dictionary"""
-        return {
-            "id": self.id,
-            "type": self.alert_type.value,
-            "severity": self.severity.value,
-            "title": self.title,
-            "message": self.message,
-            "task_id": self.task_id,
-            "timestamp": self.timestamp.isoformat(),
-            "details": self.details,
-        }
 
 
 class AlertManager:
@@ -281,7 +225,7 @@ class AlertManager:
         if not self._enabled:
             return 0
 
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
         original_count = len(self._alerts)
 
         self._alerts = [

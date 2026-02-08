@@ -6,29 +6,13 @@ Token bucket-based rate limiting to protect against abuse
 import asyncio
 import time
 from typing import Any, Dict, Optional, Tuple
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from collections import defaultdict
 import logging
 
+from .rate_limiter_models import RateLimitConfig, RateLimitStatus
+
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class RateLimitConfig:
-    """Rate limit configuration"""
-    requests_per_second: float = 10.0
-    burst_size: int = 50
-    window_size_seconds: int = 60
-
-
-@dataclass
-class RateLimitStatus:
-    """Status of rate limit check"""
-    allowed: bool
-    remaining_tokens: float
-    retry_after: float  # Seconds until allowed
-    requests_in_window: int
 
 
 class TokenBucket:

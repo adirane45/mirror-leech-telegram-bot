@@ -151,6 +151,8 @@ services:
     ports:
       - "8060:8060"
       - "9090:9090"
+    env_file:
+      - ./config/.env.production
     environment:
       - BASE_URL_PORT=8060
       - REDIS_HOST=redis
@@ -167,8 +169,6 @@ services:
       - downloads:/app/downloads
       - ./bot:/app/bot:ro
       - ./web:/app/web:ro
-      - ./config/main_config.py:/app/config.py:ro
-      - ./config/.env.production:/app/.env.production:ro
       - logs:/app/logs
     depends_on:
       redis:
@@ -190,6 +190,8 @@ services:
     restart: unless-stopped
     networks:
       - mltb-net
+    env_file:
+      - ./config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -199,7 +201,6 @@ services:
     volumes:
       - downloads:/app/downloads
       - ./bot:/app/bot:ro
-      - ./config/main_config.py:/app/config.py:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --pool=prefork --max-tasks-per-child=20 --time-limit=3700 --soft-time-limit=3600
     depends_on:
@@ -218,13 +219,14 @@ services:
     restart: unless-stopped
     networks:
       - mltb-net
+    env_file:
+      - ./config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
       - ./bot:/app/bot:ro
-      - ./config/main_config.py:/app/config.py:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app beat --loglevel=info
     depends_on:

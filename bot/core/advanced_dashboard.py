@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, WebSocket
 from fastapi.responses import HTMLResponse
 import json
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from bot.core.logger_manager import logger_manager
 from bot.core.alert_manager import alert_manager
@@ -40,7 +40,7 @@ async def websocket_live_metrics(websocket: WebSocket):
         while True:
             # Collect current metrics
             metrics = {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "logger": logger_manager.get_log_stats(),
                 "alerts": alert_manager.get_alert_summary(),
                 "backups": backup_manager.get_backup_stats(),

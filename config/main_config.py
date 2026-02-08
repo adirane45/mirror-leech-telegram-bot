@@ -43,6 +43,7 @@ STATUS_UPDATE_INTERVAL = 15
 FILELION_API = ""
 STREAMWISH_API = ""
 EXCLUDED_EXTENSIONS = ""
+INCLUDED_EXTENSIONS = ""
 INCOMPLETE_TASK_NOTIFIER = False
 YT_DLP_OPTIONS = ""
 USE_SERVICE_ACCOUNTS = False
@@ -368,6 +369,14 @@ EXPERIMENTAL_FEATURES = {
     "predictive_caching": False,
 }
 
+# ==================== AUTOMATION FEATURES ====================
+# Feature flags for automation system
+ENABLE_AUTOMATION_SYSTEM = True
+ENABLE_AUTOMATION_API = True
+ENABLE_CLIENT_SELECTION = True
+ENABLE_WORKER_AUTOSCALER = True
+ENABLE_SMART_THUMBNAILS = True
+
 # ==================== PHASE 2 CONFIGURATION ====================
 # Phase 2: Enhanced Logging, Monitoring & Recovery
 # Safe Innovation Path - All features disabled by default
@@ -539,3 +548,36 @@ SHUTDOWN_TIMEOUT = _get_safe_int("SHUTDOWN_TIMEOUT", 30)
 # This config is PRODUCTION READY
 # All critical settings can be overridden via environment variables
 # See .env.production for full example
+
+# ==================== CONFIG CLASS WRAPPER ====================
+# Provides backwards compatibility for code importing Config class
+class Config:
+    """Configuration wrapper - provides access to all module-level config variables"""
+    
+    @classmethod
+    def load(cls):
+        """No-op for backward compatibility - config is loaded on module import"""
+        pass
+    
+    @classmethod
+    def _get_all_vars(cls):
+        """Get all configuration variables"""
+        return {k: v for k, v in globals().items() if not k.startswith('_') and k.isupper()}
+    
+    def __getattr__(self, name):
+        """Get configuration variable by attribute access"""
+        if name.isupper() and name in globals():
+            return globals()[name]
+        raise AttributeError(f"Config has no attribute '{name}'")
+    
+    @classmethod
+    def get(cls, key, default=None):
+        """Get configuration value with fallback"""
+        return globals().get(key, default)
+
+
+# Export all module variables as Config class attributes for compatibility
+_config_vars = {k: v for k, v in globals().items() 
+                if not k.startswith('_') and k.isupper() and k != 'Config'}
+for _var_name, _var_value in _config_vars.items():
+    setattr(Config, _var_name, _var_value)

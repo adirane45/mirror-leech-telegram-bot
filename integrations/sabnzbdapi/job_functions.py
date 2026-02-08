@@ -1,4 +1,4 @@
-from sabnzbdapi.bound_methods import SubFunctions
+from .bound_methods import SubFunctions
 
 
 class JobFunctions(SubFunctions):

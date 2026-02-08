@@ -8,6 +8,16 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler, EditedMessag
 from ..modules import *
 from ..modules.archive import compress_file, extract_archive, list_archive
 from ..modules.mediainfo import get_media_info, extract_thumbnail, quick_media_stats
+from ..modules.enhanced_dashboard import (
+    enhanced_stats_handler,
+    enhanced_dashboard_handler,
+    enhanced_quick_status_handler,
+    enhanced_analytics_handler,
+    resource_monitor_handler,
+    system_health_handler,
+    progress_summary_handler,
+    comparison_stats_handler,
+)
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.filters import CustomFilters
 from .telegram_manager import TgClient
@@ -52,28 +62,28 @@ def add_handlers():
     TgClient.bot.add_handler(
         CallbackQueryHandler(
             edit_bot_settings, filters=regex("^botset") & CustomFilters.sudo
-        )
+                filters=command(BotCommands.QueueCommandList, case_sensitive=True)
     )
     TgClient.bot.add_handler(
         MessageHandler(
             cancel,
             filters=command(BotCommands.CancelTaskCommand, case_sensitive=True)
             & CustomFilters.authorized,
-        )
+                filters=command(BotCommands.StatusCommandList, case_sensitive=True)
     )
     TgClient.bot.add_handler(
         MessageHandler(
             cancel_all_buttons,
             filters=command(BotCommands.CancelAllCommand, case_sensitive=True)
             & CustomFilters.authorized,
-        )
+                filters=command(BotCommands.SettingsUICommandList, case_sensitive=True)
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(cancel_all_update, filters=regex("^canall"))
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(cancel_multi, filters=regex("^stopm"))
-    )
+                filters=command(BotCommands.HelpCommandList, case_sensitive=True)
     TgClient.bot.add_handler(
         MessageHandler(
             clone_node,
@@ -144,6 +154,9 @@ def add_handlers():
         CallbackQueryHandler(select_type, filters=regex("^list_types"))
     )
     TgClient.bot.add_handler(CallbackQueryHandler(arg_usage, filters=regex("^help")))
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(onboarding_callback, filters=regex("^onboard"))
+    )
     TgClient.bot.add_handler(
         MessageHandler(
             mirror,
@@ -224,7 +237,7 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            start, filters=command(BotCommands.StartCommand, case_sensitive=True)
+            start, filters=command(BotCommands.StartCommandList, case_sensitive=True)
         )
     )
     TgClient.bot.add_handler(
@@ -524,6 +537,63 @@ def add_handlers():
         MessageHandler(
             quick_media_stats,
             filters=command(BotCommands.MStatsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    # Enhanced Stats & Feedback Handlers
+    TgClient.bot.add_handler(
+        MessageHandler(
+            enhanced_stats_handler,
+            filters=command(BotCommands.EnhancedStatsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            enhanced_dashboard_handler,
+            filters=command(BotCommands.EnhancedDashCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            enhanced_quick_status_handler,
+            filters=command(BotCommands.EnhancedQuickCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            enhanced_analytics_handler,
+            filters=command(BotCommands.EnhancedAnalyticsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            resource_monitor_handler,
+            filters=command(BotCommands.ResourceMonitorCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            system_health_handler,
+            filters=command(BotCommands.SystemHealthCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            progress_summary_handler,
+            filters=command(BotCommands.ProgressSummaryCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            comparison_stats_handler,
+            filters=command(BotCommands.ComparisonStatsCommand, case_sensitive=True)
             & CustomFilters.authorized,
         )
     )

@@ -50,45 +50,49 @@ async def main():
     except Exception as e:
         LOGGER.info(f"Metrics initialization skipped: {e}")
     
-    # Initialize Phase 2 Services (optional, non-breaking)
+    
+    # Initialize Phase 5 Services (optional, non-breaking)
+    # Consolidated: Phase 1-5 in single module for maintenance
     try:
         LOGGER.info("="*50)
-        LOGGER.info("🔧 Initializing Phase 2: Enhanced Logging & Monitoring")
+        LOGGER.info("🚀 Initializing Phase 5: High Availability")
         LOGGER.info("="*50)
-        from .core.enhanced_startup_phase2 import initialize_phase2_services
-        phase2_status = await initialize_phase2_services()
-        enabled = sum(1 for v in phase2_status.values() if v)
-        LOGGER.info(f"✅ Phase 2: {enabled}/5 services enabled")
+        from .core.enhanced_startup import initialize_phase5_services
+        phase5_status = await initialize_phase5_services()
+        enabled = sum(1 for v in phase5_status.get('components', {}).values() if v)
+        total = len(phase5_status.get('components', {}))
+        LOGGER.info(f"✅ Phase 5: {enabled}/{total} components initialized")
     except Exception as e:
-        LOGGER.info(f"⚠️  Phase 2 initialization skipped: {e}")
+        LOGGER.info(f"⚠️  Phase 5 initialization skipped: {e}")
 
-    # Initialize Phase 3 Services (optional, non-breaking)
+    # Initialize Automation System (optional, non-breaking)
     try:
-        LOGGER.info("="*50)
-        LOGGER.info("🚀 Initializing Phase 3: Advanced Features")
-        LOGGER.info("="*50)
-        from .core.enhanced_startup_phase3 import initialize_phase3_services
-        phase3_status = await initialize_phase3_services()
-        enabled = sum(1 for v in phase3_status.values() if v)
-        LOGGER.info(f"✅ Phase 3: {enabled}/3 services enabled")
-    except Exception as e:
-        LOGGER.info(f"⚠️  Phase 3 initialization skipped: {e}")
+        if getattr(Config, "ENABLE_AUTOMATION_SYSTEM", True):
+            from .core.automation_system import automation_system
+            from .core.alert_manager import alert_manager, AlertType, AlertSeverity
 
-    # Initialize Phase 4 Services (optional, non-breaking)
-    try:
-        from .core.enhanced_startup_phase4 import initialize_phase4_services
-        phase4_status = await initialize_phase4_services()
-        if phase4_status.get('success'):
-            services_count = len(phase4_status.get('services_initialized', []))
-            LOGGER.info(f"✅ Phase 4: {services_count} performance optimization services enabled")
-        else:
-            errors = phase4_status.get('errors', [])
-            if errors:
-                LOGGER.info(f"⚠️  Phase 4 initialization: {errors[0]}")
-            else:
-                LOGGER.info("⚠️  Phase 4 initialization skipped")
+            alert_manager.enable()
+
+            async def _notify_admin(component_id, severity, message):
+                if alert_manager.is_enabled:
+                    await alert_manager.trigger_alert(
+                        AlertType.CUSTOM,
+                        AlertSeverity.HIGH,
+                        f"Auto-Recovery: {component_id}",
+                        message,
+                        details={"severity": getattr(severity, "value", str(severity))},
+                    )
+
+            await automation_system.enable_all(
+                enable_client_selection=getattr(Config, "ENABLE_CLIENT_SELECTION", True),
+                enable_auto_recovery=getattr(Config, "ENABLE_AUTO_RECOVERY", True),
+                enable_worker_autoscaling=getattr(Config, "ENABLE_WORKER_AUTOSCALER", True),
+                enable_thumbnails=getattr(Config, "ENABLE_SMART_THUMBNAILS", True),
+                notify_callback=_notify_admin,
+            )
+            LOGGER.info("✅ Automation System initialized")
     except Exception as e:
-        LOGGER.info(f"⚠️  Phase 4 initialization skipped: {e}")
+        LOGGER.info(f"⚠️  Automation System initialization skipped: {e}")
 
     LOGGER.info("Loading settings...")
     await load_settings()
@@ -189,18 +193,18 @@ async def main():
 
 bot_loop.run_until_complete(main())
 
-# Register Phase 4 shutdown handler
+# Register Phase 5 shutdown handler (consolidated from all phases)
 import atexit
 
-def shutdown_phase4():
-    """Shutdown Phase 4 services on exit"""
+def shutdown_services():
+    """Shutdown Phase 5 services on exit (consolidated from phases 1-5)"""
     try:
-        from .core.enhanced_startup_phase4 import shutdown_phase4_services
-        bot_loop.run_until_complete(shutdown_phase4_services())
+        from .core.enhanced_startup import shutdown_phase5_services
+        bot_loop.run_until_complete(shutdown_phase5_services())
     except Exception as e:
-        LOGGER.debug(f"Phase 4 shutdown error: {e}")
+        LOGGER.debug(f"Phase 5 shutdown error: {e}")
 
-atexit.register(shutdown_phase4)
+atexit.register(shutdown_services)
 
 from .helper.ext_utils.bot_utils import create_help_buttons
 from .helper.listeners.aria2_listener import add_aria2_callbacks

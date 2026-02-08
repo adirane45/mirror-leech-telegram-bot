@@ -10,13 +10,21 @@ from asyncio import sleep
 from time import time
 from os import environ
 import psutil
-from sabnzbdapi import SabnzbdClient
+from integrations.sabnzbdapi import SabnzbdClient
 from aioaria2 import Aria2HttpClient
 from aioqbt.client import create_client
 from aiohttp.client_exceptions import ClientError
 from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
+
+try:
+    from bot.core.api_endpoints import add_enhanced_endpoints
+    ENHANCED_API_AVAILABLE = True
+except Exception as e:
+    ENHANCED_API_AVAILABLE = False
+    LOGGER_INIT = getLogger(__name__)
+    LOGGER_INIT.warning(f"Enhanced API endpoints not available: {e}")
 
 # Try to import GraphQL schema (Phase 3 optional)
 try:
@@ -73,6 +81,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+if ENHANCED_API_AVAILABLE:
+    add_enhanced_endpoints(app)
 
 
 templates = Jinja2Templates(directory="web/templates/")

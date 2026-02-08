@@ -1,6 +1,6 @@
 from aiofiles.os import remove, path as aiopath
 from asyncio import gather, sleep
-from sabnzbdapi.exception import NotLoggedIn, LoginFailed
+from integrations.sabnzbdapi.exception import NotLoggedIn, LoginFailed
 
 from .... import (
     task_dict,

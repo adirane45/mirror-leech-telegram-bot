@@ -27,7 +27,7 @@ from .restart import (
 from .rss import get_rss_menu, rss_listener
 from .search import torrent_search, torrent_search_update, initiate_search_tools
 from .nzb_search import hydra_search
-from .services import start, ping, log
+from .services import start, ping, log, onboarding_callback
 from .shell import run_shell
 from .speedtest import speedtest
 from .scheduler import schedule_task, list_schedules, cancel_schedule
@@ -93,6 +93,7 @@ __all__ = [
     "torrent_search_update",
     "initiate_search_tools",
     "start",
+    "onboarding_callback",
     "bot_help",
     "ping",
     "log",

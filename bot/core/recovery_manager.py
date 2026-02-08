@@ -10,7 +10,7 @@ Date: February 5, 2026
 import asyncio
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, UTC
 import json
 import hashlib
 from logging import getLogger
@@ -27,7 +27,7 @@ class IntegrityCheck:
         self.path = path
         self.is_valid = is_valid
         self.details = details or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
 
 
 class RecoveryManager:
@@ -226,7 +226,7 @@ class RecoveryManager:
             return {"enabled": False}
 
         report = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "total_paths": len(critical_paths),
             "valid_paths": 0,
             "repaired_paths": 0,
