@@ -11,7 +11,7 @@ This module provides lifecycle management for:
 import asyncio
 import logging
 from typing import Any, Dict, Optional
-from datetime import datetime
+from datetime import datetime, UTC
 
 from bot.core.health_monitor import HealthMonitor
 from bot.core.cluster_manager import ClusterManager
@@ -144,7 +144,7 @@ async def initialize_phase5_services(config: Optional[Dict[str, Any]] = None) ->
     
     logger.info("🚀 Phase 5: Starting High Availability initialization...")
     _phase5_status.enabled = True
-    _phase5_status.initialized_at = datetime.utcnow()
+    _phase5_status.initialized_at = datetime.now(UTC)
     
     results = {
         'success': True,

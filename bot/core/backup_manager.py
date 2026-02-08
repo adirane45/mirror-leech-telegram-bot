@@ -10,7 +10,7 @@ Date: February 5, 2026
 import asyncio
 import shutil
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, Optional, List
 import json
 import hashlib
@@ -109,7 +109,7 @@ class BackupManager:
         try:
             # Create backup directory
             if backup_name is None:
-                backup_name = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+                backup_name = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
             backup_dir = self._backup_root / backup_name
             backup_dir.mkdir(exist_ok=True)
@@ -117,7 +117,7 @@ class BackupManager:
             # Create metadata
             metadata = BackupMetadata(backup_dir)
             metadata.update("name", backup_name)
-            metadata.update("created_at", datetime.utcnow().isoformat())
+            metadata.update("created_at", datetime.now(UTC).isoformat())
             metadata.update("description", description or "")
             metadata.update("source_paths", source_paths)
 
@@ -162,7 +162,7 @@ class BackupManager:
                 "backup_dir": str(backup_dir),
                 "items_count": len(backed_up_items),
                 "total_size": total_size,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
             }
 
             LOGGER.info(f"Backup created: {backup_name} ({total_size} bytes)")
@@ -309,7 +309,7 @@ class BackupManager:
             return 0
 
         try:
-            cutoff_time = datetime.utcnow() - timedelta(days=days)
+            cutoff_time = datetime.now(UTC) - timedelta(days=days)
             deleted_count = 0
 
             for backup_dir in self._backup_root.iterdir():

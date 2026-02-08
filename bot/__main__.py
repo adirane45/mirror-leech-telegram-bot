@@ -65,6 +65,35 @@ async def main():
     except Exception as e:
         LOGGER.info(f"⚠️  Phase 5 initialization skipped: {e}")
 
+    # Initialize Automation System (optional, non-breaking)
+    try:
+        if getattr(Config, "ENABLE_AUTOMATION_SYSTEM", True):
+            from .core.automation_system import automation_system
+            from .core.alert_manager import alert_manager, AlertType, AlertSeverity
+
+            alert_manager.enable()
+
+            async def _notify_admin(component_id, severity, message):
+                if alert_manager.is_enabled:
+                    await alert_manager.trigger_alert(
+                        AlertType.CUSTOM,
+                        AlertSeverity.HIGH,
+                        f"Auto-Recovery: {component_id}",
+                        message,
+                        details={"severity": getattr(severity, "value", str(severity))},
+                    )
+
+            await automation_system.enable_all(
+                enable_client_selection=getattr(Config, "ENABLE_CLIENT_SELECTION", True),
+                enable_auto_recovery=getattr(Config, "ENABLE_AUTO_RECOVERY", True),
+                enable_worker_autoscaling=getattr(Config, "ENABLE_WORKER_AUTOSCALER", True),
+                enable_thumbnails=getattr(Config, "ENABLE_SMART_THUMBNAILS", True),
+                notify_callback=_notify_admin,
+            )
+            LOGGER.info("✅ Automation System initialized")
+    except Exception as e:
+        LOGGER.info(f"⚠️  Automation System initialization skipped: {e}")
+
     LOGGER.info("Loading settings...")
     await load_settings()
     LOGGER.info("✅ Settings loaded")

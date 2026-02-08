@@ -42,6 +42,8 @@ from ..helper.mirror_leech_utils.download_utils.telegram_download import (
 )
 from ..helper.telegram_helper.message_utils import send_message, get_tg_link_message
 from ..helper.telegram_helper.button_build import ButtonMaker
+from ..core.config_manager import Config
+from ..core.client_selector import client_selector, ClientType
 
 
 class Mirror(TaskListener):
@@ -353,6 +355,26 @@ class Mirror(TaskListener):
                     await self.remove_from_same_dir()
                     return
 
+        auto_client = None
+        if (
+            getattr(Config, "ENABLE_CLIENT_SELECTION", True)
+            and not self.is_jd
+            and not self.is_nzb
+            and not self.is_qbit
+            and file_ is None
+            and not isinstance(self.link, dict)
+            and not is_rclone_path(self.link)
+            and not is_gdrive_link(self.link)
+            and not is_gdrive_id(self.link)
+        ):
+            try:
+                auto_client, _ = await client_selector.select_client(
+                    self.link,
+                    user_id=getattr(self, "user_id", None),
+                )
+            except Exception as e:
+                LOGGER.debug(f"Client selection skipped: {e}")
+
         if file_ is not None:
             await TelegramDownloadHelper(self).add_download(
                 reply_to, f"{path}", session
@@ -361,9 +383,9 @@ class Mirror(TaskListener):
             await add_direct_download(self, path)
         elif self.is_jd:
             await add_jd_download(self, path)
-        elif self.is_qbit:
+        elif self.is_qbit or auto_client == ClientType.QBITTORRENT:
             await add_qb_torrent(self, path, ratio, seed_time)
-        elif self.is_nzb:
+        elif self.is_nzb or auto_client == ClientType.SABNZBD:
             await add_nzb(self, path)
         elif is_rclone_path(self.link):
             await add_rclone_download(self, f"{path}")

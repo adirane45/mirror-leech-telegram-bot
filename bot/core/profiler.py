@@ -11,7 +11,7 @@ import time
 import asyncio
 from contextlib import asynccontextmanager, contextmanager
 from typing import Dict, Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from collections import defaultdict
 import statistics
 from logging import getLogger
@@ -27,7 +27,7 @@ class PerformanceMetric:
     def __init__(self, operation: str, duration: float):
         self.operation = operation
         self.duration = duration
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
 
 
 class OperationStats:
@@ -252,7 +252,7 @@ class Profiler:
         if not self._enabled:
             return 0
 
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
         total_deleted = 0
 
         for op_stats in self._operation_stats.values():

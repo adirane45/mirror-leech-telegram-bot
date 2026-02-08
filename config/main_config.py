@@ -369,6 +369,14 @@ EXPERIMENTAL_FEATURES = {
     "predictive_caching": False,
 }
 
+# ==================== AUTOMATION FEATURES ====================
+# Feature flags for automation system
+ENABLE_AUTOMATION_SYSTEM = True
+ENABLE_AUTOMATION_API = True
+ENABLE_CLIENT_SELECTION = True
+ENABLE_WORKER_AUTOSCALER = True
+ENABLE_SMART_THUMBNAILS = True
+
 # ==================== PHASE 2 CONFIGURATION ====================
 # Phase 2: Enhanced Logging, Monitoring & Recovery
 # Safe Innovation Path - All features disabled by default

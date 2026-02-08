@@ -17,7 +17,7 @@ import json
 import random
 import uuid
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Optional, Callable, Set, Any
 from abc import ABC, abstractmethod
@@ -331,7 +331,7 @@ class ClusterManager:
             self._health_check_task = asyncio.create_task(self._health_check_loop())
             
             # Reset election timeout
-            self.election_timeout_deadline = datetime.utcnow() + self._random_election_timeout()
+            self.election_timeout_deadline = datetime.now(UTC) + self._random_election_timeout()
             
             return True
         except Exception as e:
@@ -479,7 +479,7 @@ class ClusterManager:
             if message.term >= self.current_term:
                 self.leader_id = message.leader_id
                 self.last_heartbeat = message.timestamp
-                self.election_timeout_deadline = datetime.utcnow() + self._random_election_timeout()
+                self.election_timeout_deadline = datetime.now(UTC) + self._random_election_timeout()
                 
                 # Update leader node
                 if message.leader_id in self.nodes:
@@ -569,7 +569,7 @@ class ClusterManager:
         while self.enabled:
             try:
                 # Check if election timeout reached
-                if self.election_timeout_deadline and datetime.utcnow() >= self.election_timeout_deadline:
+                if self.election_timeout_deadline and datetime.now(UTC) >= self.election_timeout_deadline:
                     if self.raft_state != RaftState.LEADER:
                         await self._start_election()
                 
@@ -624,7 +624,7 @@ class ClusterManager:
             healthy_nodes = 0
             for node in self.nodes.values():
                 if node.last_heartbeat and \
-                   datetime.utcnow() - node.last_heartbeat < self.heartbeat_timeout:
+                   datetime.now(UTC) - node.last_heartbeat < self.heartbeat_timeout:
                     healthy_nodes += 1
             
             # If less than majority have heartbeats, potential split-brain
@@ -701,7 +701,7 @@ class ClusterManager:
                         continue
                     
                     if node.last_heartbeat:
-                        elapsed = datetime.utcnow() - node.last_heartbeat
+                        elapsed = datetime.now(UTC) - node.last_heartbeat
                         if elapsed > self.heartbeat_timeout * 2:
                             node.status = NodeStatus.UNHEALTHY
                         elif elapsed > self.heartbeat_timeout:

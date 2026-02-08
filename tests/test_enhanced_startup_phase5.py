@@ -4,7 +4,7 @@ Tests for all Phase 1-5 features now consolidated in enhanced_startup.py
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, UTC
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from bot.core.enhanced_startup import (
@@ -419,7 +419,7 @@ class TestGetPhase5Status:
     async def test_get_detailed_status_with_health_monitor(self):
         """Test detailed status with health monitor"""
         _phase5_status.enabled = True
-        _phase5_status.initialized_at = datetime.utcnow()
+        _phase5_status.initialized_at = datetime.now(UTC)
         _phase5_status.components = {'health_monitor': True}
         
         with patch('bot.core.enhanced_startup.HealthMonitor') as mock_health:

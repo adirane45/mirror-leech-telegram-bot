@@ -8,7 +8,7 @@ Date: February 5, 2026
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, List, Optional, Callable
 from enum import Enum
 from logging import getLogger
@@ -57,7 +57,7 @@ class Alert:
         self.message = message
         self.task_id = task_id
         self.details = details or {}
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
         self.id = f"{self.timestamp.timestamp()}_{self.alert_type.value}"
 
     def to_dict(self):
@@ -281,7 +281,7 @@ class AlertManager:
         if not self._enabled:
             return 0
 
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
         original_count = len(self._alerts)
 
         self._alerts = [

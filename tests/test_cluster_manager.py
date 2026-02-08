@@ -14,7 +14,7 @@ Tests cover:
 
 import asyncio
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bot.core.cluster_manager import (
@@ -334,7 +334,7 @@ async def test_heartbeat_resets_election_timeout(cluster_manager):
     """Test heartbeat resets election timeout"""
     await cluster_manager.initialize('node1', 'localhost', 8000)
     # Set old deadline far in the past
-    old_deadline = datetime.utcnow() - timedelta(seconds=100)
+    old_deadline = datetime.now(UTC) - timedelta(seconds=100)
     cluster_manager.election_timeout_deadline = old_deadline
     
     message = HeartbeatMessage(
@@ -345,7 +345,7 @@ async def test_heartbeat_resets_election_timeout(cluster_manager):
     await cluster_manager.handle_heartbeat(message)
     
     # Deadline should be in the future now
-    assert cluster_manager.election_timeout_deadline > datetime.utcnow()
+    assert cluster_manager.election_timeout_deadline > datetime.now(UTC)
 
 
 @pytest.mark.asyncio
@@ -456,7 +456,7 @@ async def test_healthy_cluster_state(cluster_manager):
         await cluster_manager.register_node(f'node{i}', f'host{i}', 8000 + i)
         # Set all nodes as healthy with recent heartbeats
         cluster_manager.nodes[f'node{i}'].status = NodeStatus.HEALTHY
-        cluster_manager.nodes[f'node{i}'].last_heartbeat = datetime.utcnow()
+        cluster_manager.nodes[f'node{i}'].last_heartbeat = datetime.now(UTC)
     
     # Set leader
     cluster_manager.leader_id = 'node0'
@@ -529,9 +529,9 @@ async def test_detect_split_brain_insufficient_heartbeats(cluster_manager):
     await cluster_manager.register_node('node3', 'host3', 8002)
     
     # Only node1 has recent heartbeat
-    cluster_manager.nodes['node1'].last_heartbeat = datetime.utcnow()
-    cluster_manager.nodes['node2'].last_heartbeat = datetime.utcnow() - timedelta(seconds=100)
-    cluster_manager.nodes['node3'].last_heartbeat = datetime.utcnow() - timedelta(seconds=100)
+    cluster_manager.nodes['node1'].last_heartbeat = datetime.now(UTC)
+    cluster_manager.nodes['node2'].last_heartbeat = datetime.now(UTC) - timedelta(seconds=100)
+    cluster_manager.nodes['node3'].last_heartbeat = datetime.now(UTC) - timedelta(seconds=100)
     
     result = await cluster_manager.detect_split_brain()
     

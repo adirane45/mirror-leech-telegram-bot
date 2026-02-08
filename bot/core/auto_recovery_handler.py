@@ -93,6 +93,13 @@ class AutoRecoveryHandler:
                 self._notify_callbacks.append(notify_callback)
             LOGGER.info("✅ Auto-recovery enabled")
             return True
+
+    async def disable(self) -> bool:
+        """Disable auto-recovery"""
+        async with self._lock:
+            self._enabled = False
+            LOGGER.info("❌ Auto-recovery disabled")
+            return True
     
     def register_recovery_action(
         self,

@@ -10,6 +10,7 @@ import asyncio
 from typing import Optional, Callable
 
 from .. import LOGGER
+from .config_manager import Config
 from .client_selector import client_selector
 from .auto_recovery_handler import auto_recovery, RecoverySeverity
 from .worker_autoscaler import worker_autoscaler
@@ -65,22 +66,23 @@ class AutomationSystem:
             LOGGER.info("🚀 Initializing Automation System...")
             
             # 1. Client Selector (always ready, no async init needed)
-            if enable_client_selection:
+            if enable_client_selection and getattr(Config, "ENABLE_CLIENT_SELECTION", True):
                 LOGGER.info("✓ Client Selection enabled")
             
             # 2. Auto-Recovery Handler
-            if enable_auto_recovery:
+            if enable_auto_recovery and getattr(Config, "ENABLE_AUTO_RECOVERY", True):
                 await auto_recovery.enable(notify_callback=notify_callback)
                 self._setup_recovery_actions()
+                await self._register_health_recovery_callbacks()
                 LOGGER.info("✓ Auto-Recovery enabled")
             
             # 3. Worker Autoscaler
-            if enable_worker_autoscaling:
+            if enable_worker_autoscaling and getattr(Config, "ENABLE_WORKER_AUTOSCALER", True):
                 await worker_autoscaler.enable(check_interval=30.0)
                 LOGGER.info("✓ Worker Autoscaler enabled")
             
             # 4. Thumbnail Manager (ready, no init needed)
-            if enable_thumbnails:
+            if enable_thumbnails and getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
                 LOGGER.info("✓ Thumbnail Manager enabled")
             
             self._enabled = True
@@ -131,6 +133,29 @@ class AutomationSystem:
         )
         
         LOGGER.info("📋 Recovery actions registered for 4 components")
+
+    async def _register_health_recovery_callbacks(self):
+        """Link health monitor to auto-recovery callbacks"""
+        try:
+            from .health_monitor import HealthMonitor
+
+            health_monitor = HealthMonitor.get_instance()
+            if not health_monitor.is_enabled():
+                return
+
+            def _make_callback(component_id: str):
+                async def _callback(result):
+                    await auto_recovery.attempt_recovery(
+                        component_id,
+                        error_message=result.error or "Health check failed",
+                    )
+                return _callback
+
+            for component_id in ("redis", "aria2", "qbittorrent", "mongodb"):
+                callback = _make_callback(component_id)
+                await health_monitor.register_recovery_callback(component_id, callback)
+        except Exception as e:
+            LOGGER.debug(f"Health monitor recovery callback registration skipped: {e}")
     
     # ==================== RECOVERY FUNCTIONS ====================
     

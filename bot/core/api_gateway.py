@@ -12,7 +12,7 @@ Implements:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Set, Optional, Any, Callable
 from abc import ABC, abstractmethod
@@ -267,7 +267,7 @@ class ApiGateway:
                 body="Gateway not enabled"
             )
         
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
         
         try:
             self.metrics.total_requests += 1
@@ -333,7 +333,7 @@ class ApiGateway:
             response = await self._process_request(request, target_node)
             
             # Calculate processing time
-            elapsed = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            elapsed = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
             response.processing_time_ms = elapsed
             
             # Update metrics
@@ -396,7 +396,7 @@ class ApiGateway:
             return True
         
         try:
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             window_start = now - timedelta(seconds=self.default_rate_limit.window_seconds)
             
             # Get request history for client
@@ -551,7 +551,7 @@ class ApiGateway:
         while self.enabled:
             try:
                 # Clean up old request history
-                cutoff = datetime.utcnow() - timedelta(hours=1)
+                cutoff = datetime.now(UTC) - timedelta(hours=1)
                 for client_id in list(self.request_history.keys()):
                     self.request_history[client_id] = [
                         ts for ts in self.request_history[client_id]
@@ -562,7 +562,7 @@ class ApiGateway:
                     if not self.request_history[client_id]:
                         del self.request_history[client_id]
                 
-                self.metrics.last_updated = datetime.utcnow()
+                self.metrics.last_updated = datetime.now(UTC)
                 await asyncio.sleep(300)
             except Exception:
                 await asyncio.sleep(300)

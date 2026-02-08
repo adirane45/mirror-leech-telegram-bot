@@ -12,7 +12,7 @@ Implements:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Set, Optional, Any, Callable
 from abc import ABC, abstractmethod
@@ -399,7 +399,7 @@ class TaskCoordinator:
         while self.enabled:
             try:
                 # Check for timeouts
-                now = datetime.utcnow()
+                now = datetime.now(UTC)
                 for task in self.tasks.values():
                     if task.state == TaskState.RUNNING:
                         age = (now - task.created_at).total_seconds()
@@ -410,7 +410,7 @@ class TaskCoordinator:
                 # Update metrics
                 self.metrics.active_tasks = len(await self.get_tasks_by_state(TaskState.RUNNING))
                 self.metrics.tasks_in_queue = len(self.queue)
-                self.metrics.last_updated = datetime.utcnow()
+                self.metrics.last_updated = datetime.now(UTC)
                 
                 await asyncio.sleep(5)
             except Exception:
@@ -527,12 +527,12 @@ class DefaultTaskExecutor(TaskExecutor):
     
     async def execute(self, task: Task) -> TaskResult:
         """Execute task"""
-        start = datetime.utcnow()
+        start = datetime.now(UTC)
         try:
             # Simulate task execution
             await asyncio.sleep(0.01)
             
-            elapsed = int((datetime.utcnow() - start).total_seconds() * 1000)
+            elapsed = int((datetime.now(UTC) - start).total_seconds() * 1000)
             return TaskResult(
                 task_id=task.task_id,
                 success=True,
@@ -540,7 +540,7 @@ class DefaultTaskExecutor(TaskExecutor):
                 execution_time_ms=elapsed
             )
         except Exception as e:
-            elapsed = int((datetime.utcnow() - start).total_seconds() * 1000)
+            elapsed = int((datetime.now(UTC) - start).total_seconds() * 1000)
             return TaskResult(
                 task_id=task.task_id,
                 success=False,

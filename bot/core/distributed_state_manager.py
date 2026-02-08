@@ -12,7 +12,7 @@ Implements:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Set, Optional, Any, Callable
 from abc import ABC, abstractmethod
@@ -541,7 +541,7 @@ class DistributedStateManager:
                 lock_type=lock_type,
                 owner_node=self.node_id,
                 state=LockState.PENDING,
-                expires_at=datetime.utcnow() + timedelta(seconds=self.lock_timeout_seconds)
+                expires_at=datetime.now(UTC) + timedelta(seconds=self.lock_timeout_seconds)
             )
             
             # Check for existing exclusive lock
@@ -556,7 +556,7 @@ class DistributedStateManager:
             
             # Acquire lock
             lock.state = LockState.ACQUIRED
-            lock.acquired_at = datetime.utcnow()
+            lock.acquired_at = datetime.now(UTC)
             self.locks[key] = lock
             self.metrics.lock_acquisitions += 1
             
@@ -889,7 +889,7 @@ class DistributedStateManager:
                 # Check for expired locks
                 expired_keys = []
                 for key, lock in self.locks.items():
-                    if lock.expires_at and lock.expires_at < datetime.utcnow():
+                    if lock.expires_at and lock.expires_at < datetime.now(UTC):
                         expired_keys.append(key)
                 
                 # Release expired locks
@@ -906,7 +906,7 @@ class DistributedStateManager:
         while self.enabled:
             try:
                 # Cleanup old change logs
-                cutoff = datetime.utcnow() - timedelta(hours=24)
+                cutoff = datetime.now(UTC) - timedelta(hours=24)
                 self.change_log = [
                     log for log in self.change_log
                     if log.timestamp > cutoff

@@ -11,6 +11,7 @@ from fastapi import FastAPI, Response, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 import time
 import sys
+from typing import Dict, Any
 
 from .. import LOGGER
 from .config_manager import Config
@@ -162,6 +163,111 @@ def add_enhanced_endpoints(app: FastAPI):
             raise
         except Exception as e:
             LOGGER.error(f"Redis stats error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/v1/automation/status")
+    async def automation_status():
+        """Get status of automation features"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .automation_system import automation_system
+
+            status = await automation_system.get_full_status()
+            return JSONResponse(content=status)
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Automation status error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/v1/automation/cleanup")
+    async def automation_cleanup():
+        """Trigger automation cleanup tasks"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .automation_system import automation_system
+
+            result = await automation_system.trigger_cleanup()
+            return JSONResponse(content=result)
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Automation cleanup error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/v1/automation/clients")
+    async def automation_clients():
+        """Get client selector status"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .client_selector import client_selector
+
+            return JSONResponse(content=client_selector.get_status())
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Automation clients error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/v1/automation/clients/select")
+    async def automation_client_select(payload: Dict[str, Any]):
+        """Select best client for a link"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .client_selector import client_selector
+
+            link = (payload or {}).get("link", "").strip()
+            if not link:
+                raise HTTPException(status_code=400, detail="Missing link")
+            user_id = (payload or {}).get("user_id")
+            client, reason = await client_selector.select_client(link, user_id=user_id)
+            return JSONResponse(
+                content={"client": client.value, "reason": reason, "link": link}
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Automation client select error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/v1/automation/autoscaler")
+    async def automation_autoscaler_status():
+        """Get worker autoscaler status"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .worker_autoscaler import worker_autoscaler
+
+            status = await worker_autoscaler.get_status()
+            return JSONResponse(content=status)
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Autoscaler status error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post("/api/v1/automation/autoscaler/scale")
+    async def automation_autoscaler_scale(payload: Dict[str, Any]):
+        """Manually scale worker autoscaler"""
+        try:
+            if not getattr(Config, "ENABLE_AUTOMATION_API", True):
+                raise HTTPException(status_code=403, detail="Automation API disabled")
+            from .worker_autoscaler import worker_autoscaler
+
+            target = (payload or {}).get("target")
+            if target is None:
+                raise HTTPException(status_code=400, detail="Missing target")
+            target = int(target)
+            ok = await worker_autoscaler.scale_to(target)
+            return JSONResponse(content={"scaled": bool(ok), "target": target})
+        except HTTPException:
+            raise
+        except Exception as e:
+            LOGGER.error(f"Autoscaler scale error: {e}")
             raise HTTPException(status_code=500, detail=str(e))
     
     LOGGER.info("✅ Enhanced API endpoints added: /metrics, /health, /api/v1/status")

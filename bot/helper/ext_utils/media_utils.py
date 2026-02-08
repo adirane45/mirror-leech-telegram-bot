@@ -12,6 +12,7 @@ from time import time
 from aioshutil import rmtree
 
 from ... import LOGGER, DOWNLOAD_DIR, threads, cores
+from ...core.config_manager import Config
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
@@ -185,6 +186,15 @@ async def take_ss(video_file, ss_nb) -> bool:
 
 
 async def get_audio_thumbnail(audio_file):
+    if getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
+        try:
+            from ...core.thumbnail_manager import thumbnail_manager
+
+            cached = await thumbnail_manager.get_thumbnail(audio_file, width=320, height=320)
+            if cached:
+                return str(cached)
+        except Exception as e:
+            LOGGER.debug(f"Smart thumbnail fallback (audio): {e}")
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
@@ -213,6 +223,15 @@ async def get_audio_thumbnail(audio_file):
 
 
 async def get_video_thumbnail(video_file, duration):
+    if getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
+        try:
+            from ...core.thumbnail_manager import thumbnail_manager
+
+            cached = await thumbnail_manager.get_thumbnail(video_file, width=320, height=180)
+            if cached:
+                return str(cached)
+        except Exception as e:
+            LOGGER.debug(f"Smart thumbnail fallback (video): {e}")
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")

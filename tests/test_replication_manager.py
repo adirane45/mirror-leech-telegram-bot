@@ -13,7 +13,7 @@ Tests cover:
 
 import asyncio
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bot.core.replication_manager import (
@@ -292,7 +292,7 @@ async def test_detect_concurrent_conflict(replication_manager, mock_listener):
         key='key1',
         value='remote_value',
         vector_clock=VectorClock('node2', {'node2': 1}),
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(UTC)
     )
     
     conflict = await replication_manager.detect_conflict(remote_log, 'node2')
@@ -350,8 +350,8 @@ async def test_resolve_conflict_timestamp_strategy(replication_manager):
         key='key1',
         local_value='local',
         remote_value='remote',
-        local_timestamp=datetime.utcnow() - timedelta(seconds=1),
-        remote_timestamp=datetime.utcnow(),
+        local_timestamp=datetime.now(UTC) - timedelta(seconds=1),
+        remote_timestamp=datetime.now(UTC),
         remote_node='node2',
         resolution_strategy=ConflictResolutionStrategy.TIMESTAMP
     )
@@ -672,7 +672,7 @@ async def test_clear_replication_log(replication_manager):
         operation_type='CREATE',
         key='old_key',
         value='old_value',
-        timestamp=datetime.utcnow() - timedelta(hours=25)
+        timestamp=datetime.now(UTC) - timedelta(hours=25)
     )
     replication_manager.replication_log.append(old_log)
     

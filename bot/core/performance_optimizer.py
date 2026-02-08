@@ -12,7 +12,7 @@ Implements:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Set, Optional, Any, Callable
 from abc import ABC, abstractmethod
@@ -350,7 +350,7 @@ class PerformanceOptimizer:
                     if snapshots:
                         await self._analyze_node_performance(node_id, snapshots)
                 
-                self.optimizer_metrics.last_updated = datetime.utcnow()
+                self.optimizer_metrics.last_updated = datetime.now(UTC)
                 await asyncio.sleep(15)
             except Exception:
                 await asyncio.sleep(15)
@@ -434,7 +434,7 @@ class PerformanceOptimizer:
             return False
         
         try:
-            self.scaling_history.append((node_id, action, datetime.utcnow()))
+            self.scaling_history.append((node_id, action, datetime.now(UTC)))
             self.optimizer_metrics.scaling_actions_taken += 1
             
             # Notify listeners
@@ -449,7 +449,7 @@ class PerformanceOptimizer:
         """Check if node can scale up"""
         try:
             # Count recent scale ups
-            cutoff = datetime.utcnow() - timedelta(seconds=self.scale_cooldown_seconds)
+            cutoff = datetime.now(UTC) - timedelta(seconds=self.scale_cooldown_seconds)
             recent_scale_ups = sum(
                 1 for n, a, ts in self.scaling_history
                 if n == node_id and a == ScalingAction.SCALE_UP and ts > cutoff
@@ -462,7 +462,7 @@ class PerformanceOptimizer:
         """Check if node can scale down"""
         try:
             # Count recent scale downs
-            cutoff = datetime.utcnow() - timedelta(seconds=self.scale_cooldown_seconds)
+            cutoff = datetime.now(UTC) - timedelta(seconds=self.scale_cooldown_seconds)
             recent_scale_downs = sum(
                 1 for n, a, ts in self.scaling_history
                 if n == node_id and a == ScalingAction.SCALE_DOWN and ts > cutoff

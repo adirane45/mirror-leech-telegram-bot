@@ -13,7 +13,7 @@ Tests cover:
 
 import asyncio
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bot.core.failover_manager import (
@@ -240,8 +240,8 @@ async def test_recovery_metrics_tracking(failover_manager):
     action = RecoveryAction(component_id='db', component_name='MongoDB')
     operation = RecoveryOperation(action=action)
     operation.state = RecoveryState.SUCCEEDED
-    operation.started_at = datetime.utcnow() - timedelta(seconds=1)
-    operation.completed_at = datetime.utcnow()
+    operation.started_at = datetime.now(UTC) - timedelta(seconds=1)
+    operation.completed_at = datetime.now(UTC)
     
     failover_manager.operations[operation.operation_id] = operation
     failover_manager.metrics.total_operations = 1
@@ -329,7 +329,7 @@ async def test_detect_cascading_failure(failover_manager, mock_listener):
     
     # Simulate multiple component failures
     for comp_id in ['db', 'cache', 'api', 'queue']:
-        failover_manager.component_failures[comp_id] = [datetime.utcnow()]
+        failover_manager.component_failures[comp_id] = [datetime.now(UTC)]
     
     cascade = await failover_manager.detect_cascading_failure('db')
     
@@ -342,7 +342,7 @@ async def test_detect_cascading_failure(failover_manager, mock_listener):
 async def test_cascade_affects_multiple_components(failover_manager):
     """Test cascade identifies affected components"""
     for comp_id in ['db', 'cache', 'api']:
-        failover_manager.component_failures[comp_id] = [datetime.utcnow()]
+        failover_manager.component_failures[comp_id] = [datetime.now(UTC)]
     
     cascade = await failover_manager.detect_cascading_failure('db')
     
@@ -353,7 +353,7 @@ async def test_cascade_affects_multiple_components(failover_manager):
 async def test_cascade_requires_threshold(failover_manager):
     """Test cascade detection requires minimum components"""
     # Only 1 failure
-    failover_manager.component_failures['db'] = [datetime.utcnow()]
+    failover_manager.component_failures['db'] = [datetime.now(UTC)]
     
     cascade = await failover_manager.detect_cascading_failure('db')
     
@@ -546,9 +546,9 @@ async def test_metrics_uptime_calculation(failover_manager):
 async def test_get_failure_count(failover_manager):
     """Test getting failure count for component"""
     failover_manager.component_failures['db'] = [
-        datetime.utcnow(),
-        datetime.utcnow() - timedelta(seconds=30),
-        datetime.utcnow() - timedelta(minutes=15)  # Outside default 10-min window
+        datetime.now(UTC),
+        datetime.now(UTC) - timedelta(seconds=30),
+        datetime.now(UTC) - timedelta(minutes=15)  # Outside default 10-min window
     ]
     
     count = await failover_manager.get_failure_count('db')
@@ -558,7 +558,7 @@ async def test_get_failure_count(failover_manager):
 @pytest.mark.asyncio
 async def test_reset_failure_count(failover_manager):
     """Test resetting failure count"""
-    failover_manager.component_failures['db'] = [datetime.utcnow()]
+    failover_manager.component_failures['db'] = [datetime.now(UTC)]
     
     result = await failover_manager.reset_failure_count('db')
     
@@ -571,7 +571,7 @@ async def test_clear_operation_history(failover_manager):
     """Test clearing old operation history"""
     action = RecoveryAction(component_id='db', component_name='MongoDB')
     operation = RecoveryOperation(action=action)
-    operation.completed_at = datetime.utcnow() - timedelta(hours=25)
+    operation.completed_at = datetime.now(UTC) - timedelta(hours=25)
     
     failover_manager.operations[operation.operation_id] = operation
     

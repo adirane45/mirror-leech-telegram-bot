@@ -15,7 +15,7 @@ Integrates Health Monitor for component health and Cluster Manager for coordinat
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Optional, Callable, Set, Any
 from abc import ABC, abstractmethod
@@ -407,7 +407,7 @@ class FailoverManager:
             if component_id not in self.component_failures:
                 self.component_failures[component_id] = []
             
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             self.component_failures[component_id].append(now)
             
             # Clean old failures (outside time window)
@@ -485,7 +485,7 @@ class FailoverManager:
         
         try:
             operation.state = RecoveryState.IN_PROGRESS
-            operation.started_at = datetime.utcnow()
+            operation.started_at = datetime.now(UTC)
             
             # Notify listeners
             for listener in self.listeners:
@@ -521,7 +521,7 @@ class FailoverManager:
                 operation.state = RecoveryState.FAILED
                 self.metrics.failed_operations += 1
             
-            operation.completed_at = datetime.utcnow()
+            operation.completed_at = datetime.now(UTC)
             
             # Update metrics
             self.metrics.total_operations += 1
@@ -543,7 +543,7 @@ class FailoverManager:
         
         except Exception:
             operation.state = RecoveryState.FAILED
-            operation.completed_at = datetime.utcnow()
+            operation.completed_at = datetime.now(UTC)
             self.metrics.failed_operations += 1
             self.metrics.total_operations += 1
         
@@ -567,7 +567,7 @@ class FailoverManager:
         """
         try:
             # Count concurrent failures
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             recent_failures = []
             
             for component_id, failures in self.component_failures.items():
@@ -607,12 +607,12 @@ class FailoverManager:
                     failures = self.component_failures[component_id]
                     
                     # Recent failure?
-                    recent = [f for f in failures if datetime.utcnow() - f < timedelta(seconds=10)]
+                    recent = [f for f in failures if datetime.now(UTC) - f < timedelta(seconds=10)]
                     if recent:
                         await self.detect_cascading_failure(component_id)
                 
                 # Clean resolved cascades
-                now = datetime.utcnow()
+                now = datetime.now(UTC)
                 for event_id, cascade in list(self.active_cascades.items()):
                     if cascade.timestamp and now - cascade.timestamp > timedelta(minutes=5):
                         cascade.is_active = False
@@ -735,7 +735,7 @@ class FailoverManager:
     async def clear_operation_history(self, older_than_hours: int = 24) -> int:
         """Clear old operation history"""
         try:
-            cutoff = datetime.utcnow() - timedelta(hours=older_than_hours)
+            cutoff = datetime.now(UTC) - timedelta(hours=older_than_hours)
             to_delete = [
                 op_id for op_id, op in self.operations.items()
                 if op.completed_at and op.completed_at < cutoff
@@ -762,7 +762,7 @@ class FailoverManager:
             return 0
         
         failures = self.component_failures[component_id]
-        cutoff = datetime.utcnow() - self.failure_window
+        cutoff = datetime.now(UTC) - self.failure_window
         return sum(1 for f in failures if f > cutoff)
     
     async def reset_failure_count(self, component_id: str) -> bool:

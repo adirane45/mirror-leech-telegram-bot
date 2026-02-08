@@ -12,7 +12,7 @@ Implements multi-master replication with:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Dict, List, Set, Optional, Any, Callable
 from abc import ABC, abstractmethod
@@ -384,7 +384,7 @@ class ReplicationManager:
                 key=key,
                 value=value,
                 old_value=old_value,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
                 vector_clock=VectorClock(self.node_id, dict(self.vector_clock.clocks)),
                 sequence_number=len(self.replication_log)
             )
@@ -701,7 +701,7 @@ class ReplicationManager:
     
     async def clear_replication_log(self) -> int:
         """Clear old replication log entries"""
-        cutoff = datetime.utcnow() - timedelta(hours=self.log_retention_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=self.log_retention_hours)
         initial_count = len(self.replication_log)
         
         self.replication_log = [

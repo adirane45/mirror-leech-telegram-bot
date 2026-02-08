@@ -16,12 +16,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'integrations'))
 
 
-# Configure pytest-asyncio mode
-def pytest_configure(config):
-    """Configure pytest"""
-    config.option.asyncio_mode = "auto"
-
-
 @pytest.fixture
 def mock_config():
     """Mock configuration for testing"""
@@ -62,20 +56,13 @@ def metrics_collector():
     return collector
 
 
-# Test marks 
+# Configure pytest and register markers
 def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "unit: Unit tests"
-    )
-    config.addinivalue_line(
-        "markers", "integration: Integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "slow: Slow running tests"
-    )
-    config.addinivalue_line(
-        "markers", "redis: Tests requiring Redis"
-    )
-    config.addinivalue_line(
-        "markers", "celery: Tests requiring Celery"
-    )
+    """Configure pytest"""
+    config.option.asyncio_mode = "auto"
+    config.addinivalue_line("markers", "unit: Unit tests")
+    config.addinivalue_line("markers", "integration: Integration tests")
+    config.addinivalue_line("markers", "slow: Slow running tests")
+    config.addinivalue_line("markers", "redis: Tests requiring Redis")
+    config.addinivalue_line("markers", "celery: Tests requiring Celery")
+    config.addinivalue_line("markers", "benchmark: Performance benchmark tests")

@@ -9,7 +9,7 @@ Date: February 5, 2026
 
 import graphene
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, UTC
 
 from bot.core.logger_manager import logger_manager
 from bot.core.alert_manager import alert_manager, AlertType, AlertSeverity
@@ -177,7 +177,7 @@ class Query(graphene.ObjectType):
         return IntegrityCheckType(
             path="system",
             is_valid=status.get("success_rate", 0) > 90,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(UTC).isoformat()
         )
 
     # System status
@@ -186,7 +186,7 @@ class Query(graphene.ObjectType):
     def resolve_system_status(self, info):
         """Get overall system status"""
         return SystemStatusType(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             logger_enabled=logger_manager.is_enabled,
             alerts_enabled=alert_manager.is_enabled,
             backups_enabled=backup_manager.is_enabled,
