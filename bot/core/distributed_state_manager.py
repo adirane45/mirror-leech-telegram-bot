@@ -3,12 +3,13 @@ Distributed State Manager for cluster-wide state consistency
 
 Refactored module structure:
 - distributed_state_models.py: Enums, data classes, abstract base classes
+- distributed_state_locks.py: Lock management implementation
 - distributed_state_manager.py: Core manager implementation (this file)
 
 Implements:
 - State versioning with changelog
 - Consensus-based updates
-- Distributed locking
+- Distributed locking (delegated to DistributedLockManager)
 - State reconciliation
 - Snapshot/restore mechanism
 """
@@ -34,6 +35,9 @@ from .distributed_state_models import (
     DistributedStateProvider,
     StateChangeListener,
 )
+
+# Import lock manager module
+from .distributed_state_locks import DistributedLockManager
 
 
 # ============================================================================
@@ -62,7 +66,6 @@ class DistributedStateManager:
         self.version_history: List[StateVersion] = []
         self.change_log: List[StateChangeLog] = []
         self.snapshots: Dict[str, StateSnapshot] = {}
-        self.locks: Dict[str, LockInfo] = {}
         self.proposals: Dict[str, ConsensusProposal] = {}
         self.peers: Set[str] = set()
         self.metrics = DistributedStateMetrics()
@@ -70,14 +73,22 @@ class DistributedStateManager:
         self.current_version = 1
         self.update_strategy = StateUpdateStrategy.EVENTUAL
         self.consensus_threshold = 0.5
-        self.lock_timeout_seconds = 30
         self.reconciliation_interval = 60
         self.snapshot_retention_count = 10
         
+        # Lock manager instance
+        self.lock_manager: Optional[DistributedLockManager] = None
+        
         # Background tasks
         self._reconciliation_task: Optional[asyncio.Task] = None
-        self._lock_monitor_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
+    
+    @property
+    def locks(self) -> Dict[str, LockInfo]:
+        """Get locks dict from lock manager (backward compatibility)"""
+        if self.lock_manager:
+            return self.lock_manager.locks
+        return {}
     
     @classmethod
     def get_instance(cls) -> 'DistributedStateManager':
@@ -103,9 +114,16 @@ class DistributedStateManager:
             )
             self.version_history.append(root_version)
             
+            # Initialize and start lock manager
+            self.lock_manager = DistributedLockManager(
+                node_id=self.node_id,
+                lock_timeout_seconds=30
+            )
+            self.lock_manager.add_listener(self)
+            await self.lock_manager.start()
+            
             # Start background tasks
             self._reconciliation_task = asyncio.create_task(self._reconciliation_loop())
-            self._lock_monitor_task = asyncio.create_task(self._lock_monitor_loop())
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             
             return True
@@ -121,11 +139,13 @@ class DistributedStateManager:
         try:
             self.enabled = False
             
+            # Stop lock manager
+            if self.lock_manager:
+                await self.lock_manager.stop()
+            
             # Cancel background tasks
             if self._reconciliation_task:
                 self._reconciliation_task.cancel()
-            if self._lock_monitor_task:
-                self._lock_monitor_task.cancel()
             if self._cleanup_task:
                 self._cleanup_task.cancel()
             
@@ -134,6 +154,11 @@ class DistributedStateManager:
             return True
         except Exception:
             return False
+    
+    async def clear_locks(self) -> None:
+        """Clear all locks (for testing/cleanup)"""
+        if self.lock_manager:
+            await self.lock_manager.clear_locks()
     
     # ========================================================================
     # STATE OPERATIONS
@@ -267,67 +292,33 @@ class DistributedStateManager:
     # ========================================================================
     
     async def acquire_lock(self, key: str, lock_type: LockType = LockType.EXCLUSIVE) -> bool:
-        """
-        Acquire distributed lock on key
-        """
-        if not self.enabled:
+        """Acquire distributed lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
             return False
         
-        try:
-            lock_id = f"lock_{uuid.uuid4().hex[:8]}"
-            lock = LockInfo(
-                lock_id=lock_id,
-                key=key,
-                lock_type=lock_type,
-                owner_node=self.node_id,
-                state=LockState.PENDING,
-                expires_at=datetime.now(UTC) + timedelta(seconds=self.lock_timeout_seconds)
-            )
-            
-            # Check for existing exclusive lock
-            existing = self.locks.get(key)
-            if existing and existing.lock_type == LockType.EXCLUSIVE:
-                if existing.owner_node != self.node_id:
-                    lock.state = LockState.CONTESTED
-                    lock.contenders.add(self.node_id)
-                    self.metrics.lock_contentions += 1
-                    self.locks[key] = lock
-                    return False
-            
-            # Acquire lock
-            lock.state = LockState.ACQUIRED
-            lock.acquired_at = datetime.now(UTC)
-            self.locks[key] = lock
-            self.metrics.lock_acquisitions += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_lock_acquired(lock)
-            
-            return True
-        except Exception:
-            return False
+        result = await self.lock_manager.acquire_lock(key, lock_type)
+        
+        # Copy metrics from lock manager
+        if self.lock_manager:
+            lock_metrics = self.lock_manager.get_metrics()
+            self.metrics.lock_acquisitions = lock_metrics['lock_acquisitions']
+            self.metrics.lock_contentions = lock_metrics['lock_contentions']
+        
+        return result
     
     async def release_lock(self, key: str) -> bool:
-        """Release distributed lock on key"""
-        if key not in self.locks:
+        """Release distributed lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
             return False
         
-        try:
-            lock = self.locks[key]
-            if lock.owner_node != self.node_id:
-                return False
-            
-            lock.state = LockState.RELEASED
-            self.locks.pop(key, None)
-            
-            return True
-        except Exception:
-            return False
+        return await self.lock_manager.release_lock(key)
     
     async def get_lock_info(self, key: str) -> Optional[LockInfo]:
-        """Get information about lock on key"""
-        return self.locks.get(key)
+        """Get information about lock on key (delegated to DistributedLockManager)"""
+        if not self.enabled or not self.lock_manager:
+            return None
+        
+        return await self.lock_manager.get_lock_info(key)
     
     # ========================================================================
     # CONSENSUS-BASED UPDATES
@@ -622,24 +613,6 @@ class DistributedStateManager:
             except Exception:
                 await asyncio.sleep(self.reconciliation_interval)
     
-    async def _lock_monitor_loop(self) -> None:
-        """Background loop for monitoring locks"""
-        while self.enabled:
-            try:
-                # Check for expired locks
-                expired_keys = []
-                for key, lock in self.locks.items():
-                    if lock.expires_at and lock.expires_at < datetime.now(UTC):
-                        expired_keys.append(key)
-                
-                # Release expired locks
-                for key in expired_keys:
-                    self.locks[key].state = LockState.TIMEOUT
-                    self.locks.pop(key, None)
-                
-                await asyncio.sleep(5)
-            except Exception:
-                await asyncio.sleep(5)
     
     async def _cleanup_loop(self) -> None:
         """Background loop for cleanup"""
