@@ -62,28 +62,28 @@ def add_handlers():
     TgClient.bot.add_handler(
         CallbackQueryHandler(
             edit_bot_settings, filters=regex("^botset") & CustomFilters.sudo
-                filters=command(BotCommands.QueueCommandList, case_sensitive=True)
+        )
     )
     TgClient.bot.add_handler(
         MessageHandler(
             cancel,
             filters=command(BotCommands.CancelTaskCommand, case_sensitive=True)
             & CustomFilters.authorized,
-                filters=command(BotCommands.StatusCommandList, case_sensitive=True)
+        )
     )
     TgClient.bot.add_handler(
         MessageHandler(
             cancel_all_buttons,
             filters=command(BotCommands.CancelAllCommand, case_sensitive=True)
             & CustomFilters.authorized,
-                filters=command(BotCommands.SettingsUICommandList, case_sensitive=True)
+        )
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(cancel_all_update, filters=regex("^canall"))
     )
     TgClient.bot.add_handler(
         CallbackQueryHandler(cancel_multi, filters=regex("^stopm"))
-                filters=command(BotCommands.HelpCommandList, case_sensitive=True)
+    )
     TgClient.bot.add_handler(
         MessageHandler(
             clone_node,
@@ -154,9 +154,6 @@ def add_handlers():
         CallbackQueryHandler(select_type, filters=regex("^list_types"))
     )
     TgClient.bot.add_handler(CallbackQueryHandler(arg_usage, filters=regex("^help")))
-    TgClient.bot.add_handler(
-        CallbackQueryHandler(onboarding_callback, filters=regex("^onboard"))
-    )
     TgClient.bot.add_handler(
         MessageHandler(
             mirror,
@@ -237,7 +234,7 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            start, filters=command(BotCommands.StartCommandList, case_sensitive=True)
+            start, filters=command(BotCommands.StartCommand, case_sensitive=True)
         )
     )
     TgClient.bot.add_handler(
