@@ -11,10 +11,10 @@ Implements:
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, UTC
 from typing import Dict, List, Set, Optional, Any
 
-# Import models from refactored task_models module
+# Import models
 from .task_models import (
     TaskPriority,
     TaskState,
@@ -28,6 +28,10 @@ from .task_models import (
     TaskCoordinatorListener,
     DefaultTaskExecutor,
 )
+
+# Import specialized components
+from .task_execution_monitor import TaskMonitor
+from .task_assignment_manager import TaskAssignmentManager
 
 
 class TaskCoordinator:
@@ -50,15 +54,14 @@ class TaskCoordinator:
         self.node_id = ""
         self.tasks: Dict[str, Task] = {}
         self.queue: List[str] = []  # task IDs
-        self.results: Dict[str, TaskResult] = {}
-        self.assignments: Dict[str, TaskAssignment] = {}
         self.peers: Set[str] = set()
-        self.metrics = CoordinatorMetrics()
         self.listeners: List[TaskCoordinatorListener] = []
         self.executors: Dict[TaskType, TaskExecutor] = {}
         self.max_concurrent_tasks = 10
-        self.load_balance_strategy = "least_loaded"  # or "round_robin", "random"
-        self.task_timeout_seconds = 300
+        
+        # Component delegation
+        self.monitor = TaskMonitor()
+        self.assignment_manager = TaskAssignmentManager()
         
         # Background tasks
         self._scheduler_task: Optional[asyncio.Task] = None
@@ -80,9 +83,15 @@ class TaskCoordinator:
             self.node_id = node_id or f"node_{uuid.uuid4().hex[:8]}"
             self.enabled = True
             
+            # Configure components
+            self.monitor.set_enabled(True)
+            self.monitor.set_task_reference(self.tasks)
+            self.assignment_manager.set_node_info(self.node_id, self.peers)
+            self.assignment_manager.set_task_reference(self.tasks)
+            
             # Start background tasks
             self._scheduler_task = asyncio.create_task(self._scheduling_loop())
-            self._monitor_task = asyncio.create_task(self._monitor_loop())
+            self._monitor_task = asyncio.create_task(self.monitor.monitor_loop())
             
             return True
         except Exception:
@@ -96,6 +105,7 @@ class TaskCoordinator:
         
         try:
             self.enabled = False
+            self.monitor.set_enabled(False)
             
             if self._scheduler_task:
                 self._scheduler_task.cancel()
@@ -121,8 +131,8 @@ class TaskCoordinator:
             self.tasks[task.task_id] = task
             task.state = TaskState.QUEUED
             self.queue.append(task.task_id)
-            self.metrics.total_tasks += 1
-            self.metrics.tasks_in_queue = len(self.queue)
+            self.monitor.metrics.total_tasks += 1
+            self.monitor.metrics.tasks_in_queue = len(self.queue)
             
             # Notify listeners
             for listener in self.listeners:
@@ -166,159 +176,57 @@ class TaskCoordinator:
         return [t for t in self.tasks.values() if t.state == state]
     
     # ========================================================================
-    # SCHEDULING AND EXECUTION
+    # SCHEDULING LOOP
     # ========================================================================
     
     async def _scheduling_loop(self) -> None:
         """Background loop for scheduling tasks"""
         while self.enabled:
             try:
-                # Get queued tasks
+                # Get queued tasks, sorted by priority
                 queued = [self.tasks[tid] for tid in self.queue if tid in self.tasks]
-                queued.sort(key=lambda t: (
-                    {"critical": 0, "high": 1, "normal": 2, "low": 3, "deferred": 4}[t.priority.value]
-                ))
+                priority_order = {
+                    "critical": 0, "high": 1, "normal": 2, "low": 3, "deferred": 4
+                }
+                queued.sort(key=lambda t: priority_order.get(t.priority.value, 5))
                 
                 # Assign to nodes
                 for task in queued[:self.max_concurrent_tasks]:
-                    assigned_node = await self._select_target_node(task)
-                    if assigned_node:
-                        await self._assign_task(task, assigned_node)
-                
-                await asyncio.sleep(1)
-            except Exception:
-                await asyncio.sleep(1)
-    
-    async def _assign_task(self, task: Task, node_id: str) -> bool:
-        """Assign task to node"""
-        try:
-            task.state = TaskState.ASSIGNED
-            task.assigned_node = node_id
-            self.queue.remove(task.task_id)
-            
-            assignment = TaskAssignment(
-                task_id=task.task_id,
-                node_id=node_id
-            )
-            self.assignments[assignment.assignment_id] = assignment
-            
-            return True
-        except Exception:
-            return False
-    
-    async def _select_target_node(self, task: Task) -> Optional[str]:
-        """Select best node for task"""
-        if not self.peers:
-            return self.node_id
-        
-        try:
-            if self.load_balance_strategy == "least_loaded":
-                # Select node with lowest utilization
-                best_node = self.node_id
-                min_util = 0.5
-                
-                for peer in self.peers:
-                    # In real implementation, query peer for utilization
-                    util = 0.3
-                    if util < min_util:
-                        min_util = util
-                        best_node = peer
-                
-                return best_node
-            
-            else:  # round_robin, random, etc.
-                import random
-                nodes = [self.node_id] + list(self.peers)
-                return random.choice(nodes)
-        except Exception:
-            return self.node_id
-    
-    async def _monitor_loop(self) -> None:
-        """Background loop for monitoring tasks"""
-        while self.enabled:
-            try:
-                # Check for timeouts
-                now = datetime.now(UTC)
-                for task in self.tasks.values():
-                    if task.state == TaskState.RUNNING:
-                        age = (now - task.created_at).total_seconds()
-                        if age > task.timeout_seconds:
-                            task.state = TaskState.FAILED
-                            await self._handle_task_failure(task, "Timeout")
+                    # Check dependencies
+                    if await self.assignment_manager.check_dependencies(task):
+                        assigned_node = await self.assignment_manager.select_target_node(task)
+                        if assigned_node:
+                            await self.assignment_manager.assign_task(task, assigned_node)
+                            self.queue.remove(task.task_id)
                 
                 # Update metrics
-                self.metrics.active_tasks = len(await self.get_tasks_by_state(TaskState.RUNNING))
-                self.metrics.tasks_in_queue = len(self.queue)
-                self.metrics.last_updated = datetime.now(UTC)
+                self.monitor.metrics.tasks_in_queue = len(self.queue)
                 
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
             except Exception:
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
     
-    async def _handle_task_failure(self, task: Task, error: str) -> bool:
-        """Handle task failure with retries"""
-        try:
-            if task.retry_count < task.max_retries:
-                task.retry_count += 1
-                task.state = TaskState.RETRYING
-                self.queue.append(task.task_id)
-                return True
-            else:
-                task.state = TaskState.FAILED
-                
-                # Notify listeners
-                for listener in self.listeners:
-                    await listener.on_task_failed(task, error)
-                
-                self.metrics.failed_tasks += 1
-                return False
-        except Exception:
-            return False
+    # ========================================================================
+    # TASK COMPLETION AND FAILURE
+    # ========================================================================
     
     async def complete_task(self, task_id: str, result: TaskResult) -> bool:
         """Mark task as completed"""
-        if task_id not in self.tasks:
-            return False
-        
-        try:
-            task = self.tasks[task_id]
-            task.state = TaskState.COMPLETED
-            task.result = result
-            self.results[task_id] = result
-            self.metrics.completed_tasks += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_task_completed(task, result)
-            
-            return True
-        except Exception:
-            return False
+        return await self.monitor.complete_task(task_id, result)
     
     async def fail_task(self, task_id: str, error: str) -> bool:
-        """Mark task as failed"""
+        """Mark task as failed with retries"""
         if task_id not in self.tasks:
             return False
         
         task = self.tasks[task_id]
-        return await self._handle_task_failure(task, error)
-    
-    # ========================================================================
-    # TASK DEPENDENCIES
-    # ========================================================================
-    
-    async def check_dependencies(self, task: Task) -> bool:
-        """Check if all task dependencies are satisfied"""
-        for dep in task.dependencies:
-            if dep.task_id not in self.tasks:
-                return False
-            
-            dep_task = self.tasks[dep.task_id]
-            if dep.must_complete_before:
-                if dep_task.state != TaskState.COMPLETED:
-                    return False
+        result = await self.monitor.fail_task(task_id, error)
         
-        return True
+        # Re-queue if retrying
+        if task.state == TaskState.RETRYING and task_id not in self.queue:
+            self.queue.append(task_id)
+        
+        return result
     
     # ========================================================================
     # MANAGEMENT
@@ -336,6 +244,7 @@ class TaskCoordinator:
         """Register peer node"""
         try:
             self.peers.add(peer_id)
+            self.assignment_manager.register_peer(peer_id)
             return True
         except Exception:
             return False
@@ -344,13 +253,14 @@ class TaskCoordinator:
         """Register task coordinator listener"""
         try:
             self.listeners.append(listener)
+            self.monitor.add_listener(listener)
             return True
         except Exception:
             return False
     
     async def get_metrics(self) -> CoordinatorMetrics:
         """Get coordinator metrics"""
-        return self.metrics
+        return self.monitor.metrics
     
     async def get_queue_size(self) -> int:
         """Get size of task queue"""
