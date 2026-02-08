@@ -39,6 +39,9 @@ from .distributed_state_models import (
 # Import lock manager module
 from .distributed_state_locks import DistributedLockManager
 
+# Import consensus manager module
+from .distributed_state_consensus import DistributedConsensusManager
+
 
 # ============================================================================
 # DISTRIBUTED STATE MANAGER
@@ -66,7 +69,6 @@ class DistributedStateManager:
         self.version_history: List[StateVersion] = []
         self.change_log: List[StateChangeLog] = []
         self.snapshots: Dict[str, StateSnapshot] = {}
-        self.proposals: Dict[str, ConsensusProposal] = {}
         self.peers: Set[str] = set()
         self.metrics = DistributedStateMetrics()
         self.listeners: List[StateChangeListener] = []
@@ -76,8 +78,9 @@ class DistributedStateManager:
         self.reconciliation_interval = 60
         self.snapshot_retention_count = 10
         
-        # Lock manager instance
+        # Manager instances
         self.lock_manager: Optional[DistributedLockManager] = None
+        self.consensus_manager: Optional[DistributedConsensusManager] = None
         
         # Background tasks
         self._reconciliation_task: Optional[asyncio.Task] = None
@@ -88,6 +91,13 @@ class DistributedStateManager:
         """Get locks dict from lock manager (backward compatibility)"""
         if self.lock_manager:
             return self.lock_manager.locks
+        return {}
+    
+    @property
+    def proposals(self) -> Dict[str, ConsensusProposal]:
+        """Get proposals dict from consensus manager (backward compatibility)"""
+        if self.consensus_manager:
+            return self.consensus_manager.proposals
         return {}
     
     @classmethod
@@ -122,6 +132,17 @@ class DistributedStateManager:
             self.lock_manager.add_listener(self)
             await self.lock_manager.start()
             
+            # Initialize and start consensus manager
+            self.consensus_manager = DistributedConsensusManager(
+                node_id=self.node_id,
+                consensus_threshold=self.consensus_threshold
+            )
+            self.consensus_manager.add_listener(self)
+            # Register existing peers
+            for peer in self.peers:
+                self.consensus_manager.register_peer(peer)
+            await self.consensus_manager.start()
+            
             # Start background tasks
             self._reconciliation_task = asyncio.create_task(self._reconciliation_loop())
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
@@ -139,9 +160,11 @@ class DistributedStateManager:
         try:
             self.enabled = False
             
-            # Stop lock manager
+            # Stop managers
             if self.lock_manager:
                 await self.lock_manager.stop()
+            if self.consensus_manager:
+                await self.consensus_manager.stop()
             
             # Cancel background tasks
             if self._reconciliation_task:
@@ -330,35 +353,29 @@ class DistributedStateManager:
         value: Any,
         old_value: Any
     ) -> bool:
-        """Apply state update using consensus"""
+        """Apply state update using consensus (delegated to DistributedConsensusManager)"""
+        if not self.enabled or not self.consensus_manager:
+            return False
+        
         try:
-            proposal = ConsensusProposal(
-                key=key,
-                value=value,
-                proposer_node=self.node_id,
-                consensus_threshold=self.consensus_threshold
-            )
+            # Create proposal
+            proposal = await self.consensus_manager.create_proposal(key, value, old_value)
+            if not proposal:
+                return False
             
-            self.proposals[proposal.proposal_id] = proposal
-            
-            # In real scenario, broadcast to peers
-            # For now, simulate local consensus
-            proposal.votes_for.add(self.node_id)
-            
-            # Check if consensus reached
-            if await self._check_consensus(proposal):
+            # Check if consensus reached (for single node or auto-approval)
+            if await self.consensus_manager.check_consensus(proposal):
                 proposal.state = "approved"
                 
                 # Apply the update
                 success = await self._apply_state_update(key, value, old_value)
                 
                 if success:
-                    proposal.state = "applied"
-                    self.metrics.consensual_updates += 1
-                
-                # Notify listeners
-                for listener in self.listeners:
-                    await listener.on_consensus_reached(proposal)
+                    await self.consensus_manager.mark_proposal_applied(proposal.proposal_id)
+                    # Copy metrics from consensus manager
+                    if self.consensus_manager:
+                        consensus_metrics = self.consensus_manager.get_metrics()
+                        self.metrics.consensual_updates = consensus_metrics['consensual_updates']
                 
                 return success
             
@@ -366,42 +383,17 @@ class DistributedStateManager:
         except Exception:
             return False
     
-    async def _check_consensus(self, proposal: ConsensusProposal) -> bool:
-        """Check if proposal has reached consensus"""
-        if not self.peers:
-            return True
-        
-        total_voters = len(self.peers) + 1  # +1 for self
-        votes_needed = int(total_voters * proposal.consensus_threshold)
-        votes_have = len(proposal.votes_for)
-        
-        return votes_have >= votes_needed
-    
     async def vote_on_proposal(
         self,
         proposal_id: str,
         vote_for: bool,
         from_node: str
     ) -> bool:
-        """Record vote on a proposal"""
-        if proposal_id not in self.proposals:
+        """Record vote on a proposal (delegated to DistributedConsensusManager)"""
+        if not self.enabled or not self.consensus_manager:
             return False
         
-        try:
-            proposal = self.proposals[proposal_id]
-            
-            if vote_for:
-                proposal.votes_for.add(from_node)
-            else:
-                proposal.votes_against.add(from_node)
-            
-            # Check if consensus now reached
-            if await self._check_consensus(proposal):
-                proposal.state = "approved"
-            
-            return True
-        except Exception:
-            return False
+        return await self.consensus_manager.vote_on_proposal(proposal_id, vote_for, from_node)
     
     # ========================================================================
     # VERSIONING
@@ -543,6 +535,9 @@ class DistributedStateManager:
         """Register peer node"""
         try:
             self.peers.add(peer_id)
+            # Sync with consensus manager
+            if self.consensus_manager:
+                self.consensus_manager.register_peer(peer_id)
             return True
         except Exception:
             return False
@@ -551,6 +546,9 @@ class DistributedStateManager:
         """Unregister peer node"""
         try:
             self.peers.discard(peer_id)
+            # Sync with consensus manager
+            if self.consensus_manager:
+                self.consensus_manager.unregister_peer(peer_id)
             return True
         except Exception:
             return False
