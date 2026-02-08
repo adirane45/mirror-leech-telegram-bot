@@ -1,0 +1,148 @@
+# Alertmanager Configuration
+# Handles alert routing, grouping, and notifications
+
+global:
+  resolve_timeout: 5m
+  # Telegram configuration
+  telegram_api_url: 'https://api.telegram.org'
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  receiver: 'default-receiver'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'telegram-critical'
+      group_wait: 0s
+      repeat_interval: 5m
+
+    # Warning alerts - grouped notifications
+    - match:
+        severity: warning
+      receiver: 'telegram-warnings'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 3h
+
+    # Info alerts - daily summary
+    - match:
+        severity: info
+      receiver: 'telegram-info'
+      group_wait: 5m
+      group_interval: 1h
+      repeat_interval: 24h
+
+# Inhibition rules (suppress alerts)
+inhibit_rules:
+  # Suppress warnings if critical alert for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+
+  # Suppress info if warning for same service
+  - source_match:
+      severity: 'warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'cluster', 'service']
+
+# Receivers (notification destinations)
+receivers:
+  - name: 'default-receiver'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          <b>🔔 Alert</b>
+          
+          <b>Status:</b> {{ .Status | toUpper }}
+          <b>Severity:</b> {{ .GroupLabels.severity }}
+          <b>Alert:</b> {{ .GroupLabels.alertname }}
+          
+          {{ range .Alerts }}
+          <b>Summary:</b> {{ .Annotations.summary }}
+          <b>Description:</b> {{ .Annotations.description }}
+          <b>Time:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+  - name: 'telegram-critical'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          <b>🚨 CRITICAL ALERT</b>
+          
+          <b>Alert:</b> {{ .GroupLabels.alertname }}
+          <b>Component:</b> {{ .GroupLabels.component }}
+          
+          {{ range .Alerts }}
+          <b>⚠️ {{ .Annotations.summary }}</b>
+          {{ .Annotations.description }}
+          
+          <b>Started:</b> {{ .StartsAt.Format "15:04:05" }}
+          {{ if .EndsAt }}<b>Ended:</b> {{ .EndsAt.Format "15:04:05" }}{{ end }}
+          {{ end }}
+          
+          <b>Action required immediately!</b>
+
+  - name: 'telegram-warnings'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          <b>⚠️ Warning</b>
+          
+          <b>Alert:</b> {{ .GroupLabels.alertname }}
+          <b>Component:</b> {{ .GroupLabels.component }}
+          
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'telegram-info'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          <b>ℹ️ Info</b>
+          
+          <b>Alert:</b> {{ .GroupLabels.alertname }}
+          
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
+
+  # Optional: Slack receiver
+  # - name: 'slack'
+  #   slack_configs:
+  #     - api_url: '${SLACK_WEBHOOK_URL}'
+  #       channel: '#alerts'
+  #       title: '{{ .GroupLabels.alertname }}'
+  #       text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+  # Optional: Email receiver
+  # - name: 'email'
+  #   email_configs:
+  #     - to: 'alerts@example.com'
+  #       from: 'alertmanager@example.com'
+  #       smarthost: 'smtp.gmail.com:587'
+  #       auth_username: '${SMTP_USER}'
+  #       auth_password: '${SMTP_PASSWORD}'
+  #       headers:
+  #         Subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'

@@ -1,0 +1,205 @@
+# Prometheus Alerting Rules
+# Copy this file to integrations/monitoring/prometheus/alerts.yml
+
+groups:
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up{job="mirror-leech-bot"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Service is down"
+          description: "{{ $labels.instance }} has been down for more than 2 minutes"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / node_memory_MemTotal_bytes) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }} (threshold: 85%)"
+
+      # High CPU  usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Disk space low"
+          description: "Available disk space is {{ $value | humanizePercentage }} (threshold: 15%)"
+
+      # Disk space critical
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Disk space critically low"
+          description: "Available disk space is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+  - name: download_alerts
+    interval: 30s
+    rules:
+      # Download failures
+      - alert: HighDownloadFailureRate
+        expr: rate(downloads_failed_total[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          component: downloads
+        annotations:
+          summary: "High download failure rate"
+          description: "Download failure rate is {{ $value | humanizePercentage }} (threshold: 20%)"
+
+      # Slow downloads
+      - alert: SlowDownloadSpeed
+        expr: avg(download_speed_bytes_per_second) < 1000000
+        for: 10m
+        labels:
+          severity: info
+          component: downloads
+        annotations:
+          summary: "Downloads are slow"
+          description: "Average download speed is {{ $value | humanize }}B/s (threshold: 1MB/s)"
+
+      # Queue backlog
+      - alert: DownloadQueueBacklog
+        expr: download_queue_length > 50
+        for: 15m
+        labels:
+          severity: warning
+          component: downloads
+        annotations:
+          summary: "Download queue has backlog"
+          description: "Queue length is {{ $value }} items (threshold: 50)"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # MongoDB connection issues
+      - alert: MongoDBConnectionFailed
+        expr: mongodb_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "MongoDB connection failed"
+          description: "Cannot connect to MongoDB for more than 2 minutes"
+
+      # Slow queries
+      - alert: SlowDatabaseQueries
+        expr: rate(mongodb_query_duration_seconds_sum[5m]) / rate(mongodb_query_duration_seconds_count[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Average query time is {{ $value }}s (threshold: 1s)"
+
+  - name: redis_alerts
+    interval: 30s
+    rules:
+      # Redis connection issues
+      - alert: RedisConnectionFailed
+        expr: redis_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis connection failed"
+          description: "Cannot connect to Redis for more than 2 minutes"
+
+      # High memory usage
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes /redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Low cache hit rate
+      - alert: LowCacheHitRate
+        expr: rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) < 0.7
+        for: 10m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 70%)"
+
+  - name: celery_alerts
+    interval: 30s
+    rules:
+      # Task failures
+      - alert: HighTaskFailureRate
+        expr: rate(celery_task_failed_total[5m]) / rate(celery_task_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: workers
+        annotations:
+          summary: "High task failure rate"
+          description: "Task failure rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # Worker down
+      - alert: CeleryWorkerDown
+        expr: celery_workers_active == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: workers
+        annotations:
+          summary: "No active Celery workers"
+          description: "All Celery workers are down"
+
+      # Long task queue
+      - alert: LongTaskQueue
+        expr: celery_queue_length > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: workers
+        annotations:
+          summary: "Task queue is long"
+          description: "Task queue length is {{ $value }} (threshold: 100)"
