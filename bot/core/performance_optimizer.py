@@ -11,20 +11,23 @@ Implements:
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta, UTC
-from typing import Dict, List, Set, Optional, Callable, Any
+from datetime import datetime, UTC
+from typing import Dict, List, Set, Optional, Any
 
-# Import models from refactored performance_optimizer_models module
+# Import models
 from .performance_optimizer_models import (
     OptimizationStrategy,
     ResourceType,
     ScalingAction,
-    ResourceMetric,
     PerformanceSnapshot,
     OptimizationRecommendation,
     OptimizerMetrics,
     PerformanceOptimizationListener,
 )
+
+# Import specialized components
+from .performance_metrics_collector import PerformanceMetricsCollector
+from .performance_scaling_engine import PerformanceScalingEngine
 
 
 class PerformanceOptimizer:
@@ -46,24 +49,17 @@ class PerformanceOptimizer:
         self.enabled = False
         self.node_id = ""
         self.strategy = OptimizationStrategy.BALANCED
-        self.snapshots: Dict[str, List[PerformanceSnapshot]] = {}  # node_id -> list
-        self.metrics: Dict[str, ResourceMetric] = {}
-        self.recommendations: Dict[str, OptimizationRecommendation] = {}
-        self.scaling_history: List[tuple[str, ScalingAction, datetime]] = []  # (node_id, action, timestamp)
         self.peers: Set[str] = set()
-        self.listeners: List[PerformanceOptimizationListener] = []
-        self.optimizer_metrics = OptimizerMetrics()
+        
+        # Component delegation
+        self.collector = PerformanceMetricsCollector()
+        self.scaling_engine = PerformanceScalingEngine()
         
         # Thresholds
         self.cpu_threshold = 0.8
         self.memory_threshold = 0.85
         self.network_threshold = 0.8
         self.disk_io_threshold = 0.75
-        
-        # Scaling limits
-        self.max_scale_up_count = 3
-        self.min_scale_down_count = 1
-        self.scale_cooldown_seconds = 300
         
         # Background tasks
         self._collector_task: Optional[asyncio.Task] = None
@@ -86,9 +82,20 @@ class PerformanceOptimizer:
             self.strategy = strategy
             self.enabled = True
             
+            # Configure components
+            self.collector.set_enabled(True)
+            self.collector.set_node_info(self.node_id, self.peers)
+            self.scaling_engine.set_enabled(True)
+            self.scaling_engine.set_strategy(strategy)
+            
             # Start background tasks
-            self._collector_task = asyncio.create_task(self._collection_loop())
-            self._analyzer_task = asyncio.create_task(self._analysis_loop())
+            self._collector_task = asyncio.create_task(self.collector.collection_loop())
+            self._analyzer_task = asyncio.create_task(
+                self.scaling_engine.analysis_loop(
+                    self.collector.get_node_snapshots,
+                    lambda: [self.node_id] + list(self.peers)
+                )
+            )
             
             return True
         except Exception:
@@ -102,6 +109,8 @@ class PerformanceOptimizer:
         
         try:
             self.enabled = False
+            self.collector.set_enabled(False)
+            self.scaling_engine.set_enabled(False)
             
             if self._collector_task:
                 self._collector_task.cancel()
@@ -115,220 +124,40 @@ class PerformanceOptimizer:
             return False
     
     # ========================================================================
-    # METRICS COLLECTION
+    # METRICS DELEGATION
     # ========================================================================
     
-    async def record_metric(self, metric: ResourceMetric) -> bool:
+    async def record_metric(self, metric):
         """Record a resource metric"""
-        if not self.enabled:
-            return False
-        
-        try:
-            self.metrics[f"{metric.node_id}_{metric.resource_type.value}"] = metric
-            
-            # Track in snapshots
-            if metric.node_id not in self.snapshots:
-                self.snapshots[metric.node_id] = []
-            
-            self.optimizer_metrics.metrics_collected += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_metric_collected(metric)
-            
-            # Check threshold
-            if metric.value > metric.threshold:
-                for listener in self.listeners:
-                    await listener.on_threshold_exceeded(metric)
-            
-            return True
-        except Exception:
-            return False
+        return await self.collector.record_metric(metric)
     
     async def record_snapshot(self, snapshot: PerformanceSnapshot) -> bool:
         """Record performance snapshot"""
-        if not self.enabled:
-            return False
-        
-        try:
-            if snapshot.node_id not in self.snapshots:
-                self.snapshots[snapshot.node_id] = []
-            
-            self.snapshots[snapshot.node_id].append(snapshot)
-            
-            # Keep only last 100 snapshots per node
-            if len(self.snapshots[snapshot.node_id]) > 100:
-                self.snapshots[snapshot.node_id].pop(0)
-            
-            return True
-        except Exception:
-            return False
+        return await self.collector.record_snapshot(snapshot)
     
     async def get_latest_snapshot(self, node_id: str) -> Optional[PerformanceSnapshot]:
         """Get latest performance snapshot for node"""
-        if node_id not in self.snapshots or not self.snapshots[node_id]:
-            return None
-        return self.snapshots[node_id][-1]
+        return await self.collector.get_latest_snapshot(node_id)
     
     async def get_node_snapshots(self, node_id: str, count: int = 10) -> List[PerformanceSnapshot]:
         """Get last N snapshots for node"""
-        if node_id not in self.snapshots:
-            return []
-        return self.snapshots[node_id][-count:]
+        return await self.collector.get_node_snapshots(node_id, count)
     
     # ========================================================================
-    # PERFORMANCE ANALYSIS
-    # ========================================================================
-    
-    async def _collection_loop(self) -> None:
-        """Background loop for metrics collection"""
-        while self.enabled:
-            try:
-                # In real implementation, would collect from actual nodes
-                # For now, simulate collection
-                for peer in [self.node_id] + list(self.peers):
-                    snapshot = PerformanceSnapshot(
-                        node_id=peer,
-                        cpu_usage=0.3,
-                        memory_usage=0.4,
-                        network_usage=0.2
-                    )
-                    await self.record_snapshot(snapshot)
-                
-                await asyncio.sleep(10)
-            except Exception:
-                await asyncio.sleep(10)
-    
-    async def _analysis_loop(self) -> None:
-        """Background loop for performance analysis"""
-        while self.enabled:
-            try:
-                # Analyze metrics and make recommendations
-                for node_id in [self.node_id] + list(self.peers):
-                    snapshots = await self.get_node_snapshots(node_id, 5)
-                    if snapshots:
-                        await self._analyze_node_performance(node_id, snapshots)
-                
-                self.optimizer_metrics.last_updated = datetime.now(UTC)
-                await asyncio.sleep(15)
-            except Exception:
-                await asyncio.sleep(15)
-    
-    async def _analyze_node_performance(self, node_id: str, snapshots: List[PerformanceSnapshot]) -> None:
-        """Analyze performance of a node"""
-        if not snapshots:
-            return
-        
-        try:
-            # Calculate averages
-            avg_cpu = sum(s.cpu_usage for s in snapshots) / len(snapshots)
-            avg_memory = sum(s.memory_usage for s in snapshots) / len(snapshots)
-            avg_response = sum(s.response_time_ms for s in snapshots) / len(snapshots)
-            
-            # Update metrics
-            self.optimizer_metrics.avg_cpu_usage = avg_cpu
-            self.optimizer_metrics.avg_memory_usage = avg_memory
-            self.optimizer_metrics.avg_response_time_ms = avg_response
-            
-            if avg_cpu > self.cpu_threshold or avg_memory > self.memory_threshold:
-                self.optimizer_metrics.nodes_under_load += 1
-            
-            # Make recommendations
-            if avg_cpu > 0.9 or avg_memory > 0.9:
-                await self._make_recommendation(
-                    node_id,
-                    ScalingAction.SCALE_UP,
-                    ResourceType.CPU if avg_cpu > avg_memory else ResourceType.MEMORY,
-                    "High utilization detected",
-                    5
-                )
-            elif avg_cpu < 0.2 and avg_memory < 0.2:
-                await self._make_recommendation(
-                    node_id,
-                    ScalingAction.SCALE_DOWN,
-                    None,
-                    "Low utilization detected",
-                    2
-                )
-        except Exception:
-            pass
-    
-    async def _make_recommendation(
-        self,
-        node_id: str,
-        action: ScalingAction,
-        resource_type: Optional[ResourceType],
-        reason: str,
-        priority: int
-    ) -> bool:
-        """Make optimization recommendation"""
-        try:
-            recommendation = OptimizationRecommendation(
-                node_id=node_id,
-                action=action,
-                resource_type=resource_type,
-                reason=reason,
-                priority=priority,
-                estimated_impact=0.3 + (priority * 0.1)
-            )
-            
-            self.recommendations[recommendation.recommendation_id] = recommendation
-            self.optimizer_metrics.recommendations_made += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_recommendation_made(recommendation)
-            
-            return True
-        except Exception:
-            return False
-    
-    # ========================================================================
-    # AUTO-SCALING
+    # AUTO-SCALING DELEGATION
     # ========================================================================
     
     async def execute_scaling_action(self, node_id: str, action: ScalingAction) -> bool:
         """Execute auto-scaling action"""
-        if not self.enabled:
-            return False
-        
-        try:
-            self.scaling_history.append((node_id, action, datetime.now(UTC)))
-            self.optimizer_metrics.scaling_actions_taken += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_scaling_action(action, node_id)
-            
-            return True
-        except Exception:
-            return False
+        return await self.scaling_engine.execute_scaling_action(node_id, action)
     
     async def can_scale_up(self, node_id: str) -> bool:
         """Check if node can scale up"""
-        try:
-            # Count recent scale ups
-            cutoff = datetime.now(UTC) - timedelta(seconds=self.scale_cooldown_seconds)
-            recent_scale_ups = sum(
-                1 for n, a, ts in self.scaling_history
-                if n == node_id and a == ScalingAction.SCALE_UP and ts > cutoff
-            )
-            return recent_scale_ups < self.max_scale_up_count
-        except Exception:
-            return False
+        return await self.scaling_engine.can_scale_up(node_id)
     
     async def can_scale_down(self, node_id: str) -> bool:
         """Check if node can scale down"""
-        try:
-            # Count recent scale downs
-            cutoff = datetime.now(UTC) - timedelta(seconds=self.scale_cooldown_seconds)
-            recent_scale_downs = sum(
-                1 for n, a, ts in self.scaling_history
-                if n == node_id and a == ScalingAction.SCALE_DOWN and ts > cutoff
-            )
-            return recent_scale_downs < self.min_scale_down_count
-        except Exception:
-            return False
+        return await self.scaling_engine.can_scale_down(node_id)
     
     # ========================================================================
     # MANAGEMENT
@@ -338,6 +167,7 @@ class PerformanceOptimizer:
         """Register peer node"""
         try:
             self.peers.add(peer_id)
+            self.collector.set_node_info(self.node_id, self.peers)
             return True
         except Exception:
             return False
@@ -345,7 +175,8 @@ class PerformanceOptimizer:
     async def add_listener(self, listener: PerformanceOptimizationListener) -> bool:
         """Register performance listener"""
         try:
-            self.listeners.append(listener)
+            self.collector.add_listener(listener)
+            self.scaling_engine.add_listener(listener)
             return True
         except Exception:
             return False
@@ -354,6 +185,7 @@ class PerformanceOptimizer:
         """Set optimization strategy"""
         try:
             self.strategy = strategy
+            self.scaling_engine.set_strategy(strategy)
             return True
         except Exception:
             return False
@@ -378,15 +210,15 @@ class PerformanceOptimizer:
     
     async def get_metrics(self) -> OptimizerMetrics:
         """Get optimizer metrics"""
-        return self.optimizer_metrics
+        return self.scaling_engine.optimizer_metrics
     
     async def get_recommendation(self, recommendation_id: str) -> Optional[OptimizationRecommendation]:
         """Get recommendation by ID"""
-        return self.recommendations.get(recommendation_id)
+        return self.scaling_engine.get_recommendation(recommendation_id)
     
     async def get_recommendations_for_node(self, node_id: str) -> List[OptimizationRecommendation]:
         """Get recommendations for specific node"""
-        return [r for r in self.recommendations.values() if r.node_id == node_id]
+        return self.scaling_engine.get_recommendations_for_node(node_id)
     
     async def is_enabled(self) -> bool:
         """Check if optimizer is enabled"""
