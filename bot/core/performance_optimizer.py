@@ -49,7 +49,7 @@ class ResourceMetric:
     resource_type: ResourceType
     value: float  # 0.0-1.0 or other metric value
     threshold: float = 0.8  # Alert threshold
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     node_id: str = ""
     
     def to_dict(self) -> Dict[str, Any]:
@@ -69,7 +69,7 @@ class PerformanceSnapshot:
     """Performance snapshot at a point in time"""
     snapshot_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     node_id: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     cpu_usage: float = 0.0
     memory_usage: float = 0.0
     network_usage: float = 0.0
@@ -102,7 +102,7 @@ class OptimizationRecommendation:
     reason: str = ""
     priority: int = 1  # 1=low, 5=critical
     estimated_impact: float = 0.0  # 0.0-1.0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
@@ -128,7 +128,7 @@ class OptimizerMetrics:
     avg_memory_usage: float = 0.0
     avg_response_time_ms: float = 0.0
     nodes_under_load: int = 0
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""

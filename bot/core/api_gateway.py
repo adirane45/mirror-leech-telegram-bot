@@ -43,7 +43,7 @@ class ApiRequest:
     headers: Dict[str, str] = field(default_factory=dict)
     body: Any = None
     client_id: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
@@ -63,7 +63,7 @@ class ApiResponse:
     status_code: int = 200
     headers: Dict[str, str] = field(default_factory=dict)
     body: Any = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     processing_time_ms: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
@@ -114,7 +114,7 @@ class GatewayMetrics:
     circuit_open_count: int = 0
     avg_response_time_ms: float = 0.0
     active_connections: int = 0
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
