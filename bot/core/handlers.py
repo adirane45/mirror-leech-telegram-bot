@@ -283,7 +283,7 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(handle_quick_action, filters=regex("^quick_action"))
+        CallbackQueryHandler(handle_quick_action, filters=regex("^qa_"))
     )
     # Series Tracker Handlers
     TgClient.bot.add_handler(
@@ -301,7 +301,7 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(handle_tracker_callback, filters=regex("^tracker"))
+        CallbackQueryHandler(handle_tracker_callback, filters=regex("^tracker_"))
     )
     # Mobile Layout Handler
     TgClient.bot.add_handler(
@@ -312,7 +312,7 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(handle_mobile_callback, filters=regex("^mobile"))
+        CallbackQueryHandler(handle_mobile_callback, filters=regex("^(mobile|ctx|nav)_?"))
     )
     # Smart Download Assistant Handler
     TgClient.bot.add_handler(
@@ -323,7 +323,7 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(handle_assistant_callback, filters=regex("^assistant"))
+        CallbackQueryHandler(handle_assistant_callback, filters=regex("^assistant_"))
     )
     # Onboarding Callback Handler (for Get Started button)
     TgClient.bot.add_handler(
