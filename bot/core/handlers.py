@@ -18,6 +18,10 @@ from ..modules.enhanced_dashboard import (
     progress_summary_handler,
     comparison_stats_handler,
 )
+from ..modules.quick_actions import show_quick_menu, handle_quick_action
+from ..modules.series_tracker import track_series_command, show_tracked_series, handle_tracker_callback
+from ..modules.mobile_buttons import show_mobile_menu, handle_mobile_callback
+from ..modules.smart_download_assistant import show_download_assistant, handle_assistant_callback
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.filters import CustomFilters
 from .telegram_manager import TgClient
@@ -269,6 +273,61 @@ def add_handlers():
             filters=command(BotCommands.HelpCommand, case_sensitive=True)
             & CustomFilters.authorized,
         )
+    )
+    # Quick Actions Menu Handler
+    TgClient.bot.add_handler(
+        MessageHandler(
+            show_quick_menu,
+            filters=command(BotCommands.QuickActionsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(handle_quick_action, filters=regex("^quick_action"))
+    )
+    # Series Tracker Handlers
+    TgClient.bot.add_handler(
+        MessageHandler(
+            track_series_command,
+            filters=command(BotCommands.TrackSeriesCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            show_tracked_series,
+            filters=command(BotCommands.MyShowsCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(handle_tracker_callback, filters=regex("^tracker"))
+    )
+    # Mobile Layout Handler
+    TgClient.bot.add_handler(
+        MessageHandler(
+            show_mobile_menu,
+            filters=command(BotCommands.MobileLayoutCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(handle_mobile_callback, filters=regex("^mobile"))
+    )
+    # Smart Download Assistant Handler
+    TgClient.bot.add_handler(
+        MessageHandler(
+            show_download_assistant,
+            filters=command(BotCommands.SmartAssistantCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(handle_assistant_callback, filters=regex("^assistant"))
+    )
+    # Onboarding Callback Handler (for Get Started button)
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(onboarding_callback, filters=regex("^onboard"))
     )
     TgClient.bot.add_handler(
         MessageHandler(

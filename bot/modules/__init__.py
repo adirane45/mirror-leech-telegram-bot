@@ -51,6 +51,10 @@ from .stats import bot_stats, get_packages_version
 from .status import task_status, status_pages
 from .users_settings import get_users_settings, edit_user_settings, send_user_settings
 from .ytdlp import ytdl, ytdl_leech
+from .quick_actions import show_quick_menu, handle_quick_action
+from .series_tracker import track_series_command, show_tracked_series, handle_tracker_callback
+from .mobile_buttons import show_mobile_menu, handle_mobile_callback
+from .smart_download_assistant import show_download_assistant, handle_assistant_callback
 
 __all__ = [
     "send_bot_settings",
@@ -131,4 +135,13 @@ __all__ = [
     "send_user_settings",
     "ytdl",
     "ytdl_leech",
+    "show_quick_menu",
+    "handle_quick_action",
+    "track_series_command",
+    "show_tracked_series",
+    "handle_tracker_callback",
+    "show_mobile_menu",
+    "handle_mobile_callback",
+    "show_download_assistant",
+    "handle_assistant_callback",
 ]
