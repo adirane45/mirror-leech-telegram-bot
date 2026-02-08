@@ -39,7 +39,7 @@ pre-commit==3.6.0
 
 # Performance & Profiling
 memory-profiler==0.61.0
-py-spy==0.3.14
+py-spy==0.4.1
 locust==2.20.0
 
 # Code Analysis
