@@ -103,17 +103,42 @@ services:
     ports:
       - "9091:9090"
     volumes:
-      - ./integrations/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./integrations/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./integrations/monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ===== Alertmanager =====
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: mltb-alertmanager
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./integrations/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - prometheus
 
   # ===== Grafana Dashboard =====
   grafana:
@@ -249,6 +274,8 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
+    driver: local
+  alertmanager-data:
     driver: local
   logs:
     driver: local
