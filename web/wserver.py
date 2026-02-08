@@ -36,6 +36,15 @@ except Exception as e:
     LOGGER_INIT = getLogger(__name__)
     LOGGER_INIT.warning(f"GraphQL API not available: {e}")
 
+# Phase 3: Security & Hardening Integration
+try:
+    from bot.core.security_middleware import integrate_security_features
+    SECURITY_FEATURES_AVAILABLE = True
+except Exception as e:
+    SECURITY_FEATURES_AVAILABLE = False
+    LOGGER_INIT = getLogger(__name__)
+    LOGGER_INIT.warning(f"Phase 3 security features not available: {e}")
+
 getLogger("httpx").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
 
@@ -85,6 +94,27 @@ app = FastAPI(lifespan=lifespan)
 if ENHANCED_API_AVAILABLE:
     add_enhanced_endpoints(app)
 
+# Phase 3: Integrate security features
+if SECURITY_FEATURES_AVAILABLE:
+    # Get security settings from environment
+    enable_csrf = environ.get("ENABLE_CSRF_PROTECTION", "true").lower() == "true"
+    enable_https = environ.get("ENABLE_HTTPS_REDIRECT", "false").lower() == "true"
+    enable_audit = environ.get("ENABLE_SECURITY_AUDIT", "true").lower() == "true"
+    
+    # Integrate all Phase 3 security features
+    app = integrate_security_features(
+        app,
+        enable_middleware=True,
+        enable_csrf_endpoint=True,
+        enable_status_endpoint=True,
+        enable_csrf=enable_csrf,
+        enable_input_validation=True,
+        enable_audit_logging=enable_audit,
+        enable_https_redirect=enable_https,
+        exempt_paths=["/health", "/metrics", "/docs", "/openapi.json", "/api/dashboard/tasks", "/api/dashboard/stats"]
+    )
+    LOGGER_INIT = getLogger(__name__)
+    LOGGER_INIT.info("✅ Phase 3 security features integrated")
 
 templates = Jinja2Templates(directory="web/templates/")
 

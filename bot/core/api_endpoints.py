@@ -2,12 +2,14 @@
 FastAPI Endpoints for Enhanced Services
 Metrics endpoint, health checks, and API status
 Safe Innovation Path - Phase 1
+Phase 3: Enhanced with security features
 
 Enhanced by: justadi  
 Date: February 5, 2026
+Updated: February 8, 2026 (Phase 3 Security)
 """
 
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, Response, HTTPException, Request
 from fastapi.responses import PlainTextResponse, JSONResponse
 import time
 import sys
@@ -15,6 +17,15 @@ from typing import Dict, Any
 
 from .. import LOGGER
 from .config_manager import Config
+
+# Phase 3: Security imports
+try:
+    from .input_validator import get_input_validator
+    from .security_audit import get_audit_logger, AuditEventType, AuditSeverity
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    LOGGER.warning("Phase 3 security features not available for API endpoints")
 
 
 # This will be integrated with the existing FastAPI app in web_dashboard.py
@@ -213,16 +224,48 @@ def add_enhanced_endpoints(app: FastAPI):
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/api/v1/automation/clients/select")
-    async def automation_client_select(payload: Dict[str, Any]):
+    async def automation_client_select(request: Request, payload: Dict[str, Any]):
         """Select best client for a link"""
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
+            
+            # Phase 3: Input validation
+            if SECURITY_AVAILABLE:
+                validator = get_input_validator()
+                audit_logger = get_audit_logger()
+                
+                # Validate link URL
+                link = (payload or {}).get("link", "").strip()
+                if link:
+                    is_valid, error = validator.validate_field(link, "url")
+                    if not is_valid:
+                        audit_logger.log_security_event(
+                            event_type=AuditEventType.XSS_ATTEMPT_DETECTED,
+                            user_id=str((payload or {}).get("user_id", "unknown")),
+                            severity=AuditSeverity.WARNING,
+                            details={"link": link, "error": error},
+                            request_id=getattr(request.state, "request_id", "unknown")
+                        )
+                        raise HTTPException(status_code=400, detail=f"Invalid URL: {error}")
+                else:
+                    raise HTTPException(status_code=400, detail="Missing link")
+                
+                # Log API access
+                audit_logger.log_api_access(
+                    user_id=str((payload or {}).get("user_id", "unknown")),
+                    endpoint="/api/v1/automation/clients/select",
+                    method="POST",
+                    status_code=200,
+                    ip_address=request.client.host if request.client else "unknown",
+                    request_id=getattr(request.state, "request_id", "unknown")
+                )
+            else:
+                link = (payload or {}).get("link", "").strip()
+                if not link:
+                    raise HTTPException(status_code=400, detail="Missing link")
+            
             from .client_selector import client_selector
-
-            link = (payload or {}).get("link", "").strip()
-            if not link:
-                raise HTTPException(status_code=400, detail="Missing link")
             user_id = (payload or {}).get("user_id")
             client, reason = await client_selector.select_client(link, user_id=user_id)
             return JSONResponse(
@@ -251,17 +294,51 @@ def add_enhanced_endpoints(app: FastAPI):
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post("/api/v1/automation/autoscaler/scale")
-    async def automation_autoscaler_scale(payload: Dict[str, Any]):
+    async def automation_autoscaler_scale(request: Request, payload: Dict[str, Any]):
         """Manually scale worker autoscaler"""
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
+            
+            # Phase 3: Input validation
+            if SECURITY_AVAILABLE:
+                validator = get_input_validator()
+                audit_logger = get_audit_logger()
+                
+                target = (payload or {}).get("target")
+                if target is None:
+                    raise HTTPException(status_code=400, detail="Missing target")
+                
+                # Validate integer range (0-100 workers max)
+                is_valid, error = validator.validate_field(target, "integer", min_value=0, max_value=100)
+                if not is_valid:
+                    audit_logger.log_security_event(
+                        event_type=AuditEventType.INVALID_INPUT_DETECTED,
+                        user_id="system",
+                        severity=AuditSeverity.WARNING,
+                        details={"target": target, "error": error},
+                        request_id=getattr(request.state, "request_id", "unknown")
+                    )
+                    raise HTTPException(status_code=400, detail=f"Invalid target value: {error}")
+                
+                target = int(target)
+                
+                # Log config change
+                audit_logger.log_config_change(
+                    user_id="api",
+                    config_key="worker_autoscaler.target",
+                    old_value="auto",
+                    new_value=str(target),
+                    ip_address=request.client.host if request.client else "unknown",
+                    request_id=getattr(request.state, "request_id", "unknown")
+                )
+            else:
+                target = (payload or {}).get("target")
+                if target is None:
+                    raise HTTPException(status_code=400, detail="Missing target")
+                target = int(target)
+            
             from .worker_autoscaler import worker_autoscaler
-
-            target = (payload or {}).get("target")
-            if target is None:
-                raise HTTPException(status_code=400, detail="Missing target")
-            target = int(target)
             ok = await worker_autoscaler.scale_to(target)
             return JSONResponse(content={"scaled": bool(ok), "target": target})
         except HTTPException:
