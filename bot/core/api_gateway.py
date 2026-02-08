@@ -11,21 +11,21 @@ Implements:
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, UTC
 from typing import Dict, List, Set, Optional
 
-# Import models from refactored api_gateway_models module
+# Import models
 from .api_gateway_models import (
-    RequestMethod,
-    CircuitState,
     ApiRequest,
     ApiResponse,
-    RateLimitConfig,
-    CircuitBreakerConfig,
     RouteConfig,
     GatewayMetrics,
     ApiGatewayListener,
 )
+
+# Import specialized components
+from .api_gateway_router import ApiGatewayRouter
+from .api_gateway_limiter import ApiGatewayLimiter
 
 
 class ApiGateway:
@@ -46,17 +46,12 @@ class ApiGateway:
     def __init__(self):
         self.enabled = False
         self.node_id = ""
-        self.routes: Dict[str, RouteConfig] = {}
-        self.nodes: Set[str] = set()
-        self.request_history: Dict[str, List[datetime]] = {}  # client_id -> timestamps
-        self.circuit_states: Dict[str, CircuitState] = {}  # node_id -> state
-        self.circuit_failures: Dict[str, int] = {}  # node_id -> failure count
-        self.circuit_successes: Dict[str, int] = {}  # node_id -> success count
-        self.metrics = GatewayMetrics()
-        self.listeners: List[ApiGatewayListener] = []
         self.auth_tokens: Set[str] = set()
-        self.default_rate_limit = RateLimitConfig()
-        self.default_circuit_breaker = CircuitBreakerConfig()
+        self.listeners: List[ApiGatewayListener] = []
+        
+        # Component delegation
+        self.router = ApiGatewayRouter()
+        self.limiter = ApiGatewayLimiter()
         
         # Background tasks
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -78,9 +73,14 @@ class ApiGateway:
             self.node_id = node_id or f"gateway_{uuid.uuid4().hex[:8]}"
             self.enabled = True
             
+            # Configure components
+            self.router.set_enabled(True)
+            self.router.set_node_info(self.node_id)
+            self.limiter.set_enabled(True)
+            
             # Start background tasks
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-            self._circuit_check_task = asyncio.create_task(self._circuit_check_loop())
+            self._circuit_check_task = asyncio.create_task(self.limiter.circuit_check_loop())
             
             return True
         except Exception:
@@ -94,6 +94,8 @@ class ApiGateway:
         
         try:
             self.enabled = False
+            self.router.set_enabled(False)
+            self.limiter.set_enabled(False)
             
             if self._cleanup_task:
                 self._cleanup_task.cancel()
@@ -107,30 +109,18 @@ class ApiGateway:
             return False
     
     # ========================================================================
-    # ROUTING
+    # ROUTING DELEGATION
     # ========================================================================
     
     async def register_route(self, route: RouteConfig) -> bool:
         """Register a route"""
-        if not self.enabled:
-            return False
-        
-        try:
-            self.routes[route.path] = route
-            return True
-        except Exception:
-            return False
+        return await self.router.register_route(route)
     
     async def register_node(self, node_id: str) -> bool:
         """Register target node"""
-        try:
-            self.nodes.add(node_id)
-            self.circuit_states[node_id] = CircuitState.CLOSED
-            self.circuit_failures[node_id] = 0
-            self.circuit_successes[node_id] = 0
-            return True
-        except Exception:
-            return False
+        result = await self.router.register_node(node_id)
+        self.limiter.initialize_node(node_id)
+        return result
     
     async def route_request(self, request: ApiRequest) -> ApiResponse:
         """Route request to appropriate node"""
@@ -144,15 +134,15 @@ class ApiGateway:
         start_time = datetime.now(UTC)
         
         try:
-            self.metrics.total_requests += 1
+            self.limiter.metrics.total_requests += 1
             
             # Notify listeners
             for listener in self.listeners:
                 await listener.on_request_received(request)
             
             # Check rate limit
-            if not await self._check_rate_limit(request.client_id):
-                self.metrics.rate_limited_requests += 1
+            if not await self.limiter.check_rate_limit(request.client_id):
+                self.limiter.metrics.rate_limited_requests += 1
                 return ApiResponse(
                     request_id=request.request_id,
                     status_code=429,
@@ -160,9 +150,9 @@ class ApiGateway:
                 )
             
             # Find route
-            route = self.routes.get(request.path)
+            route = await self.router.get_route(request.path)
             if not route:
-                self.metrics.failed_requests += 1
+                self.limiter.metrics.failed_requests += 1
                 return ApiResponse(
                     request_id=request.request_id,
                     status_code=404,
@@ -173,7 +163,7 @@ class ApiGateway:
             if route.requires_auth:
                 auth_token = request.headers.get("Authorization", "")
                 if not await self._check_auth(auth_token):
-                    self.metrics.failed_requests += 1
+                    self.limiter.metrics.failed_requests += 1
                     return ApiResponse(
                         request_id=request.request_id,
                         status_code=401,
@@ -181,9 +171,12 @@ class ApiGateway:
                     )
             
             # Select target node
-            target_node = await self._select_node(route)
+            target_node = await self.router.select_node(
+                route,
+                circuit_states=self.limiter.circuit_states
+            )
             if not target_node:
-                self.metrics.failed_requests += 1
+                self.limiter.metrics.failed_requests += 1
                 return ApiResponse(
                     request_id=request.request_id,
                     status_code=503,
@@ -191,20 +184,16 @@ class ApiGateway:
                 )
             
             # Check circuit breaker
-            if not await self._check_circuit(target_node):
-                self.metrics.circuit_open_count += 1
+            if not await self.limiter.check_circuit(target_node):
+                self.limiter.metrics.circuit_open_count += 1
                 return ApiResponse(
                     request_id=request.request_id,
                     status_code=503,
                     body="Circuit breaker open"
                 )
             
-            # Notify routing
-            for listener in self.listeners:
-                await listener.on_request_routed(request, target_node)
-            
-            # Process request (simulated)
-            response = await self._process_request(request, target_node)
+            # Route request
+            response = await self.router.route_request(request, target_node)
             
             # Calculate processing time
             elapsed = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
@@ -212,11 +201,11 @@ class ApiGateway:
             
             # Update metrics
             if response.status_code < 400:
-                self.metrics.successful_requests += 1
-                await self._record_success(target_node)
+                self.limiter.metrics.successful_requests += 1
+                await self.limiter.record_success(target_node)
             else:
-                self.metrics.failed_requests += 1
-                await self._record_failure(target_node)
+                self.limiter.metrics.failed_requests += 1
+                await self.limiter.record_failure(target_node)
             
             # Notify response
             for listener in self.listeners:
@@ -225,160 +214,12 @@ class ApiGateway:
             return response
             
         except Exception as e:
-            self.metrics.failed_requests += 1
+            self.limiter.metrics.failed_requests += 1
             return ApiResponse(
                 request_id=request.request_id,
                 status_code=500,
                 body=f"Internal error: {str(e)}"
             )
-    
-    async def _select_node(self, route: RouteConfig) -> Optional[str]:
-        """Select target node for route"""
-        if route.target_node:
-            return route.target_node
-        
-        if route.use_load_balancer and self.nodes:
-            # Simple round-robin (in real impl, would use more sophisticated logic)
-            available_nodes = [
-                n for n in self.nodes
-                if self.circuit_states.get(n) != CircuitState.OPEN
-            ]
-            if available_nodes:
-                import random
-                return random.choice(available_nodes)
-        
-        return None
-    
-    async def _process_request(self, request: ApiRequest, target_node: str) -> ApiResponse:
-        """Process request (simulated)"""
-        # In real implementation, would forward to actual node
-        await asyncio.sleep(0.01)  # Simulate processing
-        
-        return ApiResponse(
-            request_id=request.request_id,
-            status_code=200,
-            body={"message": "Success", "node": target_node}
-        )
-    
-    # ========================================================================
-    # RATE LIMITING
-    # ========================================================================
-    
-    async def _check_rate_limit(self, client_id: str) -> bool:
-        """Check if request is within rate limit"""
-        if not self.default_rate_limit.enabled or not client_id:
-            return True
-        
-        try:
-            now = datetime.now(UTC)
-            window_start = now - timedelta(seconds=self.default_rate_limit.window_seconds)
-            
-            # Get request history for client
-            if client_id not in self.request_history:
-                self.request_history[client_id] = []
-            
-            # Remove old requests
-            self.request_history[client_id] = [
-                ts for ts in self.request_history[client_id]
-                if ts > window_start
-            ]
-            
-            # Check limit
-            if len(self.request_history[client_id]) >= self.default_rate_limit.max_requests:
-                # Notify listeners
-                for listener in self.listeners:
-                    await listener.on_rate_limit_exceeded(client_id)
-                return False
-            
-            # Record request
-            self.request_history[client_id].append(now)
-            return True
-            
-        except Exception:
-            return True  # Allow on error
-    
-    async def set_rate_limit(self, max_requests: int, window_seconds: int) -> bool:
-        """Set global rate limit"""
-        try:
-            self.default_rate_limit = RateLimitConfig(
-                max_requests=max_requests,
-                window_seconds=window_seconds,
-                enabled=True
-            )
-            return True
-        except Exception:
-            return False
-    
-    # ========================================================================
-    # CIRCUIT BREAKER
-    # ========================================================================
-    
-    async def _check_circuit(self, node_id: str) -> bool:
-        """Check circuit breaker state"""
-        if not self.default_circuit_breaker.enabled:
-            return True
-        
-        state = self.circuit_states.get(node_id, CircuitState.CLOSED)
-        
-        if state == CircuitState.OPEN:
-            return False
-        elif state == CircuitState.HALF_OPEN:
-            # Allow one request to test
-            return True
-        
-        return True
-    
-    async def _record_failure(self, node_id: str) -> None:
-        """Record request failure for circuit breaker"""
-        if not self.default_circuit_breaker.enabled:
-            return
-        
-        try:
-            self.circuit_failures[node_id] = self.circuit_failures.get(node_id, 0) + 1
-            self.circuit_successes[node_id] = 0
-            
-            # Check if should open circuit
-            if self.circuit_failures[node_id] >= self.default_circuit_breaker.failure_threshold:
-                self.circuit_states[node_id] = CircuitState.OPEN
-                self.circuit_failures[node_id] = 0
-        except Exception:
-            pass
-    
-    async def _record_success(self, node_id: str) -> None:
-        """Record request success for circuit breaker"""
-        if not self.default_circuit_breaker.enabled:
-            return
-        
-        try:
-            self.circuit_successes[node_id] = self.circuit_successes.get(node_id, 0) + 1
-            self.circuit_failures[node_id] = 0
-            
-            state = self.circuit_states.get(node_id, CircuitState.CLOSED)
-            
-            # Check if should close circuit from half-open
-            if state == CircuitState.HALF_OPEN:
-                if self.circuit_successes[node_id] >= self.default_circuit_breaker.success_threshold:
-                    self.circuit_states[node_id] = CircuitState.CLOSED
-                    self.circuit_successes[node_id] = 0
-        except Exception:
-            pass
-    
-    async def _circuit_check_loop(self) -> None:
-        """Background loop for circuit breaker recovery"""
-        while self.enabled:
-            try:
-                timeout = self.default_circuit_breaker.timeout_seconds
-                
-                # Check for circuits to transition to half-open
-                for node_id in self.circuit_states:
-                    if self.circuit_states[node_id] == CircuitState.OPEN:
-                        # In real implementation, would track when circuit opened
-                        # For now, just transition to half-open occasionally
-                        self.circuit_states[node_id] = CircuitState.HALF_OPEN
-                
-                await asyncio.sleep(timeout)
-            except Exception:
-                await asyncio.sleep(60)
     
     # ========================================================================
     # AUTHENTICATION
@@ -397,6 +238,14 @@ class ApiGateway:
         return token in self.auth_tokens
     
     # ========================================================================
+    # RATE LIMITING DELEGATION
+    # ========================================================================
+    
+    async def set_rate_limit(self, max_requests: int, window_seconds: int) -> bool:
+        """Set global rate limit"""
+        return await self.limiter.set_rate_limit(max_requests, window_seconds)
+    
+    # ========================================================================
     # MANAGEMENT
     # ========================================================================
     
@@ -404,17 +253,19 @@ class ApiGateway:
         """Register gateway listener"""
         try:
             self.listeners.append(listener)
+            self.router.add_listener(listener)
+            self.limiter.add_listener(listener)
             return True
         except Exception:
             return False
     
     async def get_metrics(self) -> GatewayMetrics:
         """Get gateway metrics"""
-        return self.metrics
+        return self.limiter.metrics
     
-    async def get_circuit_state(self, node_id: str) -> CircuitState:
+    async def get_circuit_state(self, node_id: str):
         """Get circuit breaker state for node"""
-        return self.circuit_states.get(node_id, CircuitState.CLOSED)
+        return self.limiter.get_circuit_state(node_id)
     
     async def is_enabled(self) -> bool:
         """Check if gateway is enabled"""
@@ -425,18 +276,7 @@ class ApiGateway:
         while self.enabled:
             try:
                 # Clean up old request history
-                cutoff = datetime.now(UTC) - timedelta(hours=1)
-                for client_id in list(self.request_history.keys()):
-                    self.request_history[client_id] = [
-                        ts for ts in self.request_history[client_id]
-                        if ts > cutoff
-                    ]
-                    
-                    # Remove empty histories
-                    if not self.request_history[client_id]:
-                        del self.request_history[client_id]
-                
-                self.metrics.last_updated = datetime.now(UTC)
+                await self.limiter.cleanup_old_history(hours=1)
                 await asyncio.sleep(300)
             except Exception:
                 await asyncio.sleep(300)
