@@ -3,23 +3,18 @@
 # Modified by: justadi
 
 from collections import deque
+
 from uvloop import install
 
 install()
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from asyncio import Lock, new_event_loop, set_event_loop
-from logging import (
-    getLogger,
-    FileHandler,
-    StreamHandler,
-    INFO,
-    basicConfig,
-    WARNING,
-    ERROR,
-)
-from integrations.sabnzbdapi import SabnzbdClient
-from time import time
+from logging import ERROR, INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
 from os import cpu_count
+from time import time
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+from integrations.sabnzbdapi import SabnzbdClient
 
 getLogger("requests").setLevel(WARNING)
 getLogger("urllib3").setLevel(WARNING)

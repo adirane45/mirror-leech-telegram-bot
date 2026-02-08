@@ -1,0 +1,92 @@
+# Dependabot configuration for automated dependency updates
+# Documentation: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/config"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "your-username"  # Replace with actual GitHub username
+    assignees:
+      - "your-username"  # Replace with actual GitHub username
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    ignore:
+      # Ignore major version updates for stable dependencies
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Group updates for better PR management
+    groups:
+      production-dependencies:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "celery*"
+          - "redis*"
+          - "pymongo*"
+      google-dependencies:
+        patterns:
+          - "google-*"
+      telegram-dependencies:
+        patterns:
+          - "kurigram*"
+          - "tgcrypto*"
+      testing-dependencies:
+        patterns:
+          - "pytest*"
+
+  # Development dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "dev-dependencies"
+    commit-message:
+      prefix: "deps(dev)"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+
+# Security updates
+# Dependabot will automatically create PRs for security vulnerabilities
+# regardless of the schedule above
