@@ -35,7 +35,7 @@ pylint==3.0.3
 pydocstyle==6.3.0
 
 # Pre-commit
-pre-commit==3.6.0
+pre-commit==4.5.1
 
 # Performance & Profiling
 memory-profiler==0.61.0
