@@ -297,16 +297,32 @@ class Mirror(TaskListener):
             and not is_gdrive_link(self.link)
         ):
             buttons = ButtonMaker()
-            buttons.data_button("Help Menu", "help menu")
-            buttons.data_button("Mirror Options", "help mirror main")
-            buttons.data_button("YT-DLP Options", "help yt main")
-            buttons.data_button("Settings", "quick_settings")
-            prompt = (
-                "<b>📥 Mirror/Leech</b>\n\n"
-                "Send a link or reply to a file/message.\n"
-                f"Example: <code>/{BotCommands.MirrorCommand[0]} https://example.com/file.zip</code>\n"
-                f"Leech: <code>/{BotCommands.LeechCommand[0]} https://example.com/file.zip</code>"
-            )
+            
+            # Specific help for qBittorrent command
+            if self.is_qbit:
+                buttons.data_button("Magnet Link Info", "help qbit main")
+                buttons.data_button("Torrent Search", "search main")
+                prompt = (
+                    "<b>🧲 qBittorrent Mirror</b>\n\n"
+                    "<b>Send:</b>\n"
+                    "• Magnet link (magnet:?xt=urn:btih:...)\n"
+                    "• Torrent URL (https://...file.torrent)\n"
+                    "• .torrent file (reply with file)\n\n"
+                    "<b>NOT supported:</b> HTTP/HTTPS direct downloads\n"
+                    "(Use /mirror or /m for direct downloads)"
+                )
+            else:
+                buttons.data_button("Help Menu", "help menu")
+                buttons.data_button("Mirror Options", "help mirror main")
+                buttons.data_button("YT-DLP Options", "help yt main")
+                buttons.data_button("Settings", "quick_settings")
+                prompt = (
+                    "<b>📥 Mirror/Leech</b>\n\n"
+                    "Send a link or reply to a file/message.\n"
+                    f"Example: <code>/{BotCommands.MirrorCommand[0]} https://example.com/file.zip</code>\n"
+                    f"Leech: <code>/{BotCommands.LeechCommand[0]} https://example.com/file.zip</code>"
+                )
+            
             await send_message(self.message, prompt, buttons.build_menu(2))
             await self.remove_from_same_dir()
             return
@@ -356,6 +372,36 @@ class Mirror(TaskListener):
                     return
 
         auto_client = None
+        
+        # Validate qBittorrent-specific link requirements
+        if self.is_qbit and not self.is_nzb:
+            link_is_valid_for_qbit = (
+                is_magnet(self.link) or 
+                self.link.endswith(".torrent") or 
+                (isinstance(self.link, str) and (
+                    self.link.startswith(("http://", "https://")) and 
+                    self.link.endswith(".torrent")
+                )) or
+                await aiopath.exists(self.link) or
+                file_ is not None
+            )
+            if not link_is_valid_for_qbit:
+                await send_message(
+                    self.message,
+                    "❌ <b>Invalid link for /qm (qBittorrent)</b>\n\n"
+                    "✅ Supported formats:\n"
+                    "• Magnet: <code>magnet:?xt=urn:btih:...</code>\n"
+                    "• Torrent URL: <code>https://example.com/file.torrent</code>\n"
+                    "• File: Reply with .torrent file\n\n"
+                    "❌ NOT supported:\n"
+                    "• Direct HTTP files\n"
+                    "• Google Drive links\n"
+                    "• Rclone paths\n\n"
+                    "Use <b>/mirror</b> for direct downloads."
+                )
+                await self.remove_from_same_dir()
+                return
+        
         if (
             getattr(Config, "ENABLE_CLIENT_SELECTION", True)
             and not self.is_jd
@@ -408,6 +454,12 @@ async def mirror(client, message):
 
 
 async def qb_mirror(client, message):
+    """Handle /qbmirror or /qm command for qBittorrent downloads
+    Requires: magnet link, torrent URL, or .torrent file
+    Examples:
+        /qm magnet:?xt=urn:btih:...
+        /qm https://example.com/file.torrent
+    """
     bot_loop.create_task(Mirror(client, message, is_qbit=True).new_event())
 
 

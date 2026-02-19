@@ -18,8 +18,8 @@ from typing import Dict, Any
 
 getLogger("pymongo").setLevel(ERROR)
 
-if path.exists("log.txt"):
-    with open("log.txt", "r+") as f:
+if path.exists("data/logs/log.txt"):
+    with open("data/logs/log.txt", "r+") as f:
         f.truncate(0)
 
 if path.exists("rlog.txt"):
@@ -27,7 +27,7 @@ if path.exists("rlog.txt"):
 
 basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[FileHandler("log.txt"), StreamHandler()],
+    handlers=[FileHandler("data/logs/log.txt"), StreamHandler()],
     level=INFO,
 )
 

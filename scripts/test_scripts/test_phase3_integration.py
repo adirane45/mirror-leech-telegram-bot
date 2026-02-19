@@ -4,7 +4,7 @@ Phase 3 Integration Test Script
 Tests all integrated security features in the application
 
 Usage:
-    python3 scripts/test_phase3_integration.py
+    python3 scripts/test_scripts/test_phase3_integration.py
 """
 
 import sys

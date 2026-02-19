@@ -51,6 +51,7 @@ def _map_download_path(path: str) -> str:
 async def add_qb_torrent(listener, path, ratio, seed_time):
     path = _map_download_path(path)
     try:
+        # Improved error handling for HTTP 403 and other errors
         form = AddFormBuilder.with_client(TorrentManager.qbittorrent)
         if await aiopath.exists(listener.link):
             async with aiopen(listener.link, "rb") as f:
@@ -68,13 +69,40 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
             form = form.seeding_time_limit(int(seed_time))
         try:
             await TorrentManager.qbittorrent.torrents.add(form.build())
-        except (ClientError, TimeoutError, Exception, AQError) as e:
-            LOGGER.error(
-                f"{e}. {listener.mid}. Already added torrent or unsupported link/file type!"
-            )
-            await listener.on_download_error(
-                f"{e}. {listener.mid}. Already added torrent or unsupported link/file type!"
-            )
+        except AQError as e:
+            error_str = str(e).lower()
+            if "403" in str(e) or "forbidden" in error_str:
+                error_msg = "❌ Torrent source returned HTTP 403 (Forbidden). Source may be blocked, region-locked, or require authentication."
+            elif "401" in str(e) or "unauthorized" in error_str:
+                error_msg = "❌ Torrent source requires authentication (HTTP 401)."
+            elif "already" in error_str or "exists" in error_str:
+                error_msg = "⚠️  This torrent has already been added to qBittorrent."
+            else:
+                error_msg = f"❌ qBittorrent error: {e}"
+            LOGGER.error(f"qBittorrent AQError: {e}. {listener.mid}")
+            await listener.on_download_error(error_msg)
+            return
+        except (ClientError, TimeoutError) as e:
+            error_str = str(e).lower()
+            if "timeout" in error_str or "timed out" in error_str:
+                error_msg = "⏱️  Connection to qBittorrent timed out. Ensure qBittorrent service is running."
+            elif "connection" in error_str or "connect" in error_str:
+                error_msg = "🔴 Cannot connect to qBittorrent service. Please check if it's running."
+            else:
+                error_msg = f"❌ qBittorrent communication error: {e}"
+            LOGGER.error(f"qBittorrent connection error: {e}. {listener.mid}")
+            await listener.on_download_error(error_msg)
+            return
+        except Exception as e:
+            error_str = str(e).lower()
+            if "403" in str(e):
+                error_msg = "❌ HTTP 403 Forbidden - Source rejected the download request."
+            elif "already added" in error_str:
+                error_msg = "⚠️  This torrent/magnet already exists in qBittorrent."
+            else:
+                error_msg = f"❌ qBittorrent error: {e}. Link may be unsupported or incorrect."
+            LOGGER.error(f"qBittorrent error: {e}. {listener.mid}")
+            await listener.on_download_error(error_msg)
             return
         tor_info = await TorrentManager.qbittorrent.torrents.info(tag=f"{listener.mid}")
         if len(tor_info) == 0:

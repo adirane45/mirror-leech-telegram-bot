@@ -42,7 +42,7 @@ async def ping(_, message):
 
 @new_task
 async def log(_, message):
-    await send_file(message, "log.txt")
+    await send_file(message, "data/logs/log.txt")
 
 
 @new_task

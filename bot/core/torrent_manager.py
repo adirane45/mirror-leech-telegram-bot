@@ -54,7 +54,7 @@ class TorrentManager:
         try:
             qb_client = await create_client(
                 qb_url,
-                username="admin",
+                username="mltb",
                 password="mltbmltb",
             )
         except Exception as e:
@@ -63,7 +63,7 @@ class TorrentManager:
                 # Try with empty password
                 qb_client = await create_client(
                     qb_url,
-                    username="admin",
+                    username="mltb",
                     password="",
                 )
             except Exception as e2:

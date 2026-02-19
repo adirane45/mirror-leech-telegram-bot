@@ -120,7 +120,7 @@ templates = Jinja2Templates(directory="web/templates/")
 
 basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[FileHandler("log.txt"), StreamHandler()],
+    handlers=[FileHandler("data/logs/log.txt"), StreamHandler()],
     level=INFO,
 )
 

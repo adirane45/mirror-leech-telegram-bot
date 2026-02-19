@@ -177,48 +177,49 @@ python3 -m bot
 
 ## 📚 Complete Documentation
 
-### 📖 Available Guides
+### 📖 Core Documentation
 
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [**README_COMPLETE.md**](README_COMPLETE.md) | 📋 Complete overview | 20-30 min |
-| [**SETUP_GUIDE.md**](SETUP_GUIDE.md) | 🚀 Installation steps | 30-45 min |
-| [**USAGE_GUIDE.md**](USAGE_GUIDE.md) | 📖 All commands (50+) | 45-60 min |
-| [**DEPLOYMENT_GUIDE.md**](DEPLOYMENT_GUIDE.md) | 🐳 Docker deployment | 15-20 min |
-| [**PHASE2_VERIFICATION.md**](PHASE2_VERIFICATION.md) | ✅ Phase 2 test results | 10 min |
-| [**PHASE2_COMPLETION_SUMMARY.txt**](PHASE2_COMPLETION_SUMMARY.txt) | 📋 Phase 2 checklist | 10 min |
-| [**QUICK_REFERENCE.md**](QUICK_REFERENCE.md) | ⚡ Command cheat sheet | 5 min |
-| [**ADVANCED_FEATURES_GUIDE.md**](ADVANCED_FEATURES_GUIDE.md) | 🔧 Advanced setup | 20-30 min |
+| Document | Purpose | Type |
+|----------|---------|------|
+| [**INSTALLATION.md**](INSTALLATION.md) | 🚀 Setup & deployment | Required |
+| [**CONFIGURATION.md**](CONFIGURATION.md) | ⚙️ Configuration guide | Required |
+| [**API_REFERENCE.md**](API_REFERENCE.md) | 📚 API endpoints & classes | Reference |
+| [**AUTOMATION_FEATURES.md**](AUTOMATION_FEATURES.md) | 🤖 Automation capabilities | Guide |
+| [**DEPLOYMENT_CHECKLIST.md**](DEPLOYMENT_CHECKLIST.md) | ✅ Production deployment | Checklist |
+| [**FEATURE_IMPLEMENTATION_ROADMAP.md**](FEATURE_IMPLEMENTATION_ROADMAP.md) | 🗺️ Future features (Phase 6-11) | Planning |
+| [**RESTRUCTURING_NOTES.md**](RESTRUCTURING_NOTES.md) | 📁 Project organization | Reference |
 
-### 📈 Phase 2 Features Documentation
+### 📚 Archived Documentation
 
-**New in v3.1.0:**
-- [PHASE2_VERIFICATION.md](PHASE2_VERIFICATION.md) - End-to-end test results & verification
-- [PHASE2_COMPLETION_SUMMARY.txt](PHASE2_COMPLETION_SUMMARY.txt) - Implementation checklist & deployment guide
-- JSON-structured logging configuration
-- Alert system setup & delivery channels
-- Automatic backup recovery procedures
-- Performance profiling guides
+All completed phase documentation, implementation reports, and legacy guides are organized in the [**ARCHIVE/**](ARCHIVE/ARCHIVE_INDEX.md) folder.
+
+**Quick access to archived materials:**
+- [**ARCHIVE_INDEX.md**](ARCHIVE_INDEX.md) - Complete archive guide and index
+- [**ARCHIVE/phases/**](ARCHIVE/phases/) - Phase 1-3 completion documentation
+- [**ARCHIVE/reports/**](ARCHIVE/reports/) - Implementation reports and summaries
+- [**ARCHIVE/TIER3_/**](ARCHIVE/) - Full Tier 3 (Phase 5) deployment documentation
+
+📌 **See [ARCHIVE_INDEX.md](ARCHIVE_INDEX.md) for a complete list of archived materials and when to reference them.**
 
 ### 🎓 Learning Paths
 
-**👶 Beginner** (2-3 hours)
-1. Read README_COMPLETE.md
-2. Follow SETUP_GUIDE.md
-3. Try basic commands
-4. Bookmark QUICK_REFERENCE.md
+**👶 Beginner** (1-2 hours)
+1. Read [README.md](../README.md) in root
+2. Follow [INSTALLATION.md](INSTALLATION.md)
+3. Review [CONFIGURATION.md](CONFIGURATION.md)
+4. Try basic commands from [API_REFERENCE.md](API_REFERENCE.md)
 
-**👤 Intermediate** (4-6 hours)
+**👤 Intermediate** (3-4 hours)
 1. Complete beginner path
-2. Read USAGE_GUIDE.md
-3. Try all features
-4. Setup automation
+2. Read [AUTOMATION_FEATURES.md](AUTOMATION_FEATURES.md)
+3. Explore [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+4. Review [ARCHIVE/TIER3_TIER3_IMPLEMENTATION_PLAN.md](ARCHIVE/TIER3_TIER3_IMPLEMENTATION_PLAN.md) for architecture
 
-**🧑‍💻 Advanced** (8+ hours)
+**🧑‍💻 Advanced** (5+ hours)
 1. Complete intermediate path
-2. Read ADVANCED_FEATURES_GUIDE.md
-3. Explore code
-4. Add customizations
+2. Review [FEATURE_IMPLEMENTATION_ROADMAP.md](FEATURE_IMPLEMENTATION_ROADMAP.md)
+3. Check [ARCHIVE_INDEX.md](ARCHIVE_INDEX.md) for implementation patterns
+4. Explore archived Tier documentation for best practices
 
 ---
 

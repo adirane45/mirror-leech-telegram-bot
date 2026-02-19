@@ -4,7 +4,7 @@ Phase 4 Performance Optimization - Test Script
 Tests all performance modules
 
 Usage:
-    python3 scripts/test_phase4_performance.py
+    python3 scripts/test_scripts/test_phase4_performance.py
 """
 
 import sys
