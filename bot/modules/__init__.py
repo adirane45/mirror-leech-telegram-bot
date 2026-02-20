@@ -102,6 +102,7 @@ __all__ = [
     "bot_help",
     "ping",
     "log",
+    "stream_link",
     "run_shell",
     "speedtest",
     "schedule_task",
