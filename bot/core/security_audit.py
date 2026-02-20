@@ -241,6 +241,9 @@ class AuditLogger:
         status_code: int,
         ip_address: Optional[str] = None,
         response_time_ms: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        request_id: Optional[str] = None,
+        **_: Any,
     ) -> None:
         """Log API access"""
         success = 200 <= status_code < 300
@@ -253,6 +256,16 @@ class AuditLogger:
         elif status_code >= 500:
             severity = AuditSeverity.CRITICAL
         
+        details = {
+            "method": method,
+            "status_code": status_code,
+            "response_time_ms": response_time_ms,
+        }
+        if metadata:
+            details.update(metadata)
+        if request_id:
+            details["request_id"] = request_id
+
         entry = AuditEntry(
             event_type=AuditEventType.API_ACCESS,
             user_id=user_id,
@@ -261,11 +274,7 @@ class AuditLogger:
             result=success,
             severity=severity,
             ip_address=ip_address,
-            details={
-                "method": method,
-                "status_code": status_code,
-                "response_time_ms": response_time_ms,
-            },
+            details=details,
         )
         
         self.log_event(entry)
@@ -276,6 +285,9 @@ class AuditLogger:
         user_id: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
+        severity: Optional[AuditSeverity] = None,
+        request_id: Optional[str] = None,
+        **_: Any,
     ) -> None:
         """
         Log security-related event
@@ -295,7 +307,12 @@ class AuditLogger:
             AuditEventType.RATE_LIMIT_EXCEEDED,
         }
         
-        severity = AuditSeverity.CRITICAL if event_type in critical_events else AuditSeverity.WARNING
+        if severity is None:
+            severity = AuditSeverity.CRITICAL if event_type in critical_events else AuditSeverity.WARNING
+
+        merged_details = details or {}
+        if request_id:
+            merged_details = {**merged_details, "request_id": request_id}
         
         entry = AuditEntry(
             event_type=event_type,
@@ -303,7 +320,7 @@ class AuditLogger:
             result=False,
             severity=severity,
             ip_address=ip_address,
-            details=details or {},
+            details=merged_details,
         )
         
         self.log_event(entry)
@@ -315,8 +332,18 @@ class AuditLogger:
         old_value: Any,
         new_value: Any,
         ip_address: Optional[str] = None,
+        request_id: Optional[str] = None,
+        **_: Any,
     ) -> None:
         """Log configuration change"""
+        details = {
+            "config_key": config_key,
+            "old_value": self._redact_sensitive(config_key, old_value),
+            "new_value": self._redact_sensitive(config_key, new_value),
+        }
+        if request_id:
+            details["request_id"] = request_id
+
         entry = AuditEntry(
             event_type=AuditEventType.CONFIG_CHANGE,
             user_id=user_id,
@@ -324,11 +351,7 @@ class AuditLogger:
             action=f"Changed {config_key}",
             severity=AuditSeverity.WARNING,
             ip_address=ip_address,
-            details={
-                "config_key": config_key,
-                "old_value": self._redact_sensitive(config_key, old_value),
-                "new_value": self._redact_sensitive(config_key, new_value),
-            },
+            details=details,
         )
         
         self.log_event(entry)
@@ -340,10 +363,19 @@ class AuditLogger:
         permission: str,
         granted: bool,
         ip_address: Optional[str] = None,
+        request_id: Optional[str] = None,
+        **_: Any,
     ) -> None:
         """Log permission change"""
         event_type = AuditEventType.PERMISSION_GRANTED if granted else AuditEventType.PERMISSION_DENIED
         
+        details = {
+            "target_user": target_user,
+            "permission": permission,
+        }
+        if request_id:
+            details["request_id"] = request_id
+
         entry = AuditEntry(
             event_type=event_type,
             user_id=user_id,
@@ -351,10 +383,7 @@ class AuditLogger:
             action=f"{'Granted' if granted else 'Denied'} {permission}",
             severity=AuditSeverity.WARNING,
             ip_address=ip_address,
-            details={
-                "target_user": target_user,
-                "permission": permission,
-            },
+            details=details,
         )
         
         self.log_event(entry)

@@ -246,7 +246,7 @@ async def update_variables():
     )
 
     if Config.AUTHORIZED_CHATS:
-        aid = Config.AUTHORIZED_CHATS.split()
+        aid = Config.AUTHORIZED_CHATS.replace(",", " ").split()
         for id_ in aid:
             chat_id, *thread_ids = id_.split("|")
             chat_id = int(chat_id.strip())
@@ -257,7 +257,7 @@ async def update_variables():
                 auth_chats[chat_id] = []
 
     if Config.SUDO_USERS:
-        aid = Config.SUDO_USERS.split()
+        aid = Config.SUDO_USERS.replace(",", " ").split()
         for id_ in aid:
             sudo_users.append(int(id_.strip()))
 
