@@ -179,7 +179,7 @@ services:
       - "8060:8060"
       - "9090:9090"
     env_file:
-      - ./config/.env.production
+      - ../config/.env.production
     environment:
       - BASE_URL_PORT=8060
       - REDIS_HOST=redis
@@ -220,7 +220,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ./config/.env.production
+      - ../config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -251,7 +251,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ./config/.env.production
+      - ../config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
