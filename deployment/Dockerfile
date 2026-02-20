@@ -21,4 +21,4 @@ RUN sed -i 's/\r$//' *.sh 2>/dev/null || true
 RUN cp -f config/main_config.py config.py 2>/dev/null || true
 
 ENV PATH="/app/mltbenv/bin:$PATH"
-CMD ["python3", "-m", "bot"]
+CMD ["/app/mltbenv/bin/python3", "-m", "bot"]
