@@ -23,4 +23,4 @@ RUN cp -f config/main_config.py config.py 2>/dev/null || true
 ENV PATH="/app/mltbenv/bin:$PATH"
 ENV PYTHONPATH="/app:$PYTHONPATH"
 WORKDIR /app
-CMD ["/app/mltbenv/bin/python3", "-m", "bot"]
+CMD ["/app/mltbenv/bin/python3", "bot/__main__.py"]
