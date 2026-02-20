@@ -62,6 +62,7 @@ class BotCommands:
     HelpCommand = f"help{i}"
     HelpCommandList = [HelpCommand, f"menu{i}", f"commands{i}"]
     LogCommand = f"log{i}"
+    StreamLinkCommand = [f"streamlink{i}", f"sl{i}"]
     ShellCommand = f"shell{i}"
     AExecCommand = f"aexec{i}"
     ExecCommand = f"exec{i}"

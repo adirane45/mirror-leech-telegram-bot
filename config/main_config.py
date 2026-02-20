@@ -235,6 +235,11 @@ ENABLE_METRICS = True
 METRICS_PORT = _get_safe_int("METRICS_PORT", 9090)
 METRICS_PATH = "/metrics"
 
+
+# File cache settings (Telegram file ID cache)
+ENABLE_FILE_CACHE = os.getenv("ENABLE_FILE_CACHE", "true").lower() in ("1", "true", "yes")
+FILE_CACHE_TTL_DAYS = _get_safe_int("FILE_CACHE_TTL_DAYS", 30)
+FILE_CACHE_HASH_CHUNK_SIZE = _get_safe_int("FILE_CACHE_HASH_CHUNK_SIZE", 8 * 1024 * 1024)
 # Update system metrics interval (seconds)
 METRICS_UPDATE_INTERVAL = 60
 
@@ -519,6 +524,10 @@ if API_SECRET_KEY.startswith("GENERATE_"):
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
 if JWT_SECRET_KEY.startswith("GENERATE_"):
     JWT_SECRET_KEY = "change-me-in-production"
+
+# Stream link configuration (Phase 6.2)
+ENABLE_STREAM_LINKS = os.getenv("ENABLE_STREAM_LINKS", "true").lower() in ("1", "true", "yes")
+STREAM_LINK_TTL_SECONDS = _get_safe_int("STREAM_LINK_TTL_SECONDS", 1800)
 API_KEY_HEADER = "X-API-Key"
 
 # CORS Settings

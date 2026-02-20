@@ -17,6 +17,7 @@ from aiohttp.client_exceptions import ClientError
 from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
+from web.stream_handler import add_stream_routes
 
 try:
     from bot.core.api_endpoints import add_enhanced_endpoints
@@ -93,6 +94,8 @@ app = FastAPI(lifespan=lifespan)
 
 if ENHANCED_API_AVAILABLE:
     add_enhanced_endpoints(app)
+
+add_stream_routes(app)
 
 # Phase 3: Integrate security features
 if SECURITY_FEATURES_AVAILABLE:

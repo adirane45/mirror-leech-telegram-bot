@@ -80,6 +80,13 @@ Phase 11: Optimization & Scaling         [Months 29+]    (5+ features)
 **Priority:** ⭐⭐⭐⭐⭐ Critical User Feature  
 **Dependencies:** MongoDB, Redis, Task Tracking  
 
+**Status:** ✅ COMPLETE (Feb 20, 2026)
+
+### Implementation Notes (So Far)
+- Added `bot/core/file_cache_manager.py` for hash + cache storage.
+- Integrated cache lookup/storage into Telegram leech uploads.
+- Added unit tests for hash computation and cache key generation.
+
 ### Architecture
 ```
 User Downloads File X
@@ -159,6 +166,8 @@ User Requests Same File Later
 **Complexity:** 🟡 Medium (4-6 days)  
 **Priority:** ⭐⭐⭐⭐ High User Value  
 **Dependencies:** FastAPI, Temporal URL generation, Telegram API  
+
+**Status:** 🟡 IN PROGRESS (Started Feb 20, 2026)
 
 ### Architecture
 ```

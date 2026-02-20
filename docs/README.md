@@ -263,7 +263,7 @@ All completed phase documentation, implementation reports, and legacy guides are
 /search video       Search downloads
 ```
 
-**→ See [USAGE_GUIDE.md](USAGE_GUIDE.md) for 50+ commands with examples!**
+**→ See [COMMANDS.md](COMMANDS.md) for the full command list with usage and shortcuts.**
 
 ---
 

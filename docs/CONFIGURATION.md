@@ -397,6 +397,15 @@ CACHE_MAX_SIZE = 1000  # Maximum cached items
 CACHE_GDRIVE_RESULTS = True
 CACHE_YTDL_INFO = True
 CACHE_TORRENT_METADATA = True
+
+# Telegram File Cache (Instant Leeches)
+ENABLE_FILE_CACHE = True
+FILE_CACHE_TTL_DAYS = 30
+FILE_CACHE_HASH_CHUNK_SIZE = 8388608  # 8 MB
+
+# Stream Link Generator
+ENABLE_STREAM_LINKS = True
+STREAM_LINK_TTL_SECONDS = 1800  # 30 minutes
 ```
 
 ### Security Settings

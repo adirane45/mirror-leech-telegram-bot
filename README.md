@@ -365,7 +365,7 @@ For complete configuration guide, see [Configuration Guide](docs/CONFIGURATION.m
 | `/settings` | User settings | `/settings` |
 | `/mediainfo` | Get file info | `/mediainfo <file>` |
 
-For complete command reference, see [Command Documentation](docs/API_REFERENCE.md).
+For the full command list with usage and shortcuts, see [Command Documentation](docs/COMMANDS.md).
 
 ---
 

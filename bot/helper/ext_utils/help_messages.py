@@ -16,96 +16,623 @@ def _cmd_aliases(cmd):
 
 def format_command(cmd):
   primary = _cmd_primary(cmd)
+  return f"/{primary}"
+
+
+def format_shortcuts(cmd):
   aliases = _cmd_aliases(cmd)
-  alias_text = ""
-  if aliases:
-    alias_text = " (aka " + ", ".join(f"/{alias}" for alias in aliases) + ")"
-  return f"/{primary}{alias_text}"
+  if not aliases:
+    return ""
+  return ", ".join(f"/{alias}" for alias in aliases)
 
 
 HELP_CATEGORIES = {
+  "general": {
+    "title": "General",
+    "items": [
+      {
+        "name": "Start",
+        "cmd": BotCommands.StartCommandList,
+        "desc": "Start the bot",
+        "usage": f"/{_cmd_primary(BotCommands.StartCommandList)}",
+        "example": f"/{_cmd_primary(BotCommands.StartCommandList)}",
+      },
+      {
+        "name": "Help",
+        "cmd": BotCommands.HelpCommandList,
+        "desc": "Open help or search commands",
+        "usage": f"/{_cmd_primary(BotCommands.HelpCommandList)} [keyword]",
+        "example": f"/{_cmd_primary(BotCommands.HelpCommandList)} downloads",
+      },
+    ],
+  },
   "downloads": {
     "title": "Downloads & Uploads",
     "items": [
-      {"name": "Mirror", "cmd": BotCommands.MirrorCommand, "desc": "Mirror links to cloud"},
-      {"name": "Leech", "cmd": BotCommands.LeechCommand, "desc": "Upload to Telegram"},
-      {"name": "Qbit Mirror", "cmd": BotCommands.QbMirrorCommand, "desc": "Torrents via qBittorrent"},
-      {"name": "Qbit Leech", "cmd": BotCommands.QbLeechCommand, "desc": "Leech torrents"},
-      {"name": "JDownloader", "cmd": BotCommands.JdMirrorCommand, "desc": "Use JDownloader"},
-      {"name": "YT-DLP", "cmd": BotCommands.YtdlCommand, "desc": "Video downloads"},
+      {
+        "name": "Mirror",
+        "cmd": BotCommands.MirrorCommand,
+        "desc": "Mirror links to cloud",
+        "usage": f"/{_cmd_primary(BotCommands.MirrorCommand)} <link> [args]",
+        "example": f"/{_cmd_primary(BotCommands.MirrorCommand)} https://example.com/file.zip",
+      },
+      {
+        "name": "Leech",
+        "cmd": BotCommands.LeechCommand,
+        "desc": "Upload to Telegram",
+        "usage": f"/{_cmd_primary(BotCommands.LeechCommand)} <link> [args]",
+        "example": f"/{_cmd_primary(BotCommands.LeechCommand)} https://example.com/file.zip",
+      },
+      {
+        "name": "Qbit Mirror",
+        "cmd": BotCommands.QbMirrorCommand,
+        "desc": "Torrents via qBittorrent",
+        "usage": f"/{_cmd_primary(BotCommands.QbMirrorCommand)} <magnet|torrent>",
+        "example": f"/{_cmd_primary(BotCommands.QbMirrorCommand)} magnet:?xt=urn:btih:...",
+      },
+      {
+        "name": "Qbit Leech",
+        "cmd": BotCommands.QbLeechCommand,
+        "desc": "Leech torrents",
+        "usage": f"/{_cmd_primary(BotCommands.QbLeechCommand)} <magnet|torrent>",
+        "example": f"/{_cmd_primary(BotCommands.QbLeechCommand)} magnet:?xt=urn:btih:...",
+      },
+      {
+        "name": "JDownloader Mirror",
+        "cmd": BotCommands.JdMirrorCommand,
+        "desc": "Mirror via JDownloader",
+        "usage": f"/{_cmd_primary(BotCommands.JdMirrorCommand)} <link>",
+        "example": f"/{_cmd_primary(BotCommands.JdMirrorCommand)} https://example.com/file.zip",
+      },
+      {
+        "name": "JDownloader Leech",
+        "cmd": BotCommands.JdLeechCommand,
+        "desc": "Leech via JDownloader",
+        "usage": f"/{_cmd_primary(BotCommands.JdLeechCommand)} <link>",
+        "example": f"/{_cmd_primary(BotCommands.JdLeechCommand)} https://example.com/file.zip",
+      },
+      {
+        "name": "YT-DLP Mirror",
+        "cmd": BotCommands.YtdlCommand,
+        "desc": "Video downloads",
+        "usage": f"/{_cmd_primary(BotCommands.YtdlCommand)} <url> [options]",
+        "example": f"/{_cmd_primary(BotCommands.YtdlCommand)} https://youtu.be/xxxxx",
+      },
+      {
+        "name": "YT-DLP Leech",
+        "cmd": BotCommands.YtdlLeechCommand,
+        "desc": "Leech videos to Telegram",
+        "usage": f"/{_cmd_primary(BotCommands.YtdlLeechCommand)} <url> [options]",
+        "example": f"/{_cmd_primary(BotCommands.YtdlLeechCommand)} https://youtu.be/xxxxx",
+      },
+      {
+        "name": "NZB Mirror",
+        "cmd": BotCommands.NzbMirrorCommand,
+        "desc": "Mirror NZB files",
+        "usage": f"/{_cmd_primary(BotCommands.NzbMirrorCommand)} <nzb_url>",
+        "example": f"/{_cmd_primary(BotCommands.NzbMirrorCommand)} https://example.com/file.nzb",
+      },
+      {
+        "name": "NZB Leech",
+        "cmd": BotCommands.NzbLeechCommand,
+        "desc": "Leech NZB files",
+        "usage": f"/{_cmd_primary(BotCommands.NzbLeechCommand)} <nzb_url>",
+        "example": f"/{_cmd_primary(BotCommands.NzbLeechCommand)} https://example.com/file.nzb",
+      },
     ],
   },
   "drive": {
     "title": "Drive & Rclone",
     "items": [
-      {"name": "Clone", "cmd": BotCommands.CloneCommand, "desc": "Copy drive/rclone paths"},
-      {"name": "Count", "cmd": BotCommands.CountCommand, "desc": "Count drive folder"},
-      {"name": "Delete", "cmd": BotCommands.DeleteCommand, "desc": "Delete drive item"},
-      {"name": "List", "cmd": BotCommands.ListCommand, "desc": "Search in drive"},
+      {
+        "name": "Clone",
+        "cmd": BotCommands.CloneCommand,
+        "desc": "Copy drive/rclone paths",
+        "usage": f"/{_cmd_primary(BotCommands.CloneCommand)} <link|path>",
+        "example": f"/{_cmd_primary(BotCommands.CloneCommand)} https://drive.google.com/...",
+      },
+      {
+        "name": "Count",
+        "cmd": BotCommands.CountCommand,
+        "desc": "Count drive folder",
+        "usage": f"/{_cmd_primary(BotCommands.CountCommand)} <link|path>",
+        "example": f"/{_cmd_primary(BotCommands.CountCommand)} https://drive.google.com/...",
+      },
+      {
+        "name": "Delete",
+        "cmd": BotCommands.DeleteCommand,
+        "desc": "Delete drive item",
+        "usage": f"/{_cmd_primary(BotCommands.DeleteCommand)} <link|path>",
+        "example": f"/{_cmd_primary(BotCommands.DeleteCommand)} https://drive.google.com/...",
+      },
+      {
+        "name": "List",
+        "cmd": BotCommands.ListCommand,
+        "desc": "Search in drive",
+        "usage": f"/{_cmd_primary(BotCommands.ListCommand)} <query>",
+        "example": f"/{_cmd_primary(BotCommands.ListCommand)} ubuntu",
+      },
     ],
   },
   "queue": {
     "title": "Queue & Status",
     "items": [
-      {"name": "Status", "cmd": BotCommands.StatusCommandList, "desc": "Show task status"},
-      {"name": "Queue", "cmd": BotCommands.QueueCommandList, "desc": "Manage active tasks"},
-      {"name": "Pause", "cmd": BotCommands.PauseCommand, "desc": "Pause a task"},
-      {"name": "Resume", "cmd": BotCommands.ResumeCommand, "desc": "Resume a task"},
-      {"name": "Cancel", "cmd": BotCommands.CancelTaskCommand, "desc": "Cancel a task"},
+      {
+        "name": "Status",
+        "cmd": BotCommands.StatusCommandList,
+        "desc": "Show task status",
+        "usage": f"/{_cmd_primary(BotCommands.StatusCommandList)}",
+        "example": f"/{_cmd_primary(BotCommands.StatusCommandList)}",
+      },
+      {
+        "name": "Queue",
+        "cmd": BotCommands.QueueCommandList,
+        "desc": "Manage active tasks",
+        "usage": f"/{_cmd_primary(BotCommands.QueueCommandList)}",
+        "example": f"/{_cmd_primary(BotCommands.QueueCommandList)}",
+      },
+      {
+        "name": "Pause",
+        "cmd": BotCommands.PauseCommand,
+        "desc": "Pause a task",
+        "usage": f"/{_cmd_primary(BotCommands.PauseCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.PauseCommand)} 1a2b3c",
+      },
+      {
+        "name": "Resume",
+        "cmd": BotCommands.ResumeCommand,
+        "desc": "Resume a task",
+        "usage": f"/{_cmd_primary(BotCommands.ResumeCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.ResumeCommand)} 1a2b3c",
+      },
+      {
+        "name": "Priority",
+        "cmd": BotCommands.PriorityCommand,
+        "desc": "Set task priority",
+        "usage": f"/{_cmd_primary(BotCommands.PriorityCommand)} <gid> <level>",
+        "example": f"/{_cmd_primary(BotCommands.PriorityCommand)} 1a2b3c 1",
+      },
+      {
+        "name": "Pause All",
+        "cmd": BotCommands.PauseAllCommand,
+        "desc": "Pause all tasks",
+        "usage": f"/{_cmd_primary(BotCommands.PauseAllCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.PauseAllCommand)}",
+      },
+      {
+        "name": "Resume All",
+        "cmd": BotCommands.ResumeAllCommand,
+        "desc": "Resume all tasks",
+        "usage": f"/{_cmd_primary(BotCommands.ResumeAllCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ResumeAllCommand)}",
+      },
+      {
+        "name": "Cancel",
+        "cmd": BotCommands.CancelTaskCommand,
+        "desc": "Cancel a task",
+        "usage": f"/{_cmd_primary(BotCommands.CancelTaskCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.CancelTaskCommand)} 1a2b3c",
+      },
+      {
+        "name": "Cancel All",
+        "cmd": BotCommands.CancelAllCommand,
+        "desc": "Cancel all tasks",
+        "usage": f"/{_cmd_primary(BotCommands.CancelAllCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.CancelAllCommand)}",
+      },
+      {
+        "name": "Force Start",
+        "cmd": BotCommands.ForceStartCommand,
+        "desc": "Force start a queued task",
+        "usage": f"/{_cmd_primary(BotCommands.ForceStartCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.ForceStartCommand)} 1a2b3c",
+      },
+      {
+        "name": "Task Details",
+        "cmd": BotCommands.TaskDetailsCommand,
+        "desc": "Show task details",
+        "usage": f"/{_cmd_primary(BotCommands.TaskDetailsCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.TaskDetailsCommand)} 1a2b3c",
+      },
     ],
   },
   "search": {
     "title": "Search & History",
     "items": [
-      {"name": "Search", "cmd": BotCommands.SearchCommand, "desc": "Search torrents"},
-      {"name": "Task Search", "cmd": BotCommands.SearchTasksCommand, "desc": "Find tasks"},
-      {"name": "Filter Tasks", "cmd": BotCommands.FilterTasksCommand, "desc": "Filter by status"},
-      {"name": "History", "cmd": BotCommands.HistoryCommand, "desc": "Download history"},
+      {
+        "name": "Search",
+        "cmd": BotCommands.SearchCommand,
+        "desc": "Search torrents",
+        "usage": f"/{_cmd_primary(BotCommands.SearchCommand)} <query>",
+        "example": f"/{_cmd_primary(BotCommands.SearchCommand)} linux iso",
+      },
+      {
+        "name": "NZB Search",
+        "cmd": BotCommands.NzbSearchCommand,
+        "desc": "Search NZB files",
+        "usage": f"/{_cmd_primary(BotCommands.NzbSearchCommand)} <query>",
+        "example": f"/{_cmd_primary(BotCommands.NzbSearchCommand)} ubuntu",
+      },
+      {
+        "name": "Task Search",
+        "cmd": BotCommands.SearchTasksCommand,
+        "desc": "Find tasks",
+        "usage": f"/{_cmd_primary(BotCommands.SearchTasksCommand)} <query>",
+        "example": f"/{_cmd_primary(BotCommands.SearchTasksCommand)} ubuntu",
+      },
+      {
+        "name": "Filter Tasks",
+        "cmd": BotCommands.FilterTasksCommand,
+        "desc": "Filter by status",
+        "usage": f"/{_cmd_primary(BotCommands.FilterTasksCommand)} <status>",
+        "example": f"/{_cmd_primary(BotCommands.FilterTasksCommand)} downloading",
+      },
+      {
+        "name": "History",
+        "cmd": BotCommands.HistoryCommand,
+        "desc": "Download history",
+        "usage": f"/{_cmd_primary(BotCommands.HistoryCommand)} [limit]",
+        "example": f"/{_cmd_primary(BotCommands.HistoryCommand)} 10",
+      },
+    ],
+  },
+  "automation": {
+    "title": "Automation",
+    "items": [
+      {
+        "name": "Schedule",
+        "cmd": BotCommands.ScheduleCommand,
+        "desc": "Schedule tasks",
+        "usage": f"/{_cmd_primary(BotCommands.ScheduleCommand)} <time> <command>",
+        "example": f"/{_cmd_primary(BotCommands.ScheduleCommand)} 30m /{_cmd_primary(BotCommands.MirrorCommand)} https://example.com/file.zip",
+      },
+      {
+        "name": "Schedules",
+        "cmd": BotCommands.SchedulesCommand,
+        "desc": "List schedules",
+        "usage": f"/{_cmd_primary(BotCommands.SchedulesCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.SchedulesCommand)}",
+      },
+      {
+        "name": "Unschedule",
+        "cmd": BotCommands.UnscheduleCommand,
+        "desc": "Remove a schedule",
+        "usage": f"/{_cmd_primary(BotCommands.UnscheduleCommand)} <id>",
+        "example": f"/{_cmd_primary(BotCommands.UnscheduleCommand)} 3",
+      },
+      {
+        "name": "RSS",
+        "cmd": BotCommands.RssCommand,
+        "desc": "Manage RSS feeds",
+        "usage": f"/{_cmd_primary(BotCommands.RssCommand)} <add|del|list> [args]",
+        "example": f"/{_cmd_primary(BotCommands.RssCommand)} add https://example.com/feed.xml",
+      },
     ],
   },
   "settings": {
     "title": "Settings",
     "items": [
-      {"name": "User Settings", "cmd": BotCommands.UserSetCommand, "desc": "Per-user preferences"},
-      {"name": "Bot Settings", "cmd": BotCommands.BotSetCommand, "desc": "Owner settings"},
-      {"name": "UI Settings", "cmd": BotCommands.SettingsUICommandList, "desc": "UI & alerts"},
+      {
+        "name": "User Settings",
+        "cmd": BotCommands.UserSetCommand,
+        "desc": "Per-user preferences",
+        "usage": f"/{_cmd_primary(BotCommands.UserSetCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.UserSetCommand)}",
+      },
+      {
+        "name": "Bot Settings",
+        "cmd": BotCommands.BotSetCommand,
+        "desc": "Owner settings",
+        "usage": f"/{_cmd_primary(BotCommands.BotSetCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.BotSetCommand)}",
+      },
+      {
+        "name": "UI Settings",
+        "cmd": BotCommands.SettingsUICommandList,
+        "desc": "UI & alerts",
+        "usage": f"/{_cmd_primary(BotCommands.SettingsUICommandList)}",
+        "example": f"/{_cmd_primary(BotCommands.SettingsUICommandList)}",
+      },
+      {
+        "name": "View Toggle",
+        "cmd": BotCommands.ViewToggleCommand,
+        "desc": "Toggle view mode",
+        "usage": f"/{_cmd_primary(BotCommands.ViewToggleCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ViewToggleCommand)}",
+      },
+      {
+        "name": "Set Alerts",
+        "cmd": BotCommands.SetAlertsCommand,
+        "desc": "Configure alert preferences",
+        "usage": f"/{_cmd_primary(BotCommands.SetAlertsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.SetAlertsCommand)}",
+      },
+      {
+        "name": "Limit",
+        "cmd": BotCommands.LimitCommand,
+        "desc": "Set global task limit",
+        "usage": f"/{_cmd_primary(BotCommands.LimitCommand)} <number>",
+        "example": f"/{_cmd_primary(BotCommands.LimitCommand)} 5",
+      },
+      {
+        "name": "Limit Task",
+        "cmd": BotCommands.LimitTaskCommand,
+        "desc": "Set per-task limit",
+        "usage": f"/{_cmd_primary(BotCommands.LimitTaskCommand)} <gid> <number>",
+        "example": f"/{_cmd_primary(BotCommands.LimitTaskCommand)} 1a2b3c 2",
+      },
+      {
+        "name": "Category",
+        "cmd": BotCommands.CategoryCommand,
+        "desc": "Manage task categories",
+        "usage": f"/{_cmd_primary(BotCommands.CategoryCommand)} <name>",
+        "example": f"/{_cmd_primary(BotCommands.CategoryCommand)} movies",
+      },
+      {
+        "name": "Categorize",
+        "cmd": BotCommands.CategorizeCommand,
+        "desc": "Assign category to a task",
+        "usage": f"/{_cmd_primary(BotCommands.CategorizeCommand)} <gid> <name>",
+        "example": f"/{_cmd_primary(BotCommands.CategorizeCommand)} 1a2b3c movies",
+      },
+    ],
+  },
+  "tools": {
+    "title": "Tools & Media",
+    "items": [
+      {
+        "name": "Stream Link",
+        "cmd": BotCommands.StreamLinkCommand,
+        "desc": "Generate HTTP download link",
+        "usage": f"/{_cmd_primary(BotCommands.StreamLinkCommand)} <file_id>",
+        "example": f"/{_cmd_primary(BotCommands.StreamLinkCommand)} AgACAg...",
+      },
+      {
+        "name": "Zip",
+        "cmd": BotCommands.ZipCommand,
+        "desc": "Create archives",
+        "usage": f"/{_cmd_primary(BotCommands.ZipCommand)} <path> [format] [level]",
+        "example": f"/{_cmd_primary(BotCommands.ZipCommand)} /path/to/folder",
+      },
+      {
+        "name": "Unzip",
+        "cmd": BotCommands.UnzipCommand,
+        "desc": "Extract archives",
+        "usage": f"/{_cmd_primary(BotCommands.UnzipCommand)} <archive_path> [password]",
+        "example": f"/{_cmd_primary(BotCommands.UnzipCommand)} /path/to/file.zip",
+      },
+      {
+        "name": "Zip Info",
+        "cmd": BotCommands.ZipInfoCommand,
+        "desc": "Show archive contents",
+        "usage": f"/{_cmd_primary(BotCommands.ZipInfoCommand)} <archive_path>",
+        "example": f"/{_cmd_primary(BotCommands.ZipInfoCommand)} /path/to/file.zip",
+      },
+      {
+        "name": "Media Info",
+        "cmd": BotCommands.MediaInfoCommand,
+        "desc": "Show media information",
+        "usage": f"/{_cmd_primary(BotCommands.MediaInfoCommand)} <file_path>",
+        "example": f"/{_cmd_primary(BotCommands.MediaInfoCommand)} /path/to/video.mkv",
+      },
+      {
+        "name": "Thumbnail",
+        "cmd": BotCommands.ThumbnailCommand,
+        "desc": "Extract a video thumbnail",
+        "usage": f"/{_cmd_primary(BotCommands.ThumbnailCommand)} <file_path> [timestamp]",
+        "example": f"/{_cmd_primary(BotCommands.ThumbnailCommand)} /path/to/video.mkv 00:00:10",
+      },
+      {
+        "name": "Media Stats",
+        "cmd": BotCommands.MStatsCommand,
+        "desc": "Quick media stats",
+        "usage": f"/{_cmd_primary(BotCommands.MStatsCommand)} <file_path>",
+        "example": f"/{_cmd_primary(BotCommands.MStatsCommand)} /path/to/video.mkv",
+      },
+      {
+        "name": "Select Files",
+        "cmd": BotCommands.SelectCommand,
+        "desc": "Select files for a task",
+        "usage": f"/{_cmd_primary(BotCommands.SelectCommand)} <gid>",
+        "example": f"/{_cmd_primary(BotCommands.SelectCommand)} 1a2b3c",
+      },
     ],
   },
   "system": {
-    "title": "System & Tools",
+    "title": "System & Monitoring",
     "items": [
-      {"name": "Stats", "cmd": BotCommands.StatsCommand, "desc": "Server stats"},
-      {"name": "Speedtest", "cmd": BotCommands.SpeedCommand, "desc": "Network speed"},
-      {"name": "Schedule", "cmd": BotCommands.ScheduleCommand, "desc": "Schedule tasks"},
-      {"name": "Schedules", "cmd": BotCommands.SchedulesCommand, "desc": "List schedules"},
+      {
+        "name": "Ping",
+        "cmd": BotCommands.PingCommand,
+        "desc": "Check bot latency",
+        "usage": f"/{_cmd_primary(BotCommands.PingCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.PingCommand)}",
+      },
+      {
+        "name": "Stats",
+        "cmd": BotCommands.StatsCommand,
+        "desc": "Server stats",
+        "usage": f"/{_cmd_primary(BotCommands.StatsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.StatsCommand)}",
+      },
+      {
+        "name": "Enhanced Stats",
+        "cmd": BotCommands.EnhancedStatsCommand,
+        "desc": "Detailed system stats",
+        "usage": f"/{_cmd_primary(BotCommands.EnhancedStatsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.EnhancedStatsCommand)}",
+      },
+      {
+        "name": "Comparison Stats",
+        "cmd": BotCommands.ComparisonStatsCommand,
+        "desc": "Compare system stats",
+        "usage": f"/{_cmd_primary(BotCommands.ComparisonStatsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ComparisonStatsCommand)}",
+      },
+      {
+        "name": "Speedtest",
+        "cmd": BotCommands.SpeedCommand,
+        "desc": "Network speed",
+        "usage": f"/{_cmd_primary(BotCommands.SpeedCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.SpeedCommand)}",
+      },
+      {
+        "name": "Resource Monitor",
+        "cmd": BotCommands.ResourceMonitorCommand,
+        "desc": "Live resource monitor",
+        "usage": f"/{_cmd_primary(BotCommands.ResourceMonitorCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ResourceMonitorCommand)}",
+      },
+      {
+        "name": "System Health",
+        "cmd": BotCommands.SystemHealthCommand,
+        "desc": "Health report",
+        "usage": f"/{_cmd_primary(BotCommands.SystemHealthCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.SystemHealthCommand)}",
+      },
+      {
+        "name": "Progress Summary",
+        "cmd": BotCommands.ProgressSummaryCommand,
+        "desc": "Summary of running tasks",
+        "usage": f"/{_cmd_primary(BotCommands.ProgressSummaryCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ProgressSummaryCommand)}",
+      },
     ],
   },
   "dashboard": {
     "title": "Dashboards",
     "items": [
-      {"name": "Dashboard", "cmd": BotCommands.DashboardCommand, "desc": "System dashboard"},
-      {"name": "Quick Status", "cmd": BotCommands.EnhancedQuickCommand, "desc": "Quick overview"},
-      {"name": "Analytics", "cmd": BotCommands.EnhancedAnalyticsCommand, "desc": "Task analytics"},
+      {
+        "name": "Dashboard",
+        "cmd": BotCommands.DashboardCommand,
+        "desc": "System dashboard",
+        "usage": f"/{_cmd_primary(BotCommands.DashboardCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.DashboardCommand)}",
+      },
+      {
+        "name": "Web Dashboard",
+        "cmd": BotCommands.WebDashboardCommand,
+        "desc": "Web dashboard link",
+        "usage": f"/{_cmd_primary(BotCommands.WebDashboardCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.WebDashboardCommand)}",
+      },
+      {
+        "name": "Enhanced Dashboard",
+        "cmd": BotCommands.EnhancedDashCommand,
+        "desc": "Enhanced dashboard",
+        "usage": f"/{_cmd_primary(BotCommands.EnhancedDashCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.EnhancedDashCommand)}",
+      },
+      {
+        "name": "Quick Status",
+        "cmd": BotCommands.EnhancedQuickCommand,
+        "desc": "Quick overview",
+        "usage": f"/{_cmd_primary(BotCommands.EnhancedQuickCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.EnhancedQuickCommand)}",
+      },
+      {
+        "name": "Analytics",
+        "cmd": BotCommands.EnhancedAnalyticsCommand,
+        "desc": "Task analytics",
+        "usage": f"/{_cmd_primary(BotCommands.EnhancedAnalyticsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.EnhancedAnalyticsCommand)}",
+      },
     ],
   },
   "admin": {
     "title": "Admin",
     "items": [
-      {"name": "Authorize", "cmd": BotCommands.AuthorizeCommand, "desc": "Authorize users"},
-      {"name": "Unauthorize", "cmd": BotCommands.UnAuthorizeCommand, "desc": "Remove access"},
-      {"name": "Add Sudo", "cmd": BotCommands.AddSudoCommand, "desc": "Add sudo"},
-      {"name": "Restart", "cmd": BotCommands.RestartCommand, "desc": "Restart bot"},
+      {
+        "name": "Users",
+        "cmd": BotCommands.UsersCommand,
+        "desc": "List users",
+        "usage": f"/{_cmd_primary(BotCommands.UsersCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.UsersCommand)}",
+      },
+      {
+        "name": "Authorize",
+        "cmd": BotCommands.AuthorizeCommand,
+        "desc": "Authorize users",
+        "usage": f"/{_cmd_primary(BotCommands.AuthorizeCommand)} <user_id>",
+        "example": f"/{_cmd_primary(BotCommands.AuthorizeCommand)} 123456789",
+      },
+      {
+        "name": "Unauthorize",
+        "cmd": BotCommands.UnAuthorizeCommand,
+        "desc": "Remove access",
+        "usage": f"/{_cmd_primary(BotCommands.UnAuthorizeCommand)} <user_id>",
+        "example": f"/{_cmd_primary(BotCommands.UnAuthorizeCommand)} 123456789",
+      },
+      {
+        "name": "Add Sudo",
+        "cmd": BotCommands.AddSudoCommand,
+        "desc": "Add sudo",
+        "usage": f"/{_cmd_primary(BotCommands.AddSudoCommand)} <user_id>",
+        "example": f"/{_cmd_primary(BotCommands.AddSudoCommand)} 123456789",
+      },
+      {
+        "name": "Remove Sudo",
+        "cmd": BotCommands.RmSudoCommand,
+        "desc": "Remove sudo",
+        "usage": f"/{_cmd_primary(BotCommands.RmSudoCommand)} <user_id>",
+        "example": f"/{_cmd_primary(BotCommands.RmSudoCommand)} 123456789",
+      },
+      {
+        "name": "Restart",
+        "cmd": BotCommands.RestartCommand,
+        "desc": "Restart bot",
+        "usage": f"/{_cmd_primary(BotCommands.RestartCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.RestartCommand)}",
+      },
+      {
+        "name": "Log",
+        "cmd": BotCommands.LogCommand,
+        "desc": "View logs",
+        "usage": f"/{_cmd_primary(BotCommands.LogCommand)} [lines]",
+        "example": f"/{_cmd_primary(BotCommands.LogCommand)} 100",
+      },
+      {
+        "name": "Shell",
+        "cmd": BotCommands.ShellCommand,
+        "desc": "Run shell commands",
+        "usage": f"/{_cmd_primary(BotCommands.ShellCommand)} <command>",
+        "example": f"/{_cmd_primary(BotCommands.ShellCommand)} ls -la",
+      },
+      {
+        "name": "Exec",
+        "cmd": BotCommands.ExecCommand,
+        "desc": "Run Python code",
+        "usage": f"/{_cmd_primary(BotCommands.ExecCommand)} <python>",
+        "example": f"/{_cmd_primary(BotCommands.ExecCommand)} print(1)",
+      },
+      {
+        "name": "Async Exec",
+        "cmd": BotCommands.AExecCommand,
+        "desc": "Run async Python code",
+        "usage": f"/{_cmd_primary(BotCommands.AExecCommand)} <python>",
+        "example": f"/{_cmd_primary(BotCommands.AExecCommand)} await asyncio.sleep(1)",
+      },
+      {
+        "name": "Clear Locals",
+        "cmd": BotCommands.ClearLocalsCommand,
+        "desc": "Clear exec locals",
+        "usage": f"/{_cmd_primary(BotCommands.ClearLocalsCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.ClearLocalsCommand)}",
+      },
     ],
   },
 }
 
 
 HELP_CATEGORY_ORDER = [
+  "general",
   "downloads",
   "drive",
   "queue",
   "search",
+  "automation",
   "settings",
+  "tools",
   "system",
   "dashboard",
   "admin",
@@ -113,6 +640,9 @@ HELP_CATEGORY_ORDER = [
 
 
 HELP_CATEGORY_ALIASES = {
+  "general": "general",
+  "start": "general",
+  "help": "general",
   "downloads": "downloads",
   "download": "downloads",
   "uploads": "downloads",
@@ -122,8 +652,13 @@ HELP_CATEGORY_ALIASES = {
   "status": "queue",
   "search": "search",
   "history": "search",
+  "automation": "automation",
+  "schedule": "automation",
+  "rss": "automation",
   "settings": "settings",
   "prefs": "settings",
+  "tools": "tools",
+  "media": "tools",
   "system": "system",
   "dashboard": "dashboard",
   "admin": "admin",
@@ -138,7 +673,7 @@ def build_help_home_text():
     f"1) Mirror a link: <code>/{_cmd_primary(BotCommands.MirrorCommand)} [link]</code>\n"
     f"2) Leech to Telegram: <code>/{_cmd_primary(BotCommands.LeechCommand)} [link]</code>\n"
     f"3) View tasks: <code>/{_cmd_primary(BotCommands.StatusCommandList)}</code>\n\n"
-    "Tip: Use aliases like /dl or /ul for faster commands."
+    "Tip: Use /help <keyword> to search commands, and shortcuts like /dl or /ul for faster commands."
   )
 
 
@@ -146,10 +681,24 @@ def build_help_category_text(category_key):
   cat = HELP_CATEGORIES.get(category_key)
   if not cat:
     return "❌ Category not found."
-  lines = [f"<b>📂 {cat['title']}</b>"]
+  lines = [f"<b>📂 {cat['title']}</b>", "<i>Tap a command to copy, or use shortcuts.</i>"]
   for item in cat["items"]:
     cmd_text = format_command(item["cmd"])
-    lines.append(f"• {cmd_text} — {item['desc']}")
+    extras = []
+    usage = item.get("usage")
+    if usage:
+      extras.append(f"<b>Usage</b>: <code>{usage}</code>")
+    shortcuts = format_shortcuts(item["cmd"])
+    if shortcuts:
+      extras.append(f"<b>Shortcuts</b>: <code>{shortcuts}</code>")
+    example = item.get("example")
+    if example:
+      extras.append(f"<b>Example</b>: <code>{example}</code>")
+    if extras:
+      lines.append(f"• <b>{cmd_text}</b> — {item['desc']}")
+      lines.extend([f"  {line}" for line in extras])
+    else:
+      lines.append(f"• <b>{cmd_text}</b> — {item['desc']}")
   return "\n".join(lines)
 
 
@@ -169,9 +718,16 @@ def search_help(term):
     return f"❌ No commands matched <code>{term}</code>."
   lines = [f"<b>🔎 Results for:</b> <code>{term}</code>"]
   for cat_title, item in matches[:12]:
-    lines.append(
-      f"• <b>{cat_title}</b>: {format_command(item['cmd'])} — {item['desc']}"
-    )
+    extras = []
+    usage = item.get("usage")
+    if usage:
+      extras.append(f"<b>Usage</b>: <code>{usage}</code>")
+    shortcuts = format_shortcuts(item["cmd"])
+    if shortcuts:
+      extras.append(f"<b>Shortcuts</b>: <code>{shortcuts}</code>")
+    lines.append(f"• <b>{cat_title}</b>: <b>{format_command(item['cmd'])}</b> — {item['desc']}")
+    for extra in extras:
+      lines.append(f"  {extra}")
   return "\n".join(lines)
 
 mirror = """<b>Send link along with command line or </b>

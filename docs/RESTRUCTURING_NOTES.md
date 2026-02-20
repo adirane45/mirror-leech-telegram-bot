@@ -214,3 +214,21 @@ All Python files referencing `log.txt` have been updated to use `data/logs/log.t
 
 For questions about the reorganization, refer to this document or check the individual module documentation in the `docs/` folder.
 
+---
+
+## Command Help Optimization Plan
+
+**Goal:** Ensure all commands are visible in help with usage and shortcuts, and publish a full command reference.
+
+### Plan
+1. Centralize command metadata so help can show usage, examples, and shortcuts for every command.
+2. Publish a single command reference doc with sample usage and shortcuts.
+3. Link docs and README to the command reference for discoverability.
+4. Set code owner to the current maintainer.
+
+### Implementation Status
+- ✅ Help categories now include all commands with usage and shortcuts.
+- ✅ Full command reference added in `docs/COMMANDS.md`.
+- ✅ README links updated to point to the command reference.
+- ✅ Code owner set to @rane_adi45.
+

@@ -288,7 +288,7 @@ bot/core/
 
 # PHASE 6: Quick Wins & Stability
 
-**Status:** ⏳ UPCOMING (Starting ~June 2026)  
+**Status:** 🟡 IN PROGRESS (Phase 6.1 complete, starting 6.2)  
 **Timeline:** 3-4 months (June - September 2026)  
 **Team Size:** 2-3 engineers  
 **Effort:** ~2,400 person-hours
@@ -296,6 +296,13 @@ bot/core/
 ## Overview
 
 Deliver high-impact user-facing features with quick implementation cycles. Focus on stability and user experience improvements.
+
+### Current Implementation Update
+
+- Phase 6.1 (Global Telegram File Cache) completed.
+- Added `bot/core/file_cache_manager.py` and integrated cache lookup/storage in Telegram leech uploads.
+- Tests added for hash computation and cache key generation.
+- Phase 6.2 (Telegram-to-HTTP Direct Link Generator) started.
 
 ## Features to Implement (12 total)
 

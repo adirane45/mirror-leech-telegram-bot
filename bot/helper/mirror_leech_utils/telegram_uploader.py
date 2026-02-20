@@ -29,7 +29,8 @@ from ... import intervals
 from ...core.config_manager import Config
 from ...core.telegram_manager import TgClient
 from ..ext_utils.bot_utils import sync_to_async
-from ..ext_utils.files_utils import is_archive, get_base_name
+from ..ext_utils.files_utils import is_archive, get_base_name, get_mime_type
+from ...core.file_cache_manager import file_cache_manager
 from ..telegram_helper.message_utils import delete_message
 from ..ext_utils.media_utils import (
     get_media_info,
@@ -186,6 +187,79 @@ class TelegramUploader:
                 )
             )[-1]
 
+    def _extract_message_file_info(self, message):
+        if message is None:
+            return None, None, None
+        if message.document:
+            return message.document.file_id, message.document.file_unique_id, "document"
+        if message.video:
+            return message.video.file_id, message.video.file_unique_id, "video"
+        if message.audio:
+            return message.audio.file_id, message.audio.file_unique_id, "audio"
+        if message.photo:
+            return message.photo.file_id, message.photo.file_unique_id, "photo"
+        if message.animation:
+            return message.animation.file_id, message.animation.file_unique_id, "animation"
+        return None, None, None
+
+    async def _send_cached_media(self, cached_entry, cap_mono):
+        file_id = cached_entry.get("file_id")
+        if not file_id:
+            return False
+        file_type = cached_entry.get("file_type")
+        try:
+            if file_type == "video":
+                self._sent_msg = await self._sent_msg.reply_video(
+                    video=file_id,
+                    caption=cap_mono,
+                    disable_notification=True,
+                )
+            elif file_type == "audio":
+                self._sent_msg = await self._sent_msg.reply_audio(
+                    audio=file_id,
+                    caption=cap_mono,
+                    disable_notification=True,
+                )
+            elif file_type == "photo":
+                self._sent_msg = await self._sent_msg.reply_photo(
+                    photo=file_id,
+                    caption=cap_mono,
+                    disable_notification=True,
+                )
+            elif file_type == "animation":
+                self._sent_msg = await self._sent_msg.reply_animation(
+                    animation=file_id,
+                    caption=cap_mono,
+                    disable_notification=True,
+                )
+            else:
+                self._sent_msg = await self._sent_msg.reply_document(
+                    document=file_id,
+                    caption=cap_mono,
+                    disable_notification=True,
+                )
+            return True
+        except Exception as exc:
+            LOGGER.debug(f"Cached send failed: {exc}")
+            return False
+
+    async def _store_cache_entry(self, hashes, size, file_name):
+        file_id, file_unique_id, file_type = self._extract_message_file_info(
+            self._sent_msg
+        )
+        if not file_id or not file_unique_id or not file_type:
+            return
+        mime_type = get_mime_type(self._up_path)
+        await file_cache_manager.store_entry(
+            hashes=hashes,
+            size=size,
+            file_id=file_id,
+            file_unique_id=file_unique_id,
+            file_type=file_type,
+            mime_type=mime_type,
+            file_name=file_name,
+        )
+
     async def _send_media_group(self, subkey, key, msgs):
         for index, msg in enumerate(msgs):
             if self._listener.hybrid_leech or not self._user_session:
@@ -242,6 +316,24 @@ class TelegramUploader:
                     if self._listener.is_cancelled:
                         return
                     cap_mono = await self._prepare_file(file_, dirpath)
+                    cache_payload = await file_cache_manager.prepare_hashes(self._up_path)
+                    if cache_payload:
+                        hashes, size = cache_payload
+                        cached_entry = await file_cache_manager.get_cached_entry(
+                            hashes, size
+                        )
+                        if cached_entry and await self._send_cached_media(
+                            cached_entry, cap_mono
+                        ):
+                            if (
+                                not self._is_corrupted
+                                and (self._listener.is_super_chat or self._listener.up_dest)
+                                and not self._is_private
+                            ):
+                                self._msgs_dict[self._sent_msg.link] = file_
+                            await remove(self._up_path)
+                            await sleep(1)
+                            continue
                     if self._last_msg_in_group:
                         group_lists = [
                             x for v in self._media_dict.values() for x in v.keys()
@@ -269,6 +361,9 @@ class TelegramUploader:
                     await self._upload_file(cap_mono, file_, f_path)
                     if self._listener.is_cancelled:
                         return
+                    if cache_payload and not self._is_corrupted:
+                        hashes, size = cache_payload
+                        await self._store_cache_entry(hashes, size, file_)
                     if (
                         not self._is_corrupted
                         and (self._listener.is_super_chat or self._listener.up_dest)

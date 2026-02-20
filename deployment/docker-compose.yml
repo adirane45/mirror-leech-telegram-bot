@@ -168,7 +168,9 @@ services:
 
   # ===== Bot Application =====
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
     container_name: mltb-app
     restart: unless-stopped
     networks:
@@ -210,7 +212,9 @@ services:
 
   # ===== Celery Worker =====
   celery-worker:
-    build: .
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
     container_name: mltb-celery-worker
     restart: unless-stopped
     networks:
@@ -239,7 +243,9 @@ services:
 
   # ===== Celery Beat Scheduler =====
   celery-beat:
-    build: .
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
     container_name: mltb-celery-beat
     restart: unless-stopped
     networks:

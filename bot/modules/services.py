@@ -1,10 +1,13 @@
 from time import time
 
 from ..helper.ext_utils.bot_utils import new_task
+from ..helper.ext_utils.files_utils import get_mime_type
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import send_message, edit_message, send_file
 from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.bot_commands import BotCommands
+from ..core.config_manager import Config
+from ..core.stream_proxy import stream_proxy
 
 
 @new_task
@@ -43,6 +46,73 @@ async def ping(_, message):
 @new_task
 async def log(_, message):
     await send_file(message, "data/logs/log.txt")
+
+
+def _extract_stream_media(message):
+    media = (
+        message.document
+        or message.video
+        or message.audio
+        or message.photo
+        or message.animation
+    )
+    if not media:
+        return None, None, None
+    file_id = media.file_id
+    file_name = getattr(media, "file_name", None) or "download"
+    file_type = media.__class__.__name__.lower()
+    return file_id, file_name, file_type
+
+
+@new_task
+async def stream_link(_, message):
+    if not await CustomFilters.authorized(_, message):
+        return
+
+    reply = message.reply_to_message
+    if reply:
+        file_id, file_name, file_type = _extract_stream_media(reply)
+    else:
+        file_id = None
+        file_name = None
+        file_type = None
+
+    if not file_id:
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1:
+            file_id = parts[1].strip()
+            file_name = "download"
+            file_type = "document"
+
+    if not file_id:
+        usage = f"Usage: /{BotCommands.StreamLinkCommand[0]} <file_id> or reply to a file"
+        await send_message(message, usage)
+        return
+
+    mime_type = "application/octet-stream"
+    if reply and reply.document and reply.document.file_name:
+        mime_type = get_mime_type(reply.document.file_name)
+
+    token = await stream_proxy.create_token(
+        file_id=file_id,
+        file_name=file_name or "download",
+        file_type=file_type or "document",
+        mime_type=mime_type,
+    )
+
+    if not token:
+        await send_message(message, "Stream links are disabled.")
+        return
+
+    link = stream_proxy.build_url(token.token)
+    ttl_minutes = int(getattr(Config, "STREAM_LINK_TTL_SECONDS", 1800) / 60)
+    text = (
+        "<b>🔗 Stream Link Generated</b>\n\n"
+        f"Link: <code>{link}</code>\n"
+        f"Expires in: {ttl_minutes} minutes\n"
+        "Share this link to download the file."
+    )
+    await send_message(message, text)
 
 
 @new_task
