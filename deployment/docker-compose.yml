@@ -194,8 +194,6 @@ services:
       - MONGODB_URI=
     volumes:
       - downloads:/app/downloads
-      - ./bot:/app/bot:ro
-      - ./web:/app/web:ro
       - logs:/app/logs
     depends_on:
       redis:
@@ -229,7 +227,6 @@ services:
       - C_FORCE_ROOT=1
     volumes:
       - downloads:/app/downloads
-      - ./bot:/app/bot:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app worker --loglevel=info --concurrency=4 --pool=prefork --max-tasks-per-child=20 --time-limit=3700 --soft-time-limit=3600
     depends_on:
@@ -257,7 +254,6 @@ services:
       - REDIS_PORT=6379
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
-      - ./bot:/app/bot:ro
       - logs:/app/logs
     command: /app/mltbenv/bin/celery -A bot.core.celery_app beat --loglevel=info
     depends_on:
