@@ -7,6 +7,7 @@ Config.load()
 
 async def main():
     from asyncio import gather
+    import aiohttp
     from .core.startup import (
         load_settings,
         load_configurations,
@@ -97,6 +98,28 @@ async def main():
     LOGGER.info("Loading settings...")
     await load_settings()
     LOGGER.info("✅ Settings loaded")
+
+    async def _drop_pending_updates():
+        if not getattr(Config, "DROP_PENDING_UPDATES_ON_STARTUP", False):
+            return
+        if not getattr(Config, "BOT_TOKEN", ""):
+            return
+        url = f"https://api.telegram.org/bot{Config.BOT_TOKEN}/deleteWebhook"
+        params = {"drop_pending_updates": "true"}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, timeout=10) as resp:
+                    if resp.status == 200:
+                        LOGGER.info("✅ Cleared pending Telegram updates")
+                    else:
+                        body = await resp.text()
+                        LOGGER.warning(
+                            "Pending update cleanup failed: %s %s",
+                            resp.status,
+                            body,
+                        )
+        except Exception as exc:
+            LOGGER.warning("Pending update cleanup failed: %s", exc)
     
     LOGGER.info("Initializing task scheduler...")
     await TaskScheduler.init()
@@ -109,6 +132,7 @@ async def main():
         LOGGER.info("✅ APScheduler event loop started")
 
     LOGGER.info("Starting Telegram clients...")
+    await _drop_pending_updates()
     await gather(TgClient.start_bot(), TgClient.start_user())
     LOGGER.info("✅ Telegram clients started")
     

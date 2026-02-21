@@ -104,8 +104,8 @@ LEECH_DUMP_CHAT = ""
 THUMBNAIL_LAYOUT = ""
 # qBittorrent/Aria2c
 TORRENT_TIMEOUT = 3600  # Torrent timeout in seconds (0 = no timeout, recommended: 3600 for 1 hour)
-BASE_URL = "http://justadi.qzz.io:8090"
-BASE_URL_PORT = 8060
+BASE_URL = os.getenv("BASE_URL", "http://localhost")
+BASE_URL_PORT = _get_safe_int("BASE_URL_PORT", 8060)
 WEB_PINCODE = True
 
 # Notification on download completion
@@ -549,6 +549,9 @@ MONGODB_MAX_IDLE_TIME = _get_safe_int("MONGODB_MAX_IDLE_TIME", 45000)
 VERIFY_BOT_TOKEN_ON_STARTUP = True
 VERIFY_SERVICES_ON_STARTUP = True
 AUTO_START_SERVICES = True
+DROP_PENDING_UPDATES_ON_STARTUP = os.getenv(
+    "DROP_PENDING_UPDATES_ON_STARTUP", "true"
+).lower() in ("1", "true", "yes")
 
 # Graceful shutdown
 SHUTDOWN_TIMEOUT = _get_safe_int("SHUTDOWN_TIMEOUT", 30)

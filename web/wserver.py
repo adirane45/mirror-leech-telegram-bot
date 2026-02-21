@@ -18,6 +18,8 @@ from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
 from web.stream_handler import add_stream_routes
+from bot.core.config_manager import Config
+from bot.core.redis_manager import redis_client
 
 try:
     from bot.core.api_endpoints import add_enhanced_endpoints
@@ -67,6 +69,9 @@ async def lifespan(app: FastAPI):
     qb_port = environ.get("QB_PORT", "8090")
     qb_username = environ.get("QB_USERNAME", "admin")
     qb_password = environ.get("QB_PASSWORD", "mltbmltb")
+    redis_host = environ.get("REDIS_HOST", getattr(Config, "REDIS_HOST", "redis"))
+    redis_port = int(environ.get("REDIS_PORT", getattr(Config, "REDIS_PORT", 6379)))
+    redis_db = int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0)))
     
     try:
         aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
@@ -84,12 +89,18 @@ async def lifespan(app: FastAPI):
         qbittorrent = None
         LOGGER.warning(f"qBittorrent not available: {e}")
 
+    try:
+        await redis_client.initialize(host=redis_host, port=redis_port, db=redis_db)
+    except Exception as e:
+        LOGGER.warning(f"Redis not available for stream links: {e}")
+
     yield
 
     if aria2 is not None:
         await aria2.close()
     if qbittorrent is not None:
         await qbittorrent.close()
+    await redis_client.close()
 
 
 app = FastAPI(lifespan=lifespan)
