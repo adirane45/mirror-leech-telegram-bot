@@ -260,3 +260,21 @@ develop_notes.md
 scratch/
 temp/
 tmp/
+
+# ============================================================================
+# SECURITY - NEVER COMMIT ENVIRONMENT FILES WITH CREDENTIALS
+# ============================================================================
+.env.production
+config/.env.production
+config/.env.production.secure
+config/.env.*.local
+!config/.env.production.example
+!config/.env.*.example
+
+# API KEYS, TOKENS, CREDENTIALS
+.credentials
+secrets/
+*.pem
+*.key
+cert/
+docker.env
