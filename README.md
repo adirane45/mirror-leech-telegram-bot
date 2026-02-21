@@ -18,7 +18,67 @@
 
 ---
 
-## 📑 Table of Contents
+## � Quick Deploy (Single VPS)
+
+> **For complete instructions**, see [PRODUCTION_DEPLOYMENT_GUIDE.md](docs/PRODUCTION_DEPLOYMENT_GUIDE.md)
+
+### 3 Minutes to Production
+
+```bash
+# 1. Clone repository
+git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
+cd mirror-leech-telegram-bot
+
+# 2. Create config from template
+cp config/.env.production.example config/.env.production
+
+# 3. Edit with YOUR credentials (IMPORTANT!)
+nano config/.env.production
+# Update: BOT_TOKEN, TELEGRAM_API, TELEGRAM_HASH, OWNER_ID
+
+# 4. Deploy
+docker compose -f deployment/docker-compose.yml up -d --build
+
+# 5. Verify (wait 30 seconds)
+sleep 30
+docker compose -f deployment/docker-compose.yml logs app --tail=20
+```
+
+**Test it**: Send `/ping` to your bot on Telegram → should respond `Pong!`
+
+### Configuration
+
+**Minimum Required** (in `.env.production`):
+```env
+BOT_TOKEN=YOUR_BOT_TOKEN_FROM_@BOTFATHER
+TELEGRAM_API=YOUR_API_ID_FROM_MY.TELEGRAM.ORG
+TELEGRAM_HASH=YOUR_API_HASH_FROM_MY.TELEGRAM.ORG
+OWNER_ID=YOUR_TELEGRAM_USER_ID
+```
+
+For full options, see [config/.env.production.example](config/.env.production.example)
+
+### Troubleshooting
+
+**Bot not responding?**
+```bash
+docker compose -f deployment/docker-compose.yml logs app --tail=50
+```
+
+**Need to restart?**
+```bash
+docker compose -f deployment/docker-compose.yml restart app
+```
+
+**Full redeploy?**
+```bash
+docker compose -f deployment/docker-compose.yml down
+docker compose -f deployment/docker-compose.yml up -d --build
+```
+
+⚠️ **IMPORTANT**: Never commit `config/.env.production` to git - it contains secrets!
+
+---
 
 - [Overview](#-overview)
 - [Features](#-features)
