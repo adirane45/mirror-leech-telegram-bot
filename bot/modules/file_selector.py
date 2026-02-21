@@ -130,8 +130,8 @@ async def confirm_selection(_, query):
                             if await aiopath.exists(f_path):
                                 try:
                                     await remove(f_path)
-                                except:
-                                    pass
+                                except OSError as e:
+                                    LOGGER.warning(f"Failed to remove {f_path}: {e}")
                 if not task.queued:
                     await TorrentManager.qbittorrent.torrents.start([id_])
             else:
@@ -140,8 +140,8 @@ async def confirm_selection(_, query):
                     if f["selected"] == "false" and await aiopath.exists(f["path"]):
                         try:
                             await remove(f["path"])
-                        except:
-                            pass
+                        except OSError as e:
+                            LOGGER.warning(f"Failed to remove {f['path']}: {e}")
                 if not task.queued:
                     try:
                         await TorrentManager.aria2.unpause(id_)

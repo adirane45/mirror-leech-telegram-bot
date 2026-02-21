@@ -160,7 +160,7 @@ class Mirror(TaskListener):
 
         try:
             self.multi = int(args["-i"])
-        except:
+        except (KeyError, ValueError, TypeError):
             self.multi = 0
 
         if not isinstance(self.seed, bool):

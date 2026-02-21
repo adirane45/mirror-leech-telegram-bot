@@ -45,6 +45,8 @@ class TorrentManager:
         aria2_secret = environ.get("ARIA2_SECRET", "")
         qb_host = environ.get("QB_HOST", "localhost")
         qb_port = environ.get("QB_PORT", "8090")
+        qb_username = environ.get("QB_USERNAME", "admin")
+        qb_password = environ.get("QB_PASSWORD", "mltbmltb")
         
         # Try different authentication methods for qBittorrent
         qb_url = f"http://{qb_host}:{qb_port}/api/v2/"
@@ -54,8 +56,8 @@ class TorrentManager:
         try:
             qb_client = await create_client(
                 qb_url,
-                username="mltb",
-                password="mltbmltb",
+                username=qb_username,
+                password=qb_password,
             )
         except Exception as e:
             LOGGER.warning(f"qBittorrent auth with password failed: {e}, trying without password...")
@@ -63,7 +65,7 @@ class TorrentManager:
                 # Try with empty password
                 qb_client = await create_client(
                     qb_url,
-                    username="mltb",
+                    username=qb_username,
                     password="",
                 )
             except Exception as e2:

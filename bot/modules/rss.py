@@ -1,6 +1,6 @@
 from httpx import AsyncClient
 from apscheduler.triggers.interval import IntervalTrigger
-from asyncio import Lock, sleep
+from asyncio import Lock, sleep, CancelledError
 from datetime import datetime, timedelta
 from feedparser import parse as feed_parse
 from functools import partial
@@ -698,8 +698,9 @@ async def rss_monitor():
                             res = await client.get(data["link"])
                         html = res.text
                         break
-                    except:
+                    except Exception as e:
                         tries += 1
+                        LOGGER.debug(f"RSS fetch attempt {tries} failed: {e}")
                         if tries > 3:
                             raise
                         continue
@@ -725,7 +726,7 @@ async def rss_monitor():
                 while True:
                     try:
                         await sleep(10)
-                    except:
+                    except CancelledError:
                         raise RssShutdownException("Rss Monitor Stopped!")
                     try:
                         item_title = rss_d.entries[feed_count]["title"]
@@ -832,4 +833,3 @@ def add_job():
 
 
 add_job()
-scheduler.start()

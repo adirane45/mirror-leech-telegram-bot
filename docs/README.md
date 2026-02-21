@@ -137,11 +137,11 @@ git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Setup config
-cp config_sample.py config.py
-nano config.py  # Add BOT_TOKEN, OWNER_ID, AUTHORIZED_CHATS
+cp config/.env.security.example config/.env.production
+nano config/.env.production  # Add BOT_TOKEN, OWNER_ID, AUTHORIZED_CHATS
 
 # Start
-sudo docker-compose up --build
+sudo docker compose -f deployment/docker-compose.yml up -d --build
 ```
 
 **Option 2: Manual**
@@ -154,8 +154,8 @@ source mltbenv/bin/activate
 pip install -r requirements.txt
 
 # Configure
-cp config_sample.py config.py
-nano config.py
+cp config/.env.security.example config/.env.production
+nano config/.env.production
 
 # Start services (in separate terminals)
 aria2c --enable-rpc --rpc-listen-all=true --rpc-port=6800

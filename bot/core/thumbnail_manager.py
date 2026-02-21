@@ -181,7 +181,8 @@ class SmartThumbnailManager:
     _instance: Optional['SmartThumbnailManager'] = None
     _lock = asyncio.Lock()
     
-    def __new__(cls):
+    def __new__(cls, cache_dir: str = "data/thumbnails"):
+        """Singleton __new__ method - must accept same params as __init__"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance

@@ -72,7 +72,18 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
         except AQError as e:
             error_str = str(e).lower()
             if "403" in str(e) or "forbidden" in error_str:
-                error_msg = "❌ Torrent source returned HTTP 403 (Forbidden). Source may be blocked, region-locked, or require authentication."
+                error_msg = "❌ <b>HTTP 403 Forbidden Error</b>\n\n"
+                error_msg += "The torrent source rejected your download request.\n\n"
+                error_msg += "<b>Common Causes:</b>\n"
+                error_msg += "• Source is geo-blocked or region-restricted\n"
+                error_msg += "• Your IP is rate-limited by the source\n"
+                error_msg += "• The source requires authentication\n"
+                error_msg += "• The torrent file/magnet is no longer available\n\n"
+                error_msg += "<b>Solutions:</b>\n"
+                error_msg += "1️⃣ Try again in a few minutes\n"
+                error_msg += "2️⃣ Use a different torrent source\n"
+                error_msg += "3️⃣ Check if the link is still valid\n"
+                error_msg += "4️⃣ Try with a VPN or proxy if allowed"
             elif "401" in str(e) or "unauthorized" in error_str:
                 error_msg = "❌ Torrent source requires authentication (HTTP 401)."
             elif "already" in error_str or "exists" in error_str:
@@ -96,7 +107,13 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
         except Exception as e:
             error_str = str(e).lower()
             if "403" in str(e):
-                error_msg = "❌ HTTP 403 Forbidden - Source rejected the download request."
+                error_msg = "❌ <b>HTTP 403 Forbidden</b>\n\n"
+                error_msg += "The server rejected the download request.\n"
+                error_msg += "This usually means the source is blocking access.\n\n"
+                error_msg += "<b>Try:</b>\n"
+                error_msg += "• Waiting and retrying later\n"
+                error_msg += "• Using a different torrent source\n"
+                error_msg += "• Verifying the torrent link is valid"
             elif "already added" in error_str:
                 error_msg = "⚠️  This torrent/magnet already exists in qBittorrent."
             else:

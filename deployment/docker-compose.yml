@@ -42,6 +42,7 @@ services:
       - PGID=1000
       - TZ=UTC
       - WEBUI_PORT=8090
+      - WEBUI_USERNAME=admin
       - WEBUI_PASSWORD=mltbmltb
     volumes:
       - downloads:/downloads
@@ -189,6 +190,8 @@ services:
       - ARIA2_SECRET=mltb_aria2_secret_2026
       - QB_HOST=qbittorrent
       - QB_PORT=8090
+      - QB_USERNAME=admin
+      - QB_PASSWORD=mltbmltb
       # Disable MongoDB to speed up startup (set to empty string)
       - DATABASE_URL=
       - MONGODB_URI=

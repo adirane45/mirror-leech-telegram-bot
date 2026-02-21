@@ -84,9 +84,13 @@ class YtSelection:
         )
         try:
             await wait_for(self.event.wait(), timeout=self._timeout)
-        except:
+        except TimeoutError:
             await edit_message(self._reply_to, "Timed Out. Task has been cancelled!")
             self.qual = None
+            self.listener.is_cancelled = True
+            self.event.set()
+        except Exception as e:
+            LOGGER.error(f"Quality selection error: {e}")
             self.listener.is_cancelled = True
             self.event.set()
         finally:

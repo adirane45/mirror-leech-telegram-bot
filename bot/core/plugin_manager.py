@@ -238,13 +238,19 @@ class PluginManager:
                 if plugin_file.name.startswith("_"):
                     continue
 
-                # Load plugin asynchronously in event loop
-                import asyncio
+                # Load plugin synchronously (plugin loading is not async-critical)
+                # Avoid asyncio.run() when event loop is already running
                 try:
-                    asyncio.run(self.load_plugin(str(plugin_file)))
-                except RuntimeError:
-                    # Event loop already running
-                    pass
+                    from .. import bot_loop
+                    if bot_loop.is_running():
+                        # Schedule plugin loading as a task
+                        bot_loop.create_task(self.load_plugin(str(plugin_file)))
+                    else:
+                        # Synchronous loading for initialization phase
+                        import asyncio
+                        asyncio.run(self.load_plugin(str(plugin_file)))
+                except Exception as e:
+                    LOGGER.warning(f"Failed to load plugin {plugin_file}: {e}\")
 
         except Exception as e:
             LOGGER.error(f"Error loading plugins: {e}")

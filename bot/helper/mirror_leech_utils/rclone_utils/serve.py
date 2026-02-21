@@ -4,6 +4,7 @@ from asyncio import create_subprocess_exec
 from configparser import RawConfigParser
 
 from ....core.config_manager import Config
+from .... import LOGGER
 
 RcloneServe = []
 
@@ -14,8 +15,8 @@ async def rclone_serve_booter():
             try:
                 RcloneServe[0].kill()
                 RcloneServe.clear()
-            except:
-                pass
+            except (ProcessLookupError, IndexError) as e:
+                LOGGER.warning(f"Failed to kill RcloneServe: {e}")
         return
     config = RawConfigParser()
     async with aiopen("rclone.conf", "r") as f:
@@ -32,8 +33,8 @@ async def rclone_serve_booter():
         try:
             RcloneServe[0].kill()
             RcloneServe.clear()
-        except:
-            pass
+        except (ProcessLookupError, IndexError) as e:
+            LOGGER.warning(f"Failed to kill RcloneServe: {e}")
     cmd = [
         "rclone",
         "serve",

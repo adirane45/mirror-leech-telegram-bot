@@ -85,7 +85,7 @@ async def do(func, message):
             func_return = (
                 await sync_to_async(rfunc) if func == "exec" else await rfunc()
             )
-    except:
+    except Exception:
         value = stdout.getvalue()
         return f"{value}{format_exc()}"
     else:
@@ -97,8 +97,8 @@ async def do(func, message):
             else:
                 try:
                     result = f"{repr(await sync_to_async(eval, body, env))}"
-                except:
-                    pass
+                except Exception as e:
+                    LOGGER.debug(f"Eval failed: {e}")
         else:
             result = f"{value}{func_return}"
         if result:

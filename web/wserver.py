@@ -65,6 +65,8 @@ async def lifespan(app: FastAPI):
     aria2_port = environ.get("ARIA2_PORT", "6800")
     qb_host = environ.get("QB_HOST", "localhost")
     qb_port = environ.get("QB_PORT", "8090")
+    qb_username = environ.get("QB_USERNAME", "admin")
+    qb_password = environ.get("QB_PASSWORD", "mltbmltb")
     
     try:
         aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
@@ -75,8 +77,8 @@ async def lifespan(app: FastAPI):
     try:
         qbittorrent = await create_client(
             f"http://{qb_host}:{qb_port}/api/v2/",
-            username="admin",
-            password="mltbmltb",
+            username=qb_username,
+            password=qb_password,
         )
     except Exception as e:
         qbittorrent = None

@@ -168,6 +168,14 @@ All Python files referencing `log.txt` have been updated to use `data/logs/log.t
 
 ---
 
+## 2026-02-21 Update
+
+- The deployment compose file remains the source of truth; root-level compose files are symlinks for convenience.
+- `config/.env.production` is the expected runtime env file loaded by `config/main_config.py`.
+- Runtime data is stored under `data/` (logs, downloads, thumbnails, tokens).
+
+---
+
 ## Migration Notes
 
 ### For Developers

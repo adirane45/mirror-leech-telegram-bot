@@ -400,8 +400,8 @@ async def edit_nzb_server(_, message, pre_message, key, index=0):
         if value.startswith("{") and value.endswith("}"):
             try:
                 value = eval(value)
-            except:
-                await send_message(message, "Invalid dict format!")
+            except (SyntaxError, ValueError, TypeError) as e:
+                await send_message(message, f"Invalid dict format: {e}")
                 await update_buttons(pre_message, "nzbserver")
                 return
             res = await sabnzbd_client.add_server(value)

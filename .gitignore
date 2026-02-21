@@ -89,8 +89,10 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.production
 !.env.example
 !.env.security.example
+config/.env.production
 
 # Credentials & Secrets
 credentials.json
@@ -124,6 +126,7 @@ log.txt
 logs/
 bot_output.log
 *.log.*
+data/logs/
 
 # Running data
 downloads/
@@ -133,6 +136,10 @@ thumbnails/
 runtime/
 *.pid
 .pid
+data/downloads/
+data/backups/
+data/tokens/
+data/thumbnails/
 
 # Database
 *.db

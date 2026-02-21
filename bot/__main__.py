@@ -101,6 +101,12 @@ async def main():
     LOGGER.info("Initializing task scheduler...")
     await TaskScheduler.init()
     LOGGER.info("✅ Task scheduler initialized")
+    
+    # Start APScheduler in async context to avoid event loop errors
+    from . import scheduler
+    if not scheduler.running:
+        scheduler.start()
+        LOGGER.info("✅ APScheduler event loop started")
 
     LOGGER.info("Starting Telegram clients...")
     await gather(TgClient.start_bot(), TgClient.start_user())
@@ -123,15 +129,21 @@ async def main():
         update_nzb_options(),
     )
     LOGGER.info("✅ Download client options updated")
+    LOGGER.info("📦 Importing clean_all...")
     from .helper.ext_utils.files_utils import clean_all
+    LOGGER.info("📦 Importing jdownloader...")
     from .core.jdownloader_booter import jdownloader
+    LOGGER.info("📦 Importing telegraph...")
     from .helper.ext_utils.telegraph_helper import telegraph
+    LOGGER.info("📦 Importing rclone_serve_booter...")
     from .helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
+    LOGGER.info("📦 Importing modules functions...")
     from .modules import (
         initiate_search_tools,
         get_packages_version,
         restart_notification,
     )
+    LOGGER.info("✅ All modules imported")
 
     # Start metrics update loop if enabled
     try:
@@ -211,10 +223,15 @@ from .helper.listeners.aria2_listener import add_aria2_callbacks
 from .core.handlers import add_handlers
 from .modules.settings_ui import init_ui_monitor
 
+LOGGER.info("📝 Adding aria2 callbacks...")
 add_aria2_callbacks()
+LOGGER.info("📝 Creating help buttons...")
 create_help_buttons()
+LOGGER.info("📝 Calling add_handlers()...")
 add_handlers()
+LOGGER.info("📝 Initializing UI monitor...")
 init_ui_monitor()
 
 LOGGER.info("Bot Started!")
+
 bot_loop.run_forever()

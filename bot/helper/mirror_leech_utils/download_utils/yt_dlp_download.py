@@ -120,8 +120,8 @@ class YoutubeDLHelper:
                 self._eta = d.get("eta", "-") or "-"
             try:
                 self._progress = (self._downloaded_bytes / self._listener.size) * 100
-            except:
-                pass
+            except (ZeroDivisionError, TypeError):
+                self._progress = 0
 
     async def _on_download_start(self, from_queue=False):
         async with task_dict_lock:
@@ -189,8 +189,8 @@ class YoutubeDLHelper:
             if self._listener.is_cancelled:
                 return
             async_to_sync(self._listener.on_download_complete)
-        except:
-            pass
+        except Exception as e:
+            LOGGER.error(f"Download completion handler error: {e}")
         return
 
     async def add_download(self, path, qual, playlist, options):

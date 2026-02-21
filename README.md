@@ -197,11 +197,11 @@ git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Copy and configure environment
-cp config/.env.example config/.env.production
+cp config/.env.security.example config/.env.production
 nano config/.env.production
 
 # Start services
-docker compose up -d
+docker compose -f deployment/docker-compose.yml up -d
 
 # Verify health
 ./scripts/quick_health_check.sh
@@ -256,7 +256,7 @@ git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # Setup configuration
-cp config/.env.example config/.env.production
+cp config/.env.security.example config/.env.production
 
 # Edit configuration
 nano config/.env.production
@@ -266,13 +266,13 @@ nano config/.env.production
 
 ```bash
 # Start all services
-docker compose up -d
+docker compose -f deployment/docker-compose.yml up -d
 
 # View logs
-docker compose logs -f app
+docker compose -f deployment/docker-compose.yml logs -f app
 
 # Check status
-docker compose ps
+docker compose -f deployment/docker-compose.yml ps
 ```
 
 For detailed installation instructions, see [Installation Guide](docs/INSTALLATION.md).

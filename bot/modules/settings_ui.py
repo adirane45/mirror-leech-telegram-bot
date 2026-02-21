@@ -156,14 +156,7 @@ async def auto_pause_monitor():
 
 
 def init_ui_monitor():
-    try:
-        scheduler.add_job(
-            auto_pause_monitor,
-            trigger=IntervalTrigger(seconds=60),
-            id="ui_auto_pause",
-            replace_existing=True,
-        )
-        if not scheduler.running:
-            scheduler.start()
-    except Exception as e:
-        LOGGER.error(str(e))
+    """Initialize UI auto-pause monitor - job will be added when scheduler starts"""
+    # This function just logs readiness; the actual job is added in __main__.py
+    # after the scheduler starts to avoid "no running event loop" errors
+    LOGGER.info("✅ UI monitor ready (job will be added when scheduler starts)")

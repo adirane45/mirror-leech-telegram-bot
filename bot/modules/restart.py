@@ -73,8 +73,8 @@ async def restart_notification():
             await TgClient.bot.edit_message_text(
                 chat_id=chat_id, message_id=msg_id, text="Restarted Successfully!"
             )
-        except:
-            pass
+        except Exception as e:
+            LOGGER.warning(f"Failed to edit restart message: {e}")
         await remove(".restartmsg")
 
 

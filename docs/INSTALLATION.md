@@ -122,6 +122,9 @@ DATABASE_URL=
 # Start all services
 docker-compose up -d
 
+# (Optional) Use the deployment compose file directly
+# docker compose -f deployment/docker-compose.yml up -d
+
 # Check status
 docker-compose ps
 

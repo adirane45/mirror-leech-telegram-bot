@@ -3,6 +3,7 @@ from aiofiles import open as aiopen
 from aioshutil import rmtree
 from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
 from importlib import import_module
+from os import environ
 
 from .. import (
     aria2_options,
@@ -29,6 +30,7 @@ from .torrent_manager import TorrentManager
 async def update_qb_options():
     LOGGER.info("Get qBittorrent options from server")
     try:
+        qb_password = environ.get("QB_PASSWORD", "mltbmltb")
         if not qbit_options:
             opt = await TorrentManager.qbittorrent.app.preferences()
             qbit_options.update(opt)
@@ -36,9 +38,9 @@ async def update_qb_options():
             for k in list(qbit_options.keys()):
                 if k.startswith("rss"):
                     del qbit_options[k]
-            qbit_options["web_ui_password"] = "mltbmltb"
+            qbit_options["web_ui_password"] = qb_password
             await TorrentManager.qbittorrent.app.set_preferences(
-                {"web_ui_password": "mltbmltb"}
+                {"web_ui_password": qb_password}
             )
         else:
             await TorrentManager.qbittorrent.app.set_preferences(qbit_options)

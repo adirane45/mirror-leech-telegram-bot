@@ -48,9 +48,17 @@ class SetInterval:
         self.task = bot_loop.create_task(self._set_interval(*args, **kwargs))
 
     async def _set_interval(self, *args, **kwargs):
+        from asyncio import iscoroutinefunction
         while True:
             await sleep(self.interval)
-            await self.action(*args, **kwargs)
+            if iscoroutinefunction(self.action):
+                await self.action(*args, **kwargs)
+            else:
+                # If not async, run in thread pool to avoid blocking
+                result = self.action(*args, **kwargs)
+                # Check if result is awaitable (e.g., coroutine)
+                if hasattr(result, '__await__'):
+                    await result
 
     def cancel(self):
         self.task.cancel()

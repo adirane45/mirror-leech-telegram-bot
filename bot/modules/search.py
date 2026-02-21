@@ -146,7 +146,7 @@ async def get_result(search_results, key, message, method):
                     msg += f"<b>Size: </b>{result['size']}<br>"
                     try:
                         msg += f"<b>Seeders: </b>{result['seeders']} | <b>Leechers: </b>{result['leechers']}<br>"
-                    except:
+                    except KeyError:
                         pass
                     if "torrent" in result.keys():
                         msg += f"<a href='{result['torrent']}'>Direct Link</a><br><br>"
@@ -155,7 +155,8 @@ async def get_result(search_results, key, message, method):
                         msg += f"<a href='http://t.me/share/url?url={quote(result['magnet'])}'>Telegram</a><br><br>"
                     else:
                         msg += "<br>"
-            except:
+            except (KeyError, TypeError) as e:
+                LOGGER.debug(f"Skipping malformed search result: {e}")
                 continue
         else:
             msg += f"<a href='{result.descrLink}'>{escape(result.fileName)}</a><br>"
