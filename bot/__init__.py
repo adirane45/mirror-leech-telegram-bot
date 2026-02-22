@@ -4,9 +4,14 @@
 
 from collections import deque
 
-from uvloop import install
+import sys
 
-install()
+try:
+    import uvloop
+    if sys.version_info < (3, 12):
+        uvloop.install()
+except Exception:
+    pass
 from asyncio import Lock, new_event_loop, set_event_loop
 from logging import ERROR, INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
 from os import cpu_count

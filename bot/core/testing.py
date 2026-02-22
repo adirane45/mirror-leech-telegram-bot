@@ -21,6 +21,7 @@ from .. import LOGGER
 
 class TestType(str, Enum):
     """Test types"""
+    __test__ = False
     UNIT = "unit"
     INTEGRATION = "integration"
     LOAD = "load"
@@ -42,6 +43,7 @@ class TestResult:
 
 class TestRunner:
     """Run tests"""
+    __test__ = False
     
     def __init__(self):
         self.tests: Dict[str, Callable] = {}

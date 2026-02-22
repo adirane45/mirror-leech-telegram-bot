@@ -1,6 +1,11 @@
-from uvloop import install
+import sys
 
-install()
+try:
+    import uvloop
+    if sys.version_info < (3, 12):
+        uvloop.install()
+except Exception:
+    pass
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
