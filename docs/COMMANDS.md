@@ -3,12 +3,19 @@
 This document lists all bot commands, shortcuts, and example usage.
 If CMD_SUFFIX is configured, append it to each command (for example, /mirror1).
 
+## Usage Notes
+
+- Most download commands accept links in the message or by replying to a link/file.
+- Use flags like `-n`, `-m`, `-z`, `-e`, `-up`, and `-rcf` to control names, folders, zip/extract, upload targets, and rclone flags.
+- Many commands are restricted to authorized users; owner-only commands are labeled in the Notes column.
+
 ## General
 
 | Command | Shortcuts | Usage | Example | Notes |
 | --- | --- | --- | --- | --- |
 | /start | /hi | /start | /start | - |
 | /help | /menu, /commands | /help [keyword] | /help downloads | - |
+| /cmdlist | /commandlist | /cmdlist | /cmdlist | Sends full command list and BotFather-formatted file |
 
 ## Downloads & Uploads
 
@@ -134,3 +141,48 @@ If CMD_SUFFIX is configured, append it to each command (for example, /mirror1).
 | /exec | - | /exec <python> | /exec print(1) | Owner only |
 | /aexec | - | /aexec <python> | /aexec await asyncio.sleep(1) | Owner only |
 | /clearlocals | - | /clearlocals | /clearlocals | Owner only |
+
+## Detailed Examples
+
+### Downloads & Uploads
+
+- Mirror a link to default upload destination: `/mirror https://example.com/file.zip`
+- Mirror with custom name and zip: `/mirror https://example.com/file.zip -n ProjectA -z`
+- Leech a link to Telegram as media: `/leech https://example.com/video.mkv -med`
+- Batch from a text file (reply with `-b`): `/mirror -b -up remote:team/archives`
+
+### Drive & Rclone
+
+- Clone a drive folder: `/clone https://drive.google.com/drive/folders/abc123`
+- Count items in an rclone path: `/count remote:dataset/2024`
+- Delete a file by link: `/del https://drive.google.com/file/d/abc123/view`
+
+### Queue & Status
+
+- Check status: `/status`
+- Pause a task by gid: `/pqueue 1a2b3c`
+- Resume a task by gid: `/rqueue 1a2b3c`
+- Set priority: `/prqueue 1a2b3c 1`
+
+### Automation
+
+- Schedule a mirror in 30 minutes: `/schedule 30m /mirror https://example.com/file.zip`
+- View schedules: `/schedules`
+- Cancel a schedule: `/unschedule 3`
+
+### Tools & Media
+
+- Generate a stream link (reply to a file): `/streamlink`
+- Zip a folder: `/zip /downloads/folder zip 6`
+- Extract a protected archive: `/unzip /downloads/archive.zip /tmp/extracted password123`
+
+### Settings
+
+- Open user settings: `/usetting`
+- Open bot settings (owner): `/bsetting`
+
+### Admin
+
+- Authorize a user: `/auth 123456789`
+- Add a sudo user: `/addsudo 123456789`
+- Run a shell command (owner): `/shell ls -la`

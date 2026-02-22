@@ -40,9 +40,16 @@ HELP_CATEGORIES = {
       {
         "name": "Help",
         "cmd": BotCommands.HelpCommandList,
-        "desc": "Open help or search commands",
+        "desc": "Open the help menu or search commands by keyword",
         "usage": f"/{_cmd_primary(BotCommands.HelpCommandList)} [keyword]",
-        "example": f"/{_cmd_primary(BotCommands.HelpCommandList)} downloads",
+        "example": f"/{_cmd_primary(BotCommands.HelpCommandList)} mirror",
+      },
+      {
+        "name": "Command List",
+        "cmd": BotCommands.CommandListCommand,
+        "desc": "Show all commands and send a BotFather-ready command list",
+        "usage": f"/{_cmd_primary(BotCommands.CommandListCommand)}",
+        "example": f"/{_cmd_primary(BotCommands.CommandListCommand)}",
       },
     ],
   },

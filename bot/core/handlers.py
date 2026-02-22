@@ -287,6 +287,13 @@ def add_handlers():
                     & CustomFilters.authorized,
                 )
             )
+            TgClient.bot.add_handler(
+                MessageHandler(
+                    command_list,
+                    filters=command(BotCommands.CommandListCommand, case_sensitive=True)
+                    & CustomFilters.authorized,
+                )
+            )
             # Disabled handlers for missing modules - temporary
             # Quick Actions Menu Handler - disabled
             # TgClient.bot.add_handler(

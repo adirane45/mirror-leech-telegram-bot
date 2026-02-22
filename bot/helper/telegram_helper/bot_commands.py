@@ -61,6 +61,7 @@ class BotCommands:
     SetAlertsCommand = f"setalerts{i}"
     HelpCommand = f"help{i}"
     HelpCommandList = [HelpCommand, f"menu{i}", f"commands{i}"]
+    CommandListCommand = [f"cmdlist{i}", f"commandlist{i}"]
     LogCommand = f"log{i}"
     StreamLinkCommand = [f"streamlink{i}", f"sl{i}"]
     ShellCommand = f"shell{i}"

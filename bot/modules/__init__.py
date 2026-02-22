@@ -9,6 +9,7 @@ from .gd_count import count_node
 from .gd_delete import delete_file
 from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
+from .command_list import command_list
 from .mirror_leech import (
     mirror,
     leech,
@@ -100,6 +101,7 @@ __all__ = [
     "start",
     "onboarding_callback",
     "bot_help",
+    "command_list",
     "ping",
     "log",
     "stream_link",

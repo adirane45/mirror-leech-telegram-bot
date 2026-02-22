@@ -1,0 +1,78 @@
+start - Start the bot
+help - Open the help menu or search commands by keyword
+cmdlist - Show all commands and send a BotFather-ready command list
+mirror - Mirror links to cloud
+leech - Upload to Telegram
+qbmirror - Torrents via qBittorrent
+qbleech - Leech torrents
+jdmirror - Mirror via JDownloader
+jdleech - Leech via JDownloader
+ytdl - Video downloads
+ytdlleech - Leech videos to Telegram
+nzbmirror - Mirror NZB files
+nzbleech - Leech NZB files
+clone - Copy drive/rclone paths
+count - Count drive folder
+del - Delete drive item
+list - Search in drive
+status - Show task status
+queue - Manage active tasks
+pqueue - Pause a task
+rqueue - Resume a task
+prqueue - Set task priority
+pauseall - Pause all tasks
+resumeall - Resume all tasks
+cancel - Cancel a task
+cancelall - Cancel all tasks
+forcestart - Force start a task from queue
+taskdetails - View task details
+search - Search torrents
+nzbsearch - Search NZB indexers
+searchtasks - Search task history
+filtertasks - Filter tasks by status
+history - View download history
+schedule - Schedule a command
+schedules - List schedules
+unschedule - Cancel a schedule
+rss - Manage RSS subscriptions
+usetting - Open user settings
+bsetting - Open bot settings
+settings - Open quick settings panel
+viewtoggle - Toggle compact view
+setalerts - Configure alerts
+limit - Set download limits
+limit_task - Set per-task limits
+category - Create or manage categories
+categorize - Categorize a task
+streamlink - Generate a streamable link
+zip - Create an archive
+unzip - Extract an archive
+zipinfo - Show archive info
+mediainfo - Show media info
+thumbnail - Create thumbnail
+mstats - Media stats summary
+sel - Select files from torrent/NZB
+ping - Check bot latency
+stats - Show system stats
+estats - Enhanced stats
+cstats - Comparison stats
+speed - Run speedtest
+rmon - Resource monitor
+health - System health
+psummary - Progress summary
+dashboard - Open dashboard
+webdash - Open web dashboard
+edash - Enhanced dashboard
+equick - Quick status panel
+eanalytics - Enhanced analytics
+users - List users
+auth - Authorize a user
+unauth - Remove authorization
+addsudo - Add sudo user
+rmsudo - Remove sudo user
+restart - Restart the bot
+log - Download logs
+shell - Run shell command
+exec - Run python code
+aexec - Run async python
+clearlocals - Clear exec locals
