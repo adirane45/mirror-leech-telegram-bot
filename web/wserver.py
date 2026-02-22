@@ -80,10 +80,7 @@ async def lifespan(app: FastAPI):
     redis_db = int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0)))
     
     try:
-        aria2_url = f"http://{aria2_host}:{aria2_port}/jsonrpc"
-        if aria2_secret:
-            aria2_url += f"?token={aria2_secret}"
-        aria2 = Aria2HttpClient(aria2_url)
+        aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
     except Exception as e:
         aria2 = None
         LOGGER.warning(f"Aria2 not available: {e}")
