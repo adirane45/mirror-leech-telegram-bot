@@ -132,7 +132,7 @@ if SECURITY_FEATURES_AVAILABLE:
         enable_input_validation=True,
         enable_audit_logging=enable_audit,
         enable_https_redirect=enable_https,
-        exempt_paths=["/health", "/metrics", "/docs", "/openapi.json", "/api/dashboard/tasks", "/api/dashboard/stats"]
+        exempt_paths=["/health", "/metrics", "/docs", "/openapi.json", "/api/dashboard/tasks", "/api/dashboard/stats", "/webstat", "/", "/dashboard"]
     )
     LOGGER_INIT = getLogger(__name__)
     LOGGER_INIT.info("✅ Phase 3 security features integrated")
@@ -292,7 +292,9 @@ async def dashboard_tasks():
 
 
 @app.get("/api/dashboard/stats")
+@app.get("/webstat")
 async def dashboard_stats():
+    """Dashboard statistics endpoint (also available as /webstat)"""
     total_speed = 0
     try:
         if aria2:
