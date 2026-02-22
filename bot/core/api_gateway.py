@@ -21,6 +21,10 @@ from .api_gateway_models import (
     RouteConfig,
     GatewayMetrics,
     ApiGatewayListener,
+    RateLimitConfig,
+    CircuitBreakerConfig,
+    RequestMethod,
+    CircuitState,
 )
 
 # Import specialized components
