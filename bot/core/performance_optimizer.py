@@ -23,6 +23,7 @@ from .performance_optimizer_models import (
     OptimizationRecommendation,
     OptimizerMetrics,
     PerformanceOptimizationListener,
+    ResourceMetric,
 )
 
 # Import specialized components

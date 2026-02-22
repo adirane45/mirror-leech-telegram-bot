@@ -23,6 +23,7 @@ from .replication_models import (
     SyncCheckpoint,
     ReplicationMetrics,
     ReplicationEventListener,
+    ReplicationLag,
 )
 
 from .replication_conflict_resolver import ReplicationConflictResolver
