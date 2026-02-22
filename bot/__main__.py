@@ -1,8 +1,9 @@
 from . import LOGGER, bot_loop
 from .core.telegram_manager import TgClient
-from .core.config_manager import Config
+from .core.config_manager import Config, validate_required_config
 
 Config.load()
+validate_required_config(strict=True)
 
 
 async def main():
