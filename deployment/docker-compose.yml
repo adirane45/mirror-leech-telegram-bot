@@ -170,7 +170,7 @@ services:
   # ===== Bot Application =====
   app:
     build:
-      context: ..
+      context: .
       dockerfile: deployment/Dockerfile
     container_name: mltb-app
     restart: unless-stopped
@@ -180,7 +180,7 @@ services:
       - "8060:8060"
       - "9090:9090"
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - BASE_URL_PORT=8060
       - REDIS_HOST=redis
@@ -214,14 +214,14 @@ services:
   # ===== Celery Worker =====
   celery-worker:
     build:
-      context: ..
+      context: .
       dockerfile: deployment/Dockerfile
     container_name: mltb-celery-worker
     restart: unless-stopped
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -244,14 +244,14 @@ services:
   # ===== Celery Beat Scheduler =====
   celery-beat:
     build:
-      context: ..
+      context: .
       dockerfile: deployment/Dockerfile
     container_name: mltb-celery-beat
     restart: unless-stopped
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
