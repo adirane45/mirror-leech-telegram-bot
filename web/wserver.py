@@ -70,6 +70,7 @@ async def lifespan(app: FastAPI):
     global aria2, qbittorrent
     aria2_host = environ.get("ARIA2_HOST", "localhost")
     aria2_port = environ.get("ARIA2_PORT", "6800")
+    aria2_secret = environ.get("ARIA2_SECRET", "")
     qb_host = environ.get("QB_HOST", "localhost")
     qb_port = environ.get("QB_PORT", "8090")
     qb_username = environ.get("QB_USERNAME", "admin")
@@ -79,7 +80,10 @@ async def lifespan(app: FastAPI):
     redis_db = int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0)))
     
     try:
-        aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
+        aria2_url = f"http://{aria2_host}:{aria2_port}/jsonrpc"
+        if aria2_secret:
+            aria2_url += f"?token={aria2_secret}"
+        aria2 = Aria2HttpClient(aria2_url)
     except Exception as e:
         aria2 = None
         LOGGER.warning(f"Aria2 not available: {e}")
