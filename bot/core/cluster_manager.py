@@ -357,9 +357,17 @@ class ClusterManager:
     # NODE MANAGEMENT
     # ========================================================================
     
-    async def register_node(self, node_id: str, hostname: str, port: int) -> bool:
+    async def register_node(self, node_id: str, hostname: str, port: Optional[int] = None) -> bool:
         """Register a node in the cluster"""
         try:
+            if isinstance(hostname, dict) and port is None:
+                host = hostname.get('host') or hostname.get('hostname') or "localhost"
+                port = int(hostname.get('port', 0))
+                hostname = host
+
+            if port is None:
+                port = 0
+
             if node_id not in self.nodes:
                 node = Node(node_id=node_id, hostname=hostname, port=port)
                 self.nodes[node_id] = node
@@ -370,6 +378,23 @@ class ClusterManager:
             
             return True
         except Exception as e:
+            return False
+
+    async def send_heartbeat(self) -> bool:
+        """Compatibility helper for heartbeat broadcasts"""
+        try:
+            if not self.raft_manager:
+                return True
+
+            message = HeartbeatMessage(
+                leader_id=self.node_id,
+                term=self.raft_manager.current_term
+            )
+
+            if self.raft_manager._send_heartbeat:
+                await self.raft_manager._send_heartbeat(message)
+            return True
+        except Exception:
             return False
     
     async def unregister_node(self, node_id: str) -> bool:

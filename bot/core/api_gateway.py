@@ -270,6 +270,17 @@ class ApiGateway:
                 body=f"Internal error: {str(e)}"
             )
 
+    async def process_request(self, request: dict) -> ApiResponse:
+        """Compatibility wrapper to process dict-based requests"""
+        api_request = ApiRequest(
+            method=RequestMethod(request.get('method', 'GET')),
+            path=request.get('path', '/'),
+            headers=request.get('headers', {}),
+            body=request.get('body'),
+            client_id=request.get('client_id', '')
+        )
+        return await self.route_request(api_request)
+
     async def _record_failure(self, node_id: str) -> None:
         """Compatibility wrapper for circuit failure recording"""
         await self.limiter.record_failure(node_id)

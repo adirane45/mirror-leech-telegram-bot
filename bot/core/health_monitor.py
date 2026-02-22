@@ -161,6 +161,17 @@ class HealthMonitor:
             logger.error(f"Failed to register health check {check_id}: {e}")
             return False
 
+    async def check_health(self) -> Dict[str, Any]:
+        """Run all enabled health checks once and return overall health"""
+        tasks = [
+            self._run_health_check(check_id, health_check)
+            for check_id, health_check in self._health_checks.items()
+            if health_check.enabled
+        ]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        return await self.get_overall_health()
+
     async def register_recovery_callback(
         self,
         component_id: str,
@@ -285,6 +296,17 @@ class HealthMonitor:
             'last_error': component.last_error,
             'details': component.details
         }
+
+    async def check_health(self) -> Dict[str, Any]:
+        """Run all enabled health checks once and return overall health"""
+        tasks = [
+            self._run_health_check(check_id, health_check)
+            for check_id, health_check in self._health_checks.items()
+            if health_check.enabled
+        ]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        return await self.get_overall_health()
 
     async def _health_check_loop(self):
         """Background health check loop"""

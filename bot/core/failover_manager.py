@@ -191,6 +191,39 @@ class FailoverManager:
             return True
         except Exception:
             return False
+
+    def record_failure(self, component_id: str) -> bool:
+        """Compatibility wrapper for recording failures"""
+        try:
+            # Track failures synchronously for benchmark compatibility
+            now = datetime.now(UTC)
+            failures = self.cascade_detector.component_failures.setdefault(component_id, [])
+            failures.append(now)
+            return True
+        except Exception:
+            return False
+
+    def is_component_failed(self, component_id: str) -> bool:
+        """Compatibility wrapper to check component failure status"""
+        try:
+            failures = self.cascade_detector.component_failures.get(component_id, [])
+            cutoff = datetime.now(UTC) - self.cascade_detector.failure_window
+            recent = [f for f in failures if f > cutoff]
+            return len(recent) > 0
+        except Exception:
+            return False
+
+    async def attempt_recovery(self, component_id: str) -> bool:
+        """Compatibility wrapper to attempt recovery"""
+        try:
+            action = RecoveryAction(
+                component_id=component_id,
+                strategy=RecoveryStrategy.RESTART,
+                priority=5
+            )
+            return await self.recovery_executor.queue_recovery_action(action)
+        except Exception:
+            return False
     
     # ========================================================================
     # CASCADE DETECTION AND HANDLING

@@ -131,9 +131,6 @@ class TestPhase5PerformanceBenchmark:
         assert stats['mean'] < 0.5, "Initialization should complete in < 500ms on average"
         print(f"  ✅ Mean initialization time: {stats['mean']*1000:.1f}ms")
     
-    # The following tests require method signature verification
-    # They are placeholders for future performance validation
-    @pytest.mark.skip(reason="Requires method signature verification")
     async def test_health_check_latency(self):
         """Benchmark health check latency"""
         from bot.core.health_monitor import HealthMonitor
@@ -162,7 +159,6 @@ class TestPhase5PerformanceBenchmark:
         finally:
             await shutdown_phase5_services()
     
-    @pytest.mark.skip(reason="Requires method signature verification")
     async def test_cluster_coordination_latency(self):
         """Benchmark cluster coordination operations"""
         from bot.core.cluster_manager import ClusterManager
@@ -298,7 +294,6 @@ class TestPhase5PerformanceBenchmark:
         finally:
             await shutdown_phase5_services()
     
-    @pytest.mark.skip(reason="Requires method signature verification")
     async def test_failover_recovery_time(self):
         """Benchmark failover detection and recovery"""
         from bot.core.failover_manager import FailoverManager
@@ -332,7 +327,6 @@ class TestPhase5PerformanceBenchmark:
         finally:
             await shutdown_phase5_services()
     
-    @pytest.mark.skip(reason="Requires method signature verification")
     async def test_api_gateway_throughput(self):
         """Benchmark API gateway request handling"""
         from bot.core.api_gateway import ApiGateway

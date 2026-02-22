@@ -31,13 +31,48 @@ def mock_config():
 
 
 @pytest.fixture
-async def redis_client():
+async def redis_client(request):
     """Mock Redis client for testing"""
     from bot.core.redis_manager import RedisManager
+    from typing import Any, Optional
     
     client = RedisManager()
-    # Don't actually connect in tests
-    client._enabled = False
+
+    class _InMemoryCache:
+        def __init__(self):
+            self._store = {}
+
+        async def get(self, key: str, default: Any = None) -> Optional[Any]:
+            return self._store.get(key, default)
+
+        async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+            self._store[key] = value
+            return True
+
+        async def delete(self, *keys: str) -> int:
+            deleted = 0
+            for key in keys:
+                if key in self._store:
+                    del self._store[key]
+                    deleted += 1
+            return deleted
+
+        async def exists(self, key: str) -> bool:
+            return key in self._store
+
+        async def close(self):
+            self._store.clear()
+
+    if request.node.get_closest_marker("redis"):
+        # Enable in-memory cache for redis-marked tests
+        client._client = object()
+        client._enabled = True
+        client._cache = _InMemoryCache()
+    else:
+        # Default to disabled for non-redis tests
+        client._client = None
+        client._enabled = False
+        client._cache = None
     
     yield client
     
