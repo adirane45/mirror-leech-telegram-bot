@@ -62,10 +62,25 @@ class TaskCoordinator:
         # Component delegation
         self.monitor = TaskMonitor()
         self.assignment_manager = TaskAssignmentManager()
+
+        # Backward-compatible attribute aliases
+        self.results = self.monitor.results
+        self.assignments = self.assignment_manager.assignments
+        self._metrics = self.monitor.metrics
         
         # Background tasks
         self._scheduler_task: Optional[asyncio.Task] = None
         self._monitor_task: Optional[asyncio.Task] = None
+
+    @property
+    def metrics(self) -> CoordinatorMetrics:
+        """Expose coordinator metrics for compatibility"""
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, value: CoordinatorMetrics) -> None:
+        self._metrics = value
+        self.monitor.metrics = value
     
     @classmethod
     def get_instance(cls) -> 'TaskCoordinator':
@@ -174,6 +189,10 @@ class TaskCoordinator:
     async def get_tasks_by_state(self, state: TaskState) -> List[Task]:
         """Get all tasks in given state"""
         return [t for t in self.tasks.values() if t.state == state]
+
+    async def check_dependencies(self, task: Task) -> bool:
+        """Compatibility wrapper for dependency checks"""
+        return await self.assignment_manager.check_dependencies(task)
     
     # ========================================================================
     # SCHEDULING LOOP
@@ -205,6 +224,17 @@ class TaskCoordinator:
                 await asyncio.sleep(1)
             except Exception:
                 await asyncio.sleep(1)
+
+    async def _assign_task(self, task: Task, node_id: str) -> bool:
+        """Compatibility wrapper for task assignment"""
+        result = await self.assignment_manager.assign_task(task, node_id)
+        if result and task.task_id in self.queue:
+            self.queue.remove(task.task_id)
+        return result
+
+    async def _select_target_node(self, task: Task) -> Optional[str]:
+        """Compatibility wrapper for node selection"""
+        return await self.assignment_manager.select_target_node(task)
     
     # ========================================================================
     # TASK COMPLETION AND FAILURE

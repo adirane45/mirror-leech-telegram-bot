@@ -49,17 +49,20 @@ class ReplicationManager:
         self.node_id = ""
         self.peer_nodes: Dict[str, Dict[str, Any]] = {}
         self.replication_log: List[ReplicationLog] = []
+        self.pending_replication: Dict[str, List[ReplicationLog]] = {}
         self.sync_checkpoints: Dict[str, SyncCheckpoint] = {}
         self.local_state: Dict[str, Any] = {}
-        self.metrics = ReplicationMetrics()
+        self._metrics = ReplicationMetrics()
         self.vector_clock = VectorClock("")
         self.listeners: List[ReplicationEventListener] = []
+        self.conflicts: Dict[str, ConflictEvent] = {}
+        self._replication_task: Optional[asyncio.Task] = None
         
         # Initialize specialized components
         self.conflict_resolver = ReplicationConflictResolver(
             replication_log=self.replication_log,
             local_state=self.local_state,
-            metrics=self.metrics,
+            metrics=self._metrics,
             listeners=self.listeners
         )
         
@@ -67,9 +70,25 @@ class ReplicationManager:
             replication_log=self.replication_log,
             local_state=self.local_state,
             peer_nodes=self.peer_nodes,
-            metrics=self.metrics,
+            metrics=self._metrics,
             listeners=self.listeners
         )
+
+        # Backward-compatible attribute aliases
+        self.pending_replication = self.sync_engine.pending_replication
+        self.conflicts = self.conflict_resolver.conflicts
+        self.sync_engine.sync_checkpoints = self.sync_checkpoints
+
+    @property
+    def metrics(self) -> ReplicationMetrics:
+        """Expose metrics for compatibility"""
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, value: ReplicationMetrics) -> None:
+        self._metrics = value
+        self.conflict_resolver.metrics = value
+        self.sync_engine.metrics = value
     
     @classmethod
     def get_instance(cls) -> 'ReplicationManager':
@@ -90,6 +109,7 @@ class ReplicationManager:
             
             # Start sync engine
             await self.sync_engine.start()
+            self._replication_task = self.sync_engine._replication_task
             
             return True
         except Exception:
@@ -104,6 +124,7 @@ class ReplicationManager:
         try:
             self.enabled = False
             await self.sync_engine.stop()
+            self._replication_task = None
             return True
         except Exception:
             return False
@@ -186,14 +207,13 @@ class ReplicationManager:
         """
         if not self.enabled:
             return False
-        
         try:
             # Update vector clock
             self.vector_clock.merge(log_entry.vector_clock)
-            
+
             # Check for conflicts
             conflict = await self.conflict_resolver.detect_conflict(log_entry, from_node)
-            
+
             if conflict:
                 # Resolve conflict
                 resolved = await self.conflict_resolver.resolve_conflict(conflict)
@@ -205,25 +225,33 @@ class ReplicationManager:
                     if log_entry.operation_type != "DELETE":
                         self.local_state[log_entry.key] = conflict.resolved_value
                 return True
-            
+
             # Apply change
             log_entry.applied = True
             self.replication_log.append(log_entry)
-            
+
             if log_entry.operation_type == "DELETE":
                 self.local_state.pop(log_entry.key, None)
             else:
                 self.local_state[log_entry.key] = log_entry.value
-            
+
             self.metrics.synced_changes += 1
-            
+
             # Notify listeners
             for listener in self.listeners:
                 await listener.on_change_received(log_entry, from_node)
-            
+
             return True
         except Exception:
             return False
+
+    async def detect_conflict(self, log_entry: ReplicationLog, from_node: str) -> Optional[ConflictEvent]:
+        """Compatibility wrapper for conflict detection"""
+        return await self.conflict_resolver.detect_conflict(log_entry, from_node)
+
+    async def resolve_conflict(self, conflict: ConflictEvent) -> bool:
+        """Compatibility wrapper for conflict resolution"""
+        return await self.conflict_resolver.resolve_conflict(conflict)
     
     # ========================================================================
     # SYNCHRONIZATION
@@ -240,6 +268,10 @@ class ReplicationManager:
     async def force_sync_all_nodes(self) -> bool:
         """Force synchronization with all peer nodes"""
         return await self.sync_engine.force_sync_all_nodes()
+
+    def _classify_lag(self, lag_ms: int) -> str:
+        """Compatibility wrapper for lag classification"""
+        return self.sync_engine._classify_lag(lag_ms)
     
     # ========================================================================
     # MONITORING AND MANAGEMENT

@@ -55,6 +55,18 @@ class PerformanceOptimizer:
         # Component delegation
         self.collector = PerformanceMetricsCollector()
         self.scaling_engine = PerformanceScalingEngine()
+
+        # Shared listener registry for backward compatibility
+        self.listeners: List[PerformanceOptimizationListener] = []
+        self.collector.listeners = self.listeners
+        self.scaling_engine.listeners = self.listeners
+
+        # Backward-compatible attribute aliases
+        self.snapshots = self.collector.snapshots
+        self.metrics = self.collector.metrics
+        self.recommendations = self.scaling_engine.recommendations
+        self.scaling_history = self.scaling_engine.scaling_history
+        self._optimizer_metrics = self.scaling_engine.optimizer_metrics
         
         # Thresholds
         self.cpu_threshold = 0.8
@@ -65,6 +77,16 @@ class PerformanceOptimizer:
         # Background tasks
         self._collector_task: Optional[asyncio.Task] = None
         self._analyzer_task: Optional[asyncio.Task] = None
+
+    @property
+    def optimizer_metrics(self) -> OptimizerMetrics:
+        """Expose optimizer metrics for compatibility"""
+        return self._optimizer_metrics
+
+    @optimizer_metrics.setter
+    def optimizer_metrics(self, value: OptimizerMetrics) -> None:
+        self._optimizer_metrics = value
+        self.scaling_engine.optimizer_metrics = value
     
     @classmethod
     def get_instance(cls) -> 'PerformanceOptimizer':
@@ -123,6 +145,10 @@ class PerformanceOptimizer:
             return True
         except Exception:
             return False
+
+    async def is_enabled(self) -> bool:
+        """Check if optimizer is enabled"""
+        return self.enabled
     
     # ========================================================================
     # METRICS DELEGATION
@@ -130,7 +156,11 @@ class PerformanceOptimizer:
     
     async def record_metric(self, metric):
         """Record a resource metric"""
-        return await self.collector.record_metric(metric)
+        result = await self.collector.record_metric(metric)
+        if result:
+            self.optimizer_metrics.metrics_collected += 1
+            self.optimizer_metrics.last_updated = datetime.now(UTC)
+        return result
     
     async def record_snapshot(self, snapshot: PerformanceSnapshot) -> bool:
         """Record performance snapshot"""
@@ -143,6 +173,23 @@ class PerformanceOptimizer:
     async def get_node_snapshots(self, node_id: str, count: int = 10) -> List[PerformanceSnapshot]:
         """Get last N snapshots for node"""
         return await self.collector.get_node_snapshots(node_id, count)
+
+    async def _make_recommendation(
+        self,
+        node_id: str,
+        action: ScalingAction,
+        resource_type: Optional[ResourceType],
+        reason: str,
+        priority: int
+    ) -> bool:
+        """Compatibility wrapper for recommendation creation"""
+        return await self.scaling_engine._make_recommendation(
+            node_id=node_id,
+            action=action,
+            resource_type=resource_type,
+            reason=reason,
+            priority=priority
+        )
     
     # ========================================================================
     # AUTO-SCALING DELEGATION

@@ -56,10 +56,51 @@ class ApiGateway:
         # Component delegation
         self.router = ApiGatewayRouter()
         self.limiter = ApiGatewayLimiter()
+
+        # Backward-compatible route access
+        self.routes = self.router.routes
+        self.nodes = self.router.nodes
+        self.request_history = self.limiter.request_history
+        self.circuit_states = self.limiter.circuit_states
+        self.circuit_failures = self.limiter.circuit_failures
+        self.circuit_successes = self.limiter.circuit_successes
+        self._metrics = self.limiter.metrics
+        self._default_rate_limit = self.limiter.default_rate_limit
+        self._default_circuit_breaker = self.limiter.default_circuit_breaker
         
         # Background tasks
         self._cleanup_task: Optional[asyncio.Task] = None
         self._circuit_check_task: Optional[asyncio.Task] = None
+
+    @property
+    def metrics(self) -> GatewayMetrics:
+        """Expose gateway metrics for compatibility"""
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, value: GatewayMetrics) -> None:
+        self._metrics = value
+        self.limiter.metrics = value
+
+    @property
+    def default_rate_limit(self) -> RateLimitConfig:
+        """Expose default rate limit for compatibility"""
+        return self._default_rate_limit
+
+    @default_rate_limit.setter
+    def default_rate_limit(self, value: RateLimitConfig) -> None:
+        self._default_rate_limit = value
+        self.limiter.default_rate_limit = value
+
+    @property
+    def default_circuit_breaker(self) -> CircuitBreakerConfig:
+        """Expose default circuit breaker for compatibility"""
+        return self._default_circuit_breaker
+
+    @default_circuit_breaker.setter
+    def default_circuit_breaker(self, value: CircuitBreakerConfig) -> None:
+        self._default_circuit_breaker = value
+        self.limiter.default_circuit_breaker = value
     
     @classmethod
     def get_instance(cls) -> 'ApiGateway':
@@ -125,6 +166,10 @@ class ApiGateway:
         result = await self.router.register_node(node_id)
         self.limiter.initialize_node(node_id)
         return result
+
+    async def _select_node(self, route: RouteConfig) -> Optional[str]:
+        """Compatibility wrapper for node selection"""
+        return await self.router.select_node(route, circuit_states=self.circuit_states)
     
     async def route_request(self, request: ApiRequest) -> ApiResponse:
         """Route request to appropriate node"""
@@ -224,6 +269,14 @@ class ApiGateway:
                 status_code=500,
                 body=f"Internal error: {str(e)}"
             )
+
+    async def _record_failure(self, node_id: str) -> None:
+        """Compatibility wrapper for circuit failure recording"""
+        await self.limiter.record_failure(node_id)
+
+    async def _record_success(self, node_id: str) -> None:
+        """Compatibility wrapper for circuit success recording"""
+        await self.limiter.record_success(node_id)
     
     # ========================================================================
     # AUTHENTICATION
@@ -247,7 +300,9 @@ class ApiGateway:
     
     async def set_rate_limit(self, max_requests: int, window_seconds: int) -> bool:
         """Set global rate limit"""
-        return await self.limiter.set_rate_limit(max_requests, window_seconds)
+        result = await self.limiter.set_rate_limit(max_requests, window_seconds)
+        self._default_rate_limit = self.limiter.default_rate_limit
+        return result
     
     # ========================================================================
     # MANAGEMENT

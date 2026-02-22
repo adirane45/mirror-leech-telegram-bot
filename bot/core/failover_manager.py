@@ -73,10 +73,32 @@ class FailoverManager:
         self.cascade_detector = FailoverCascadeDetector(
             listeners=self.listeners
         )
+
+        # Backward-compatible attribute aliases
+        self.operations = self.recovery_executor.operations
+        self.pending_actions = self.recovery_executor.pending_actions
+        self.custom_handlers = self.recovery_executor.custom_handlers
+        self._recovery_executor_task = self.recovery_executor._executor_task
+        self._cascade_monitor_task = self.cascade_detector._monitor_task
+        self.component_failures = self.cascade_detector.component_failures
+        self.active_cascades = self.cascade_detector.active_cascades
+        self._metrics = self.recovery_executor.metrics
+        self.cascade_detector.metrics = self._metrics
         
         # Configuration
         self.failure_threshold = 5
         self.enabled = False
+
+    @property
+    def metrics(self) -> RecoveryMetrics:
+        """Expose recovery metrics for compatibility"""
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, value: RecoveryMetrics) -> None:
+        self._metrics = value
+        self.recovery_executor.metrics = value
+        self.cascade_detector.metrics = value
     
     @classmethod
     def get_instance(cls) -> 'FailoverManager':
@@ -97,9 +119,11 @@ class FailoverManager:
             
             # Start recovery executor
             await self.recovery_executor.start()
+            self._recovery_executor_task = self.recovery_executor._executor_task
             
             # Start cascade detector
             await self.cascade_detector.start()
+            self._cascade_monitor_task = self.cascade_detector._monitor_task
             
             return True
         except Exception:
@@ -117,6 +141,8 @@ class FailoverManager:
             # Stop both components
             await self.recovery_executor.stop()
             await self.cascade_detector.stop()
+            self._recovery_executor_task = None
+            self._cascade_monitor_task = None
             
             return True
         except Exception:
