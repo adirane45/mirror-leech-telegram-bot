@@ -71,26 +71,43 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
             await TorrentManager.qbittorrent.torrents.add(form.build())
         except AQError as e:
             error_str = str(e).lower()
-            if "403" in str(e) or "forbidden" in error_str:
+            full_error = str(e)
+            
+            if "403" in full_error or "forbidden" in error_str:
                 error_msg = "❌ <b>HTTP 403 Forbidden Error</b>\n\n"
-                error_msg += "The torrent source rejected your download request.\n\n"
-                error_msg += "<b>Common Causes:</b>\n"
+                error_msg += "<b>The torrent source rejected your download request.</b>\n\n"
+                error_msg += "<b>🔍 Common Causes:</b>\n"
                 error_msg += "• Source is geo-blocked or region-restricted\n"
                 error_msg += "• Your IP is rate-limited by the source\n"
-                error_msg += "• The source requires authentication\n"
-                error_msg += "• The torrent file/magnet is no longer available\n\n"
-                error_msg += "<b>Solutions:</b>\n"
-                error_msg += "1️⃣ Try again in a few minutes\n"
-                error_msg += "2️⃣ Use a different torrent source\n"
-                error_msg += "3️⃣ Check if the link is still valid\n"
-                error_msg += "4️⃣ Try with a VPN or proxy if allowed"
-            elif "401" in str(e) or "unauthorized" in error_str:
-                error_msg = "❌ Torrent source requires authentication (HTTP 401)."
+                error_msg += "• The source requires authentication/cookies\n"
+                error_msg += "• The torrent file/magnet is no longer available\n"
+                error_msg += "• qBittorrent lacks proper User-Agent header\n\n"
+                error_msg += "<b>✅ Solutions to Try:</b>\n"
+                error_msg += "1️⃣ <b>Wait & Retry</b> - Try again in 5-10 minutes\n"
+                error_msg += "2️⃣ <b>Different Source</b> - Use another torrent source\n"
+                error_msg += "3️⃣ <b>Verify Link</b> - Check if the link still works\n"
+                error_msg += "4️⃣ <b>Use /mirror</b> - Try downloading with /mirror command instead\n"
+                error_msg += "5️⃣ <b>Direct .torrent</b> - Download torrent file first, then upload\n\n"
+                error_msg += f"<b>Error Details:</b> <code>{full_error}</code>"
+            elif "401" in full_error or "unauthorized" in error_str:
+                error_msg = "❌ <b>HTTP 401 Unauthorized</b>\n\n"
+                error_msg += "The torrent source requires authentication.\n"
+                error_msg += "This source may need login credentials or API key."
             elif "already" in error_str or "exists" in error_str:
-                error_msg = "⚠️  This torrent has already been added to qBittorrent."
+                error_msg = "⚠️  <b>Torrent Already Added</b>\n\n"
+                error_msg += "This torrent/magnet link is already in qBittorrent.\n"
+                error_msg += "Check ongoing downloads or use /stats to see queue."
+            elif "invalid" in error_str or "bad" in error_str:
+                error_msg = "❌ <b>Invalid Torrent Link</b>\n\n"
+                error_msg += "The link format is not recognized.\n"
+                error_msg += "<b>Supported formats:</b>\n"
+                error_msg += "• Magnet link: magnet:?xt=urn:btih:...\n"
+                error_msg += "• Torrent URL: https://example.com/file.torrent\n"
+                error_msg += "• Torrent file upload: Reply with .torrent file"
             else:
-                error_msg = f"❌ qBittorrent error: {e}"
-            LOGGER.error(f"qBittorrent AQError: {e}. {listener.mid}")
+                error_msg = f"❌ <b>qBittorrent Error</b>\n\n{e}"
+            
+            LOGGER.error(f"qBittorrent AQError (403): {full_error}. User: {listener.mid}")
             await listener.on_download_error(error_msg)
             return
         except (ClientError, TimeoutError) as e:
@@ -195,7 +212,41 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
     except (ClientError, TimeoutError, Exception, AQError) as e:
         if f"{listener.mid}" in qb_torrents:
             del qb_torrents[f"{listener.mid}"]
-        await listener.on_download_error(f"{e}")
+        
+        # Better error classification
+        error_str = str(e).lower()
+        full_error = str(e)
+        
+        if "403" in full_error or "forbidden" in error_str:
+            error_msg = "❌ <b>HTTP 403 Forbidden</b>\n\n"
+            error_msg += "Access denied by the torrent source.\n"
+            error_msg += "The server is blocking this download.\n\n"
+            error_msg += "<b>Try:</b>\n"
+            error_msg += "• Wait a few minutes and retry\n"
+            error_msg += "• Use a different torrent/magnet link\n"
+            error_msg += "• Use /mirror command instead of /qm\n"
+            error_msg += "• Check if your IP is rate-limited"
+        elif "timeout" in error_str or "timed out" in error_str:
+            error_msg = "⏱️  <b>Connection Timeout</b>\n\n"
+            error_msg += "Took too long to connect to torrent source.\n"
+            error_msg += "The server may be slow or unreachable.\n\n"
+            error_msg += "<b>Try:</b>\n"
+            error_msg += "• Wait a moment and retry\n"
+            error_msg += "• Check your internet connection\n"
+            error_msg += "• Try a different torrent source"
+        elif "connection" in error_str or "cannot connect" in error_str:
+            error_msg = "🔴 <b>qBittorrent Connection Failed</b>\n\n"
+            error_msg += "Cannot reach qBittorrent service.\n"
+            error_msg += "Please ensure qBittorrent is running.\n\n"
+            error_msg += f"Debug: {full_error}"
+        elif "already" in error_str:
+            error_msg = "⚠️  <b>Torrent Already Added</b>\n\n"
+            error_msg += "This torrent is already in qBittorrent."
+        else:
+            error_msg = f"❌ <b>qBittorrent Error:</b>\n<code>{full_error}</code>"
+        
+        LOGGER.error(f"qBittorrent exception: {full_error}. User: {listener.mid}")
+        await listener.on_download_error(error_msg)
     finally:
         if await aiopath.exists(listener.link):
             await remove(listener.link)
