@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror-Leech Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .status-pill {
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-downloading {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+
+        .status-uploading {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+
+        .status-paused {
+            background: rgba(234, 179, 8, 0.2);
+            color: #fde68a;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+        }
+
+        .status-completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: #bbf7d0;
+        }
+
+        .progress-track {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 999px;
+            height: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #38bdf8, #6366f1);
+            height: 8px;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 min-h-screen">
+    <div class="max-w-6xl mx-auto px-6 py-10">
+        <header class="glass rounded-2xl px-6 py-5 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold">Mirror-Leech Web Dashboard</h1>
+                <p class="text-slate-400">Real-time task monitoring and system stats</p>
+            </div>
+            <div class="text-sm text-slate-300">
+                <span id="connection-status" class="inline-flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Connected
+                </span>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" id="stats-grid">
+            <div class="glass rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Active Tasks</p>
+                <p class="text-2xl font-semibold" id="stat-active">0</p>
+            </div>
+            <div class="glass rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Total Speed</p>
+                <p class="text-2xl font-semibold" id="stat-speed">0 MB/s</p>
+            </div>
+            <div class="glass rounded-xl p-4">
+                <p class="text-slate-400 text-sm">CPU Usage</p>
+                <p class="text-2xl font-semibold" id="stat-cpu">0%</p>
+            </div>
+            <div class="glass rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Memory Usage</p>
+                <p class="text-2xl font-semibold" id="stat-mem">0%</p>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Active Tasks</h2>
+                <button class="glass rounded-xl px-4 py-2 text-sm hover:bg-slate-800" onclick="refreshDashboard()">
+                    Refresh
+                </button>
+            </div>
+            <div id="task-list" class="space-y-4"></div>
+            <div id="task-empty" class="glass rounded-xl p-8 text-center text-slate-400 hidden">
+                No active tasks.
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const refreshInterval = 2000;
+        let refreshTimer = null;
+
+        async function fetchJson(url) {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`Request failed: ${response.status}`);
+            }
+            return response.json();
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes <= 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let size = bytes;
+            let unitIndex = 0;
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+            return `${size.toFixed(2)} ${units[unitIndex]}`;
+        }
+
+        function formatSpeed(bytesPerSec) {
+            return `${formatBytes(bytesPerSec)}/s`;
+        }
+
+        function formatEta(seconds) {
+            if (!seconds || seconds <= 0) return '--:--:--';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function renderStats(stats) {
+            document.getElementById('stat-active').textContent = stats.active_tasks ?? 0;
+            document.getElementById('stat-speed').textContent = formatSpeed(stats.total_speed || 0);
+            document.getElementById('stat-cpu').textContent = `${stats.cpu_usage ?? 0}%`;
+            document.getElementById('stat-mem').textContent = `${stats.memory_usage ?? 0}%`;
+        }
+
+        function renderTasks(tasks) {
+            const container = document.getElementById('task-list');
+            const empty = document.getElementById('task-empty');
+            container.innerHTML = '';
+
+            if (!tasks || tasks.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+
+            tasks.forEach((task) => {
+                const progress = Math.min(Math.max(task.progress || 0, 0), 100);
+                const item = document.createElement('div');
+                item.className = 'glass rounded-xl p-5';
+                item.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                            <p class="font-semibold">${task.name || 'Unnamed Task'}</p>
+                            <p class="text-sm text-slate-400">${task.engine || 'unknown'} • ${task.gid || 'n/a'}</p>
+                        </div>
+                        <span class="status-pill status-${task.status}">${task.status || 'unknown'}</span>
+                    </div>
+                    <div class="mt-4">
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: ${progress}%;"></div>
+                        </div>
+                        <div class="mt-2 text-sm text-slate-300 flex flex-wrap gap-4">
+                            <span>Progress: ${progress.toFixed(1)}%</span>
+                            <span>Speed: ${formatSpeed(task.speed || 0)}</span>
+                            <span>ETA: ${formatEta(task.eta || 0)}</span>
+                            <span>Size: ${formatBytes(task.completed_length || 0)} / ${formatBytes(task.total_length || 0)}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function refreshDashboard() {
+            try {
+                const [stats, tasks] = await Promise.all([
+                    fetchJson('/api/dashboard/stats'),
+                    fetchJson('/api/dashboard/tasks')
+                ]);
+                renderStats(stats);
+                renderTasks(tasks.tasks || []);
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = '<span class="h-2 w-2 rounded-full bg-red-400"></span> Disconnected';
+            }
+        }
+
+        function startAutoRefresh() {
+            refreshDashboard();
+            refreshTimer = setInterval(refreshDashboard, refreshInterval);
+        }
+
+        startAutoRefresh();
+    </script>
+</body>
+
+</html>

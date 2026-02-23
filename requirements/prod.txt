@@ -1,0 +1,47 @@
+# Production dependencies
+# Include base requirements
+-r base.txt
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+gunicorn==21.2.0
+starlette==0.27.0
+
+# Download clients
+aioaria2==0.1.2
+aioqbt==0.4.2
+yt-dlp==2023.12.30
+
+# Storage & Cache
+redis==5.0.1
+pymongo==4.6.0
+motor==3.3.2
+
+# Monitoring & Observability
+prometheus-client==0.19.0
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-otlp==1.21.0
+opentelemetry-instrumentation-fastapi==0.42b0
+opentelemetry-instrumentation-asgi==0.42b0
+
+# Cloud Storage
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.107.0
+rclone-python==0.8.0
+
+# Task Queue
+celery==5.3.4
+kombu==5.3.4
+
+# RPC clients
+aioaria2==0.1.2
+aioqbt==0.4.2
+
+# Utilities
+python-telegram-bot==20.3
+html2text==2024.2.26
+pillow==10.1.0
+wget==3.2
+psutil==5.9.6
