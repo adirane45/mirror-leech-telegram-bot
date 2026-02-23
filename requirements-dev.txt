@@ -48,7 +48,7 @@ vulture==2.11
 mccabe==0.7.0
 
 # Documentation
-sphinx==7.2.6
+sphinx==9.0.4
 sphinx-rtd-theme==2.0.0
 
 # Utilities
