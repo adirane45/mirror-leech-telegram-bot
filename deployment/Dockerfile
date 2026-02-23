@@ -5,8 +5,8 @@ FROM ${BASE_IMAGE} AS build
 WORKDIR /app
 RUN python3 -m venv mltbenv
 
-COPY requirements/prod.txt /tmp/requirements.txt
-RUN /app/mltbenv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
+COPY requirements/ /app/requirements/
+RUN /app/mltbenv/bin/pip install --no-cache-dir -r /app/requirements/prod.txt
 
 COPY . .
 
