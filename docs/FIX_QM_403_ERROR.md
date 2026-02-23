@@ -84,7 +84,56 @@ This bypasses the URL completely and avoids 403 errors.
 
 ---
 
-### **Solution 5: Check qBittorrent Configuration** ⚙️
+### **Solution 5: Enable Tor for Rotating IP** 🌐
+
+This is the most effective solution for persistent 403 errors:
+
+```bash
+# 1. Edit config/.env.production
+ENABLE_TOR=true
+
+# 2. Start Tor service
+docker compose --profile tor -f deployment/compose/docker-compose.yml up tor -d
+
+# 3. Restart bot
+docker compose restart mirror-bot
+
+# Now /qm will use rotating IP addresses
+/qm <magnet-link-or-url>
+```
+
+**How it works**: 
+- Tor rotates IP every ~10 minutes
+- Each new IP appears as different user to torrent source  
+- 403 error often resets with new IP
+
+See: [TOR_SETUP_GUIDE.md](TOR_SETUP_GUIDE.md) for detailed setup
+
+---
+
+### **Solution 6: Add Custom Proxy** 🔧
+
+If you have a SOCKS5/HTTP proxy:
+
+```bash
+# In config/.env.production
+USE_PROXY=true
+PROXY_URL=socks5://proxy-host:port
+# Or: PROXY_URL=http://proxy-host:port
+
+# Restart
+docker restart mirror-bot
+```
+
+**Proxy options:**
+- External Tor service
+- Residential proxy (most effective but paid)
+- Corporate proxy
+- VPN SOCKS5 endpoint
+
+---
+
+### ~~Solution 5~~: Check qBittorrent Configuration ⚙️
 
 If the issue persists for ALL torrents:
 
@@ -144,8 +193,20 @@ docker compose -f deployment/compose/docker-compose.yml logs bot | tail -50 | gr
 # Check your public IP
 curl https://api.ipify.org
 
-# If source has IP-based blocking, VPN might help
-# (Only if bot admin allows VPN)
+# If source has IP-based blocking, Tor helps
+# See: TOR_SETUP_GUIDE.md for how to enable
+```
+
+### **Is Tor Enabled and Working?**
+```bash
+# Check if Tor is running
+docker ps | grep tor
+
+# Verify Tor IP is different from direct IP
+curl https://api.ipify.org  # Your real IP
+curl -x socks5://localhost:9050 https://api.ipify.org  # Tor IP
+
+# They should be different!
 ```
 
 ---

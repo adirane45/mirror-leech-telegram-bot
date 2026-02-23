@@ -55,6 +55,7 @@
 | [DOCKER_VALIDATION.md](DOCKER_VALIDATION.md) | Docker validation & verification report |
 | [PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md) | Deploy to production |
 | [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) | Pre-deployment checklist |
+| [TOR_SETUP_GUIDE.md](TOR_SETUP_GUIDE.md) | Setup Tor for IP rotation (fix 403 errors) |
 
 ### 📦 Release Management
 
@@ -78,6 +79,8 @@
 | [API_REFERENCE.md](API_REFERENCE.md) | API endpoints & usage |
 | [INSTALLATION.md](INSTALLATION.md) | Detailed installation steps |
 | [FIXES_AND_UPDATES.md](FIXES_AND_UPDATES.md) | Recent fixes & improvements |
+| [FIX_QM_403_ERROR.md](FIX_QM_403_ERROR.md) | Fix HTTP 403 Forbidden errors in /qm |
+| [TOR_SETUP_GUIDE.md](TOR_SETUP_GUIDE.md) | Use Tor to rotate IP (solutions for 403) |
 
 ### 📑 Archive & Historical
 
