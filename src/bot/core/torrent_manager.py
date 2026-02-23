@@ -1,7 +1,7 @@
 from aioaria2 import Aria2WebsocketClient
 from aioqbt.client import create_client
 from asyncio import gather, TimeoutError
-from aiohttp import ClientError
+from aiohttp import ClientError, ClientSession
 from pathlib import Path
 from inspect import iscoroutinefunction
 from os import environ
@@ -48,9 +48,39 @@ class TorrentManager:
         qb_username = environ.get("QB_USERNAME", "admin")
         qb_password = environ.get("QB_PASSWORD", "mltbmltb")
         
+        # Proxy configuration for 403 errors
+        enable_tor = environ.get("ENABLE_TOR", "false").lower() == "true"
+        use_proxy = environ.get("USE_PROXY", "false").lower() == "true"
+        tor_proxy_url = environ.get("TOR_PROXY_URL", "socks5://127.0.0.1:9050")
+        proxy_url = environ.get("PROXY_URL", "")
+        
+        # Determine which proxy to use
+        proxy_for_qb = None
+        if enable_tor:
+            proxy_for_qb = tor_proxy_url
+            LOGGER.info(f"🔄 Tor proxy enabled for qBittorrent: {tor_proxy_url}")
+        elif use_proxy and proxy_url:
+            proxy_for_qb = proxy_url
+            LOGGER.info(f"🔄 Proxy enabled for qBittorrent: {proxy_url}")
+        
         # Try different authentication methods for qBittorrent
         qb_url = f"http://{qb_host}:{qb_port}/api/v2/"
         qb_client = None
+        
+        # Create custom session with proxy if needed
+        connector_kwargs = {}
+        if proxy_for_qb:
+            try:
+                # Try to use proxy with aiohttp
+                import ssl
+                import aiohttp_socks
+                connector = aiohttp_socks.SocksConnector.from_url(proxy_for_qb, ssl=ssl.create_default_context())
+                session = ClientSession(connector=connector)
+                connector_kwargs['session'] = session
+            except ImportError:
+                LOGGER.warning("aiohttp-socks not installed, proxy may not work. Install with: pip install aiohttp-socks")
+            except Exception as e:
+                LOGGER.warning(f"Failed to setup proxy connector: {e}. Continuing without proxy.")
         
         # Try with password first
         try:
@@ -58,6 +88,7 @@ class TorrentManager:
                 qb_url,
                 username=qb_username,
                 password=qb_password,
+                **connector_kwargs
             )
         except Exception as e:
             LOGGER.warning(f"qBittorrent auth with password failed: {e}, trying without password...")
@@ -67,12 +98,13 @@ class TorrentManager:
                     qb_url,
                     username=qb_username,
                     password="",
+                    **connector_kwargs
                 )
             except Exception as e2:
                 LOGGER.warning(f"qBittorrent auth without password failed: {e2}, trying unauthenticated...")
                 try:
                     # Try unauthenticated
-                    qb_client = await create_client(qb_url)
+                    qb_client = await create_client(qb_url, **connector_kwargs)
                 except Exception as e3:
                     LOGGER.error(f"All qBittorrent authentication methods failed: {e3}")
                     raise
@@ -85,6 +117,13 @@ class TorrentManager:
             )
         else:
             cls.aria2 = await Aria2WebsocketClient.new(f"http://{aria2_host}:{aria2_port}/jsonrpc")
+        
+        # Log proxy status
+        if proxy_for_qb:
+            LOGGER.info("✅ Proxy/Tor configured for qBittorrent downloads (helps with 403 errors)")
+        else:
+            LOGGER.info("⚠️  No proxy configured (set ENABLE_TOR=true to fix 403 errors)")
+        
         cls.qbittorrent = qb_client
         cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
 

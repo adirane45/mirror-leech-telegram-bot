@@ -272,6 +272,30 @@ services:
       redis:
         condition: service_healthy
 
+  # ===== Tor Proxy (For IP Rotation - Optional) =====
+  # Uncomment to enable Tor for rotating IP (fixes 403 errors)
+  # Set ENABLE_TOR=true in config/.env.production
+  tor:
+    image: osminogin/tor-simple:latest
+    container_name: mltb-tor
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "9050:9050"  # SOCKS5 proxy
+      - "9051:9051"  # Control port
+    volumes:
+      - tor-data:/var/lib/tor
+    environment:
+      - TOR_ENABLE_CONTROL_PORT=1
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9050"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - tor  # Disabled by default, enable with: docker-compose --profile tor up
+
 # ===== Networks =====
 networks:
   mltb-net:
@@ -290,6 +314,8 @@ volumes:
   grafana-data:
     driver: local
   alertmanager-data:
+    driver: local
+  tor-data:
     driver: local
   logs:
     driver: local

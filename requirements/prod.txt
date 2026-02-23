@@ -13,6 +13,10 @@ aioaria2>=1.3.6
 aioqbt>=1.0.0
 yt-dlp>=2023.12.30
 
+# Proxy & Tor support
+PySocks>=1.7.1
+aiohttp-socks>=0.8.0
+
 # Storage & Cache
 redis>=5.0.0
 pymongo>=4.6.0
