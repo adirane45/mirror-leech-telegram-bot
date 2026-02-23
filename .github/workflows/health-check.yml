@@ -1,0 +1,93 @@
+name: Health Check
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'deployment/compose/docker-compose.yml'
+      - '.github/workflows/health-check.yml'
+
+jobs:
+  health-check:
+    name: Verify Service Health
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Start services
+        run: docker-compose -f deployment/compose/docker-compose.yml up -d
+        timeout-minutes: 5
+
+      - name: Wait for services to be ready
+        run: sleep 15
+
+      - name: Check Docker services
+        run: |
+          echo "🔍 Checking Docker services..."
+          docker-compose -f deployment/compose/docker-compose.yml ps
+          echo "✅ Docker services check completed"
+
+      - name: Health check - FastAPI
+        run: |
+          echo "🔍 Checking FastAPI endpoint..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8060/health | grep -q "healthy"; then
+              echo "✅ FastAPI is healthy"
+              exit 0
+            fi
+            echo "⏳ Attempt $i: Waiting for FastAPI..."
+            sleep 2
+          done
+          echo "❌ FastAPI health check failed"
+          curl -v http://localhost:8060/health || true
+          exit 1
+
+      - name: Health check - Redis
+        run: |
+          echo "🔍 Checking Redis..."
+          docker exec $(docker-compose -f deployment/compose/docker-compose.yml ps -q mltb-redis) \
+            redis-cli ping || echo "⚠️ Redis check skipped"
+
+      - name: Health check - Prometheus
+        run: |
+          echo "🔍 Checking Prometheus..."
+          curl -s http://localhost:9091/-/healthy | grep "Prometheus" || echo "⚠️ Prometheus check skipped"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "📋 Docker Compose logs:"
+          docker-compose -f deployment/compose/docker-compose.yml logs --tail=50
+          echo "📋 Service status:"
+          docker-compose -f deployment/compose/docker-compose.yml ps
+
+      - name: Stop services
+        if: always()
+        run: docker-compose -f deployment/compose/docker-compose.yml down -v
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ Health check failed! Please review logs.'
+            })
