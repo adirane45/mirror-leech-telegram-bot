@@ -7,7 +7,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - PUID=1000
       - PGID=1000
@@ -37,7 +37,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - PUID=1000
       - PGID=1000
@@ -150,7 +150,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
@@ -192,7 +192,7 @@ services:
       - "8060:8060"
       - "9090:9090"
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - BASE_URL_PORT=8060
       - REDIS_HOST=redis
@@ -230,7 +230,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -260,7 +260,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - config/.env.production
+      - ../config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -272,7 +272,26 @@ services:
       redis:
         condition: service_healthy
 
-# ===== Networks =====
+  # ===== Tor Proxy for IP Rotation (OPTIONAL - Use: --profile tor) =====
+  tor:
+    image: osminogin/tor-simple:latest
+    container_name: mltb-tor
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "9050:9050"    # SOCKS5 proxy port
+      - "9051:9051"    # Tor control port
+    volumes:
+      - tor-data:/var/lib/tor
+    profiles:
+      - tor
+    healthcheck:
+      test: ["CMD", "curl", "-x", "socks5://localhost:9050", "-f", "https://api.ipify.org"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 networks:
   mltb-net:
     driver: bridge
@@ -292,4 +311,6 @@ volumes:
   alertmanager-data:
     driver: local
   logs:
+    driver: local
+  tor-data:
     driver: local
