@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ===== aria2 Download Manager =====
   aria2:
@@ -8,8 +6,9 @@ services:
     restart: unless-stopped
     networks:
       - mltb-net
+    env_file:
+      - config/.env.production
     environment:
-      - RPC_SECRET=mltb_aria2_secret_2026
       - PUID=1000
       - PGID=1000
       - RPC_PORT=6800
@@ -25,7 +24,7 @@ services:
       - "6888:6888"
       - "6888:6888/udp"
     healthcheck:
-      test: ["CMD", "curl", "-f", "-X", "POST", "-H", "Content-Type: application/json", "--data", "{\"jsonrpc\":\"2.0\",\"id\":\"mltb\",\"method\":\"aria2.getVersion\",\"params\":[\"token:mltb_aria2_secret_2026\"]}", "http://localhost:6800/jsonrpc"]
+      test: ["CMD-SHELL", "curl -f -X POST -H 'Content-Type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":\"mltb\",\"method\":\"aria2.getVersion\",\"params\":[\"token:'\"$$RPC_SECRET\"'\"]}' http://localhost:6800/jsonrpc"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,13 +36,13 @@ services:
     restart: unless-stopped
     networks:
       - mltb-net
+    env_file:
+      - config/.env.production
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
       - WEBUI_PORT=8090
-      - WEBUI_USERNAME=admin
-      - WEBUI_PASSWORD=mltbmltb
     volumes:
       - downloads:/downloads
       - ./clients/qbittorrent/config:/config
@@ -150,9 +149,9 @@ services:
       - mltb-net
     ports:
       - "3000:3000"
+    env_file:
+      - config/.env.production
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=mltbadmin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
@@ -166,6 +165,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ===== OpenTelemetry Collector =====
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.100.0
+    container_name: mltb-otel-collector
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    ports:
+      - "4318:4318"
+    volumes:
+      - ./deployment/otel-collector-config.yml:/etc/otelcol/config.yml:ro
+    command: ["--config=/etc/otelcol/config.yml"]
 
   # ===== Bot Application =====
   app:
@@ -187,11 +199,8 @@ services:
       - REDIS_PORT=6379
       - ARIA2_HOST=aria2
       - ARIA2_PORT=6800
-      - ARIA2_SECRET=mltb_aria2_secret_2026
       - QB_HOST=qbittorrent
       - QB_PORT=8090
-      - QB_USERNAME=admin
-      - QB_PASSWORD=mltbmltb
       # Disable MongoDB to speed up startup (set to empty string)
       - DATABASE_URL=
       - MONGODB_URI=

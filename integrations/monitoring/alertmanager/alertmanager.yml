@@ -62,7 +62,7 @@ receivers:
   - name: 'default-receiver'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        chat_id: 1
         parse_mode: 'HTML'
         message: |
           <b>🔔 Alert</b>
@@ -80,7 +80,7 @@ receivers:
   - name: 'telegram-critical'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        chat_id: 1
         parse_mode: 'HTML'
         message: |
           <b>🚨 CRITICAL ALERT</b>
@@ -101,7 +101,7 @@ receivers:
   - name: 'telegram-warnings'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        chat_id: 1
         parse_mode: 'HTML'
         message: |
           <b>⚠️ Warning</b>
@@ -117,7 +117,7 @@ receivers:
   - name: 'telegram-info'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_ALERT_CHAT_ID}
+        chat_id: 1
         parse_mode: 'HTML'
         message: |
           <b>ℹ️ Info</b>

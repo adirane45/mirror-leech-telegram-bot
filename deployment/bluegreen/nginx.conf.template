@@ -1,0 +1,31 @@
+upstream app_http {
+    server app-${ACTIVE_COLOR}:8060;
+}
+
+upstream app_metrics {
+    server app-${ACTIVE_COLOR}:9090;
+}
+
+server {
+    listen 8060;
+
+    location / {
+        proxy_pass http://app_http;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 9090;
+
+    location / {
+        proxy_pass http://app_metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -1,13 +1,7 @@
 name: CI/CD Pipeline - Enhanced Quality & Security
 
 on:
-  push:
-    branches: [ master, develop ]
-  pull_request:
-    branches: [ master, develop ]
-  schedule:
-    # Run security scans weekly
-    - cron: '0 8 * * 1'
+  workflow_dispatch:
 
 jobs:
   # Security and quality checks
@@ -30,20 +24,17 @@ jobs:
     
     - name: Run Bandit security scan
       run: |
-        bandit -r bot/ -f json -o bandit-report.json || true
+        bandit -r bot/ -f json -o bandit-report.json
         bandit -r bot/ -f screen
-      continue-on-error: true
     
     - name: Check for known vulnerabilities (Safety)
       run: |
         pip install -r config/requirements.txt
-        safety check --json || true
-      continue-on-error: true
+        safety check --json
     
     - name: Audit dependencies (pip-audit)
       run: |
-        pip-audit --desc --format json || true
-      continue-on-error: true
+        pip-audit --desc --format json
     
     - name: Upload security reports
       uses: actions/upload-artifact@v4
@@ -79,19 +70,16 @@ jobs:
     
     - name: Run pylint
       run: |
-        pylint bot/ --output-format=text --reports=y || true
-      continue-on-error: true
+        pylint bot/ --output-format=text --reports=y
     
     - name: Check code complexity (radon)
       run: |
-        radon cc bot/ -a -nb || true
-        radon mi bot/ -nb || true
-      continue-on-error: true
+        radon cc bot/ -a -nb
+        radon mi bot/ -nb
     
     - name: Type check with mypy
       run: |
         mypy bot/ --html-report mypy-report
-      continue-on-error: true
     
     - name: Format check with black
       run: black --check bot/
@@ -166,8 +154,7 @@ jobs:
     
     - name: Run integration tests
       run: |
-        pytest tests/ -v -m "integration" --tb=short || true
-      continue-on-error: true
+        pytest tests/ -v -m "integration" --tb=short
       env:
         MONGODB_URI: mongodb://localhost:27017/test
         REDIS_HOST: localhost
@@ -215,20 +202,18 @@ jobs:
         cache-to: type=gha,mode=max
     
     - name: Scan Docker image with Trivy
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.24.0
       with:
         image-ref: mirror-leech-telegram-bot:${{ github.sha }}
         format: 'sarif'
         output: 'trivy-results.sarif'
         severity: 'CRITICAL,HIGH'
-      continue-on-error: true
     
     - name: Upload Trivy results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
-      continue-on-error: true
     
     - name: Login to Docker Hub
       if: github.ref == 'refs/heads/master'

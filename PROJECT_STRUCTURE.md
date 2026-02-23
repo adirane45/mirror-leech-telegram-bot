@@ -92,7 +92,6 @@ config/
 ├── main_config.py        # Central config loader
 ├── .env.production       # Production secrets (git-ignored)
 ├── .env.development      # Dev environment (git-ignored)
-├── requirements.txt      # Runtime dependencies
 └── requirements-cli.txt  # CLI tool dependencies
 ```
 
@@ -158,6 +157,10 @@ docs/
 ├── INSTALLATION.md               # Setup guide
 ├── DEPLOYMENT_CHECKLIST.md       # Pre-deployment checks
 ├── PRODUCTION_DEPLOYMENT_GUIDE.md # Production setup
+├── CI_CD_IMPLEMENTATION_SUMMARY.md # CI/CD overview
+├── CI_CD_SETUP_CHECKLIST.md       # CI/CD setup steps
+├── CI_CD_PIPELINE.md              # CI/CD workflow reference
+├── CI_CD_ARCHITECTURE.md          # CI/CD architecture diagrams
 │
 ├── runbooks/                     # Operations documentation
 │   ├── README.md                 # Operations index
@@ -272,9 +275,12 @@ clients/
 ```
 .github/
 ├── workflows/
-│   ├── ci-cd-pipeline.yml       # CI/CD on push
+│   ├── build.yml                # Build, test, scan, push
+│   ├── quality.yml              # Lint, format, type check
+│   ├── tests.yml                # Unit + integration tests
 │   ├── release.yml              # Release on tag
-│   └── security-scan.yml        # Security checks
+│   ├── health-check.yml         # Scheduled health checks
+│   └── ci-cd-pipeline.yml       # Legacy (archived)
 │
 └── FUNDING.yml                  # Sponsorship info
 ```

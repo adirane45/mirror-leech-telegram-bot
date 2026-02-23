@@ -1,1 +1,0 @@
- index link generation , batch operations, built-in link bypassers,debrid service integrations,inline torrent search engine,server-side gdrive cloning,Auto-Retry with Rotating Proxies,Auto-Multipart Merger Scripts,Smart Source Fallback (Self-Healing Downloads),Virus & Malware Pre-Scan,Dynamic "Live" Progress Bars,Interactive File Tree Selector (Web App),

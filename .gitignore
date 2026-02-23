@@ -140,6 +140,8 @@ data/downloads/
 data/backups/
 data/tokens/
 data/thumbnails/
+clients/qbittorrent/config/qBittorrent/lockfile
+clients/qbittorrent/config/qBittorrent/rss/
 
 # Database
 *.db

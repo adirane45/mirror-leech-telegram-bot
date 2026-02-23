@@ -109,6 +109,9 @@ EOF
     
     # 8. List backup
     ls -lh "${BACKUP_NAME}.tar.gz"
+
+    # 9. Verify backup integrity
+    verify_backup "${BACKUP_DIR}/${BACKUP_NAME}.tar.gz" || log_warn "Backup integrity check failed"
 }
 
 # Function: Cleanup old backups

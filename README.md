@@ -162,6 +162,8 @@ See complete command list: [docs/COMMANDS.md](docs/COMMANDS.md)
 ### Operations
 - [Production Deployment](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) – Scale it up
 - [Development Journey](docs/DEVELOPMENT_JOURNEY.md) – Architecture & timeline
+- [Runbooks](docs/runbooks/README.md) – On-call, recovery, and service guides
+- [Postmortem Template](docs/runbooks/postmortem_template.md) – Incident writeups
 
 ---
 

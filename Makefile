@@ -132,9 +132,9 @@ commit-fix:
 
 # Development server
 dev:
-	ENVIRONMENT=development python -m uvicorn src.web.wserver:app --reload --port 8060
+	PYTHONPATH=/app/src:$$PYTHONPATH ENVIRONMENT=development python -m uvicorn src.web.wserver:app --reload --port 8060
 
 prod:
-	ENVIRONMENT=production gunicorn src.web.wserver:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8060
+	PYTHONPATH=/app/src:$$PYTHONPATH ENVIRONMENT=production gunicorn src.web.wserver:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8060
 
 .DEFAULT_GOAL := help

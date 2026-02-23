@@ -5,13 +5,13 @@ FROM ${BASE_IMAGE} AS build
 WORKDIR /app
 RUN python3 -m venv mltbenv
 
-COPY config/requirements.txt config/requirements-cli.txt ./
-RUN /app/mltbenv/bin/pip install --no-cache-dir -r requirements.txt -r requirements-cli.txt
+COPY requirements/prod.txt /tmp/requirements.txt
+RUN /app/mltbenv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY . .
 
-RUN sed -i 's/\r$//' *.sh 2>/dev/null || true
-RUN cp -f config/main_config.py config.py 2>/dev/null || true
+RUN sed -i 's/\r$//' scripts/*.sh 2>/dev/null || true
+RUN sed -i 's/\r$//' deployment/scripts/*.sh 2>/dev/null || true
 
 FROM ${BASE_IMAGE}
 
@@ -28,5 +28,7 @@ RUN apt-get update \
 COPY --from=build /app /app
 
 ENV PATH="/app/mltbenv/bin:$PATH"
+ENV PYTHONPATH="/app/src:$PYTHONPATH"
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 CMD ["/app/mltbenv/bin/python3", "-m", "bot"]
