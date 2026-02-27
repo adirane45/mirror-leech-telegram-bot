@@ -27,7 +27,7 @@ par2cmdline-turbo
 pillow
 prometheus-client
 opentelemetry-api==1.25.0
-opentelemetry-sdk==1.25.0
+opentelemetry-sdk==1.39.1
 opentelemetry-exporter-otlp==1.25.0
 opentelemetry-instrumentation-fastapi==0.46b0
 opentelemetry-instrumentation-asgi==0.46b0
