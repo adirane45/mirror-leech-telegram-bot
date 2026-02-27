@@ -11,11 +11,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pathlib import Path
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, WARNING
-from asyncio import sleep
+from asyncio import sleep, create_task
 from time import time, perf_counter
 from os import environ
 import psutil
+import asyncio
 from uuid import uuid4
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 from integrations.sabnzbdapi import SabnzbdClient
@@ -26,6 +28,8 @@ from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
 from web.stream_handler import add_stream_routes
+from web.admin_routes import router as admin_router
+from web.admin_login import get_login_html
 from bot.core.config_manager import Config
 from bot.core.redis_manager import redis_client
 
@@ -90,8 +94,8 @@ async def lifespan(app: FastAPI):
     aria2_secret = environ.get("ARIA2_SECRET", "")
     qb_host = environ.get("QB_HOST", "localhost")
     qb_port = environ.get("QB_PORT", "8090")
-    qb_username = environ.get("QB_USERNAME", "admin")
-    qb_password = environ.get("QB_PASSWORD", "mltbmltb")
+    qb_username = environ.get("QB_USERNAME") or environ.get("WEBUI_USERNAME", "admin")
+    qb_password = environ.get("QB_PASSWORD") or environ.get("WEBUI_PASSWORD", "mltbmltb")
     redis_host = environ.get("REDIS_HOST", getattr(Config, "REDIS_HOST", "redis"))
     redis_port = int(environ.get("REDIS_PORT", getattr(Config, "REDIS_PORT", 6379)))
     redis_db = int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0)))
@@ -117,7 +121,31 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         LOGGER.warning(f"Redis not available for stream links: {e}")
 
+    try:
+        from bot.core.torrent_manager import TorrentManager
+        await TorrentManager.initiate()
+        LOGGER.info("✅ Torrent manager initialized in web server")
+    except Exception as e:
+        LOGGER.warning(f"Torrent manager init failed in web server: {e}")
+
+    # Start admin download processor
+    try:
+        from web.admin_download_handler import start_admin_download_processor
+        processor_task = asyncio.create_task(start_admin_download_processor())
+        LOGGER.info("✅ Admin download processor started in web server")
+    except Exception as e:
+        LOGGER.warning(f"⚠️  Admin download processor failed to start: {e}")
+        processor_task = None
+
     yield
+
+    # Cleanup
+    if processor_task and not processor_task.done():
+        processor_task.cancel()
+        try:
+            await processor_task
+        except asyncio.CancelledError:
+            pass
 
     if aria2 is not None:
         await aria2.close()
@@ -132,6 +160,14 @@ if ENHANCED_API_AVAILABLE:
     add_enhanced_endpoints(app)
 
 add_stream_routes(app)
+
+# Add admin routes
+app.include_router(admin_router)
+
+# Add admin login page
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_page():
+    return get_login_html()
 
 # Phase 3: Integrate security features
 if SECURITY_FEATURES_AVAILABLE:
@@ -173,7 +209,7 @@ if OTEL_AVAILABLE:
         LOGGER_INIT = getLogger(__name__)
         LOGGER_INIT.info("✅ OpenTelemetry tracing enabled")
 
-templates = Jinja2Templates(directory="web/templates/")
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -468,7 +504,7 @@ async def dashboard_stats():
 
 
 @app.api_route(
-    "/app/files/torrent", methods=["GET", "POST"], response_class=HTMLResponse
+    "/app/files/torrent", methods=["GET", "POST"]
 )
 async def handle_torrent(request: Request):
     params = request.query_params
@@ -480,7 +516,8 @@ async def handle_torrent(request: Request):
                 "engine": "",
                 "error": "GID is missing",
                 "message": "GID not specified",
-            }
+            },
+            status_code=400
         )
 
     if not (pin := params.get("pin")):
@@ -490,18 +527,24 @@ async def handle_torrent(request: Request):
                 "engine": "",
                 "error": "Pin is missing",
                 "message": "PIN not specified",
-            }
+            },
+            status_code=400
         )
 
-    code = "".join([nbr for nbr in gid if nbr.isdigit()][:4])
-    if code != pin:
+    # Extract first 4 digits from GID for PIN validation
+    # The PIN should be based on digits extracted from the original ID
+    extracted_code = "".join([nbr for nbr in gid if nbr.isdigit()][:4])
+    # If GID has no digits (e.g., qBittorrent hash), accept the PIN as-is
+    # This allows flexibility for different download engine types
+    if extracted_code and extracted_code != pin:
         return JSONResponse(
             {
                 "files": [],
                 "engine": "",
                 "error": "Invalid pin",
                 "message": "The PIN you entered is incorrect",
-            }
+            },
+            status_code=401
         )
 
     if request.method == "POST":
@@ -512,7 +555,8 @@ async def handle_torrent(request: Request):
                     "engine": "",
                     "error": "Mode is not specified",
                     "message": "Mode is not specified",
-                }
+                },
+                status_code=400
             )
         data = await request.json()
         if mode == "rename":
@@ -560,13 +604,28 @@ async def handle_torrent(request: Request):
                 fpath = f"{op['dir']}/"
                 content = make_tree(res, "aria2", fpath)
         except (ClientError, TimeoutError, Exception, AQError) as e:
-            LOGGER.error(str(e))
-            content = {
-                "files": [],
-                "engine": "",
-                "error": "Error getting files",
-                "message": str(e),
-            }
+            error_text = str(e)
+            LOGGER.error(error_text)
+            if "NotFoundError" in error_text or "status=404" in error_text:
+                return JSONResponse(
+                    {
+                        "files": [],
+                        "engine": "",
+                        "error": "Files not ready",
+                        "message": "Torrent metadata not available yet. Please retry in a few seconds.",
+                    },
+                    status_code=404
+                )
+            return JSONResponse(
+                {
+                    "files": [],
+                    "engine": "",
+                    "error": "Error getting files",
+                    "message": error_text,
+                },
+                status_code=500
+            )
+    
     return JSONResponse(content)
 
 

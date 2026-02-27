@@ -447,7 +447,7 @@ class RcloneTransferHelper:
     ):
         rclone_select = False
         if source.split(":")[-1].startswith("rclone_select"):
-            source = f"{source.split(":")[0]}:"
+            source = f"{source.split(':')[0]}:"
             rclone_select = True
         cmd = [
             "rclone",

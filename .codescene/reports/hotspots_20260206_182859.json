@@ -1,0 +1,1874 @@
+{
+  "hotspots": [
+    {
+      "file": "bot/__init__.py",
+      "changes": 201,
+      "complexity": 86,
+      "score": 2018.6,
+      "priority": "Critical",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/modules/bot_settings.py",
+      "changes": 154,
+      "complexity": 856,
+      "score": 1625.6,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/ext_utils/bot_utils.py",
+      "changes": 141,
+      "complexity": 228,
+      "score": 1432.8,
+      "priority": "Critical",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/common.py",
+      "changes": 132,
+      "complexity": 1116,
+      "score": 1431.6,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/modules/ytdlp.py",
+      "changes": 138,
+      "complexity": 422,
+      "score": 1422.2,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/modules/mirror_leech.py",
+      "changes": 129,
+      "complexity": 365,
+      "score": 1326.5,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/__main__.py",
+      "changes": 126,
+      "complexity": 174,
+      "score": 1277.4,
+      "priority": "Critical",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/modules/clone.py",
+      "changes": 121,
+      "complexity": 275,
+      "score": 1237.5,
+      "priority": "Critical",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/modules/rss.py",
+      "changes": 103,
+      "complexity": 800,
+      "score": 1110.0,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/modules/users_settings.py",
+      "changes": 96,
+      "complexity": 711,
+      "score": 1031.1,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py",
+      "changes": 73,
+      "complexity": 1782,
+      "score": 908.2,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/ext_utils/help_messages.py",
+      "changes": 74,
+      "complexity": 477,
+      "score": 787.7,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/ext_utils/media_utils.py",
+      "changes": 71,
+      "complexity": 722,
+      "score": 782.2,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/telegram_helper/message_utils.py",
+      "changes": 71,
+      "complexity": 247,
+      "score": 734.7,
+      "priority": "Critical",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/ext_utils/db_handler.py",
+      "changes": 63,
+      "complexity": 216,
+      "score": 651.6,
+      "priority": "Critical",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/modules/search.py",
+      "changes": 55,
+      "complexity": 276,
+      "score": 577.6,
+      "priority": "Critical",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/listeners/task_listener.py",
+      "changes": 52,
+      "complexity": 501,
+      "score": 570.1,
+      "priority": "Critical",
+      "recommendation": "Critical: Consider splitting this file - high change rate and complexity"
+    },
+    {
+      "file": "bot/helper/ext_utils/files_utils.py",
+      "changes": 44,
+      "complexity": 415,
+      "score": 481.5,
+      "priority": "High",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/listeners/aria2_listener.py",
+      "changes": 44,
+      "complexity": 181,
+      "score": 458.1,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/jd_download.py",
+      "changes": 42,
+      "complexity": 331,
+      "score": 453.1,
+      "priority": "High",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/ext_utils/status_utils.py",
+      "changes": 42,
+      "complexity": 296,
+      "score": 449.6,
+      "priority": "High",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/listeners/qbit_listener.py",
+      "changes": 43,
+      "complexity": 194,
+      "score": 449.4,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "web/wserver.py",
+      "changes": 35,
+      "complexity": 408,
+      "score": 390.8,
+      "priority": "High",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/modules/status.py",
+      "changes": 37,
+      "complexity": 181,
+      "score": 388.1,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/ext_utils/task_manager.py",
+      "changes": 37,
+      "complexity": 136,
+      "score": 383.6,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/telegram_uploader.py",
+      "changes": 32,
+      "complexity": 474,
+      "score": 367.4,
+      "priority": "High",
+      "recommendation": "High: Refactor to reduce complexity and improve stability"
+    },
+    {
+      "file": "bot/helper/telegram_helper/bot_commands.py",
+      "changes": 35,
+      "complexity": 71,
+      "score": 357.1,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/listeners/jdownloader_listener.py",
+      "changes": 34,
+      "complexity": 80,
+      "score": 348.0,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/rclone_utils/transfer.py",
+      "changes": 29,
+      "complexity": 460,
+      "score": 336.0,
+      "priority": "High",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/telegram_helper/filters.py",
+      "changes": 28,
+      "complexity": 51,
+      "score": 285.1,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/qbit_download.py",
+      "changes": 26,
+      "complexity": 139,
+      "score": 273.9,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/modules/shell.py",
+      "changes": 26,
+      "complexity": 27,
+      "score": 262.7,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/core/startup.py",
+      "changes": 22,
+      "complexity": 292,
+      "score": 249.2,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py",
+      "changes": 21,
+      "complexity": 318,
+      "score": 241.8,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/core/config_manager.py",
+      "changes": 21,
+      "complexity": 286,
+      "score": 238.6,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/telegram_download.py",
+      "changes": 21,
+      "complexity": 161,
+      "score": 226.1,
+      "priority": "Medium",
+      "recommendation": "Medium: Monitor for stability issues"
+    },
+    {
+      "file": "web/nodes.py",
+      "changes": 20,
+      "complexity": 195,
+      "score": 219.5,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/handlers.py",
+      "changes": 16,
+      "complexity": 522,
+      "score": 212.2,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/cancel_task.py",
+      "changes": 19,
+      "complexity": 166,
+      "score": 206.6,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/rclone_utils/list.py",
+      "changes": 17,
+      "complexity": 362,
+      "score": 206.2,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/file_selector.py",
+      "changes": 19,
+      "complexity": 151,
+      "score": 205.1,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/jdownloader_status.py",
+      "changes": 19,
+      "complexity": 111,
+      "score": 201.1,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/listeners/direct_listener.py",
+      "changes": 19,
+      "complexity": 79,
+      "score": 197.9,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/telegraph_helper.py",
+      "changes": 19,
+      "complexity": 76,
+      "score": 197.6,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/nzb_status.py",
+      "changes": 18,
+      "complexity": 122,
+      "score": 192.2,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/list.py",
+      "changes": 14,
+      "complexity": 360,
+      "score": 176.0,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/gd_count.py",
+      "changes": 17,
+      "complexity": 37,
+      "score": 173.7,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/telegram_helper/button_build.py",
+      "changes": 15,
+      "complexity": 51,
+      "score": 155.1,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/gd_delete.py",
+      "changes": 15,
+      "complexity": 24,
+      "score": 152.4,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/aria2_download.py",
+      "changes": 14,
+      "complexity": 98,
+      "score": 149.8,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/listeners/nzb_listener.py",
+      "changes": 14,
+      "complexity": 91,
+      "score": 149.1,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/exec.py",
+      "changes": 14,
+      "complexity": 90,
+      "score": 149.0,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/qbit_status.py",
+      "changes": 13,
+      "complexity": 94,
+      "score": 139.4,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/nzb_downloader.py",
+      "changes": 12,
+      "complexity": 153,
+      "score": 135.3,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/restart.py",
+      "changes": 12,
+      "complexity": 125,
+      "score": 132.5,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/rclone_download.py",
+      "changes": 12,
+      "complexity": 114,
+      "score": 131.4,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/force_start.py",
+      "changes": 12,
+      "complexity": 81,
+      "score": 128.1,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/help.py",
+      "changes": 12,
+      "complexity": 44,
+      "score": 124.4,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/__init__.py",
+      "changes": 11,
+      "complexity": 132,
+      "score": 123.2,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/upload.py",
+      "changes": 10,
+      "complexity": 214,
+      "score": 121.4,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/gd_search.py",
+      "changes": 11,
+      "complexity": 88,
+      "score": 118.8,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/helper.py",
+      "changes": 9,
+      "complexity": 239,
+      "score": 113.9,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/speedtest.py",
+      "changes": 10,
+      "complexity": 83,
+      "score": 108.3,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/download.py",
+      "changes": 9,
+      "complexity": 169,
+      "score": 106.9,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/torrent_manager.py",
+      "changes": 9,
+      "complexity": 150,
+      "score": 105.0,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/exceptions.py",
+      "changes": 10,
+      "complexity": 12,
+      "score": 101.2,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/aria2_status.py",
+      "changes": 9,
+      "complexity": 110,
+      "score": 101.0,
+      "priority": "Medium",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/search.py",
+      "changes": 8,
+      "complexity": 170,
+      "score": 97.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/direct_downloader.py",
+      "changes": 9,
+      "complexity": 50,
+      "score": 95.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/gdrive_status.py",
+      "changes": 9,
+      "complexity": 45,
+      "score": 94.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/web_dashboard.py",
+      "changes": 2,
+      "complexity": 730,
+      "score": 93.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/chat_permission.py",
+      "changes": 8,
+      "complexity": 122,
+      "score": 92.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/clone.py",
+      "changes": 7,
+      "complexity": 161,
+      "score": 86.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/rclone_utils/serve.py",
+      "changes": 8,
+      "complexity": 56,
+      "score": 85.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/ffmpeg_status.py",
+      "changes": 8,
+      "complexity": 50,
+      "score": 85.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/direct_status.py",
+      "changes": 8,
+      "complexity": 43,
+      "score": 84.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/telegram_status.py",
+      "changes": 8,
+      "complexity": 41,
+      "score": 84.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/links_utils.py",
+      "changes": 8,
+      "complexity": 35,
+      "score": 83.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/myjd/myjdapi.py",
+      "changes": 1,
+      "complexity": 670,
+      "score": 77.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/sevenz_status.py",
+      "changes": 7,
+      "complexity": 56,
+      "score": 75.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/bot_commands_setup.py",
+      "changes": 7,
+      "complexity": 52,
+      "score": 75.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/gd_download.py",
+      "changes": 7,
+      "complexity": 45,
+      "score": 74.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/jdownloader_booter.py",
+      "changes": 6,
+      "complexity": 133,
+      "score": 73.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/socks.py",
+      "changes": 1,
+      "complexity": 631,
+      "score": 73.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/bulk_links.py",
+      "changes": 7,
+      "complexity": 27,
+      "score": 72.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/queue_manager.py",
+      "changes": 4,
+      "complexity": 249,
+      "score": 64.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/queue_status.py",
+      "changes": 6,
+      "complexity": 40,
+      "score": 64.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/rclone_status.py",
+      "changes": 6,
+      "complexity": 31,
+      "score": 63.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/advanced_dashboard.py",
+      "changes": 1,
+      "complexity": 497,
+      "score": 59.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/telegram_manager.py",
+      "changes": 5,
+      "complexity": 91,
+      "score": 59.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/sabnzbdapi/job_functions.py",
+      "changes": 1,
+      "complexity": 473,
+      "score": 57.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/mediainfo.py",
+      "changes": 3,
+      "complexity": 268,
+      "score": 56.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/archive_manager.py",
+      "changes": 2,
+      "complexity": 335,
+      "score": 53.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/archive.py",
+      "changes": 3,
+      "complexity": 235,
+      "score": 53.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/media_info.py",
+      "changes": 2,
+      "complexity": 324,
+      "score": 52.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/nzb_search.py",
+      "changes": 4,
+      "complexity": 108,
+      "score": 50.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "scripts/production_hardening.py",
+      "changes": 1,
+      "complexity": 398,
+      "score": 49.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/stats.py",
+      "changes": 4,
+      "complexity": 86,
+      "score": 48.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/plugin_manager.py",
+      "changes": 2,
+      "complexity": 285,
+      "score": 48.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/backup_manager.py",
+      "changes": 2,
+      "complexity": 279,
+      "score": 47.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/redis_manager.py",
+      "changes": 2,
+      "complexity": 275,
+      "score": 47.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/metrics.py",
+      "changes": 2,
+      "complexity": 273,
+      "score": 47.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/count.py",
+      "changes": 4,
+      "complexity": 72,
+      "score": 47.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/recovery_manager.py",
+      "changes": 2,
+      "complexity": 249,
+      "score": 44.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_phase3_integration.py",
+      "changes": 2,
+      "complexity": 240,
+      "score": 44.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "config/main_config.py",
+      "changes": 1,
+      "complexity": 337,
+      "score": 43.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/alert_manager.py",
+      "changes": 2,
+      "complexity": 237,
+      "score": 43.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/yt_dlp_status.py",
+      "changes": 4,
+      "complexity": 37,
+      "score": 43.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/delete.py",
+      "changes": 4,
+      "complexity": 33,
+      "score": 43.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/logger_manager.py",
+      "changes": 2,
+      "complexity": 229,
+      "score": 42.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/celery_tasks.py",
+      "changes": 2,
+      "complexity": 225,
+      "score": 42.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/profiler.py",
+      "changes": 2,
+      "complexity": 220,
+      "score": 42.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/download_templates.py",
+      "changes": 2,
+      "complexity": 200,
+      "score": 40.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/__init__.py",
+      "changes": 4,
+      "complexity": 0,
+      "score": 40.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "web/__init__.py",
+      "changes": 4,
+      "complexity": 0,
+      "score": 40.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/task_scheduler.py",
+      "changes": 2,
+      "complexity": 184,
+      "score": 38.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/telegram_helper/interactive_keyboards.py",
+      "changes": 2,
+      "complexity": 171,
+      "score": 37.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/dashboard.py",
+      "changes": 3,
+      "complexity": 69,
+      "score": 36.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/task_categorizer.py",
+      "changes": 2,
+      "complexity": 165,
+      "score": 36.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "scripts/security_setup.py",
+      "changes": 1,
+      "complexity": 260,
+      "score": 36.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/graphql_api.py",
+      "changes": 1,
+      "complexity": 255,
+      "score": 35.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/task_details.py",
+      "changes": 3,
+      "complexity": 53,
+      "score": 35.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/bandwidth_limiter.py",
+      "changes": 2,
+      "complexity": 147,
+      "score": 34.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/darklibria.py",
+      "changes": 1,
+      "complexity": 241,
+      "score": 34.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/settings_ui.py",
+      "changes": 2,
+      "complexity": 140,
+      "score": 34.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/api_endpoints.py",
+      "changes": 2,
+      "complexity": 136,
+      "score": 33.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/services.py",
+      "changes": 3,
+      "complexity": 35,
+      "score": 33.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/mypornclub.py",
+      "changes": 1,
+      "complexity": 229,
+      "score": 32.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/dashboard_callbacks.py",
+      "changes": 3,
+      "complexity": 26,
+      "score": 32.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/bandwidth.py",
+      "changes": 2,
+      "complexity": 125,
+      "score": 32.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/task_tools.py",
+      "changes": 2,
+      "complexity": 114,
+      "score": 31.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/__init__.py",
+      "changes": 3,
+      "complexity": 8,
+      "score": 30.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/scheduler.py",
+      "changes": 2,
+      "complexity": 107,
+      "score": 30.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/phase2_integration_examples.py",
+      "changes": 1,
+      "complexity": 206,
+      "score": 30.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_api_endpoints.py",
+      "changes": 1,
+      "complexity": 201,
+      "score": 30.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/gdrive_utils/__init__.py",
+      "changes": 3,
+      "complexity": 0,
+      "score": 30.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/bitsearch.py",
+      "changes": 1,
+      "complexity": 194,
+      "score": 29.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_phase2_integration.py",
+      "changes": 1,
+      "complexity": 194,
+      "score": 29.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/enhanced_startup_phase2.py",
+      "changes": 2,
+      "complexity": 92,
+      "score": 29.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/search_filter.py",
+      "changes": 2,
+      "complexity": 90,
+      "score": 29.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/celery_app.py",
+      "changes": 2,
+      "complexity": 85,
+      "score": 28.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/enhanced_startup.py",
+      "changes": 2,
+      "complexity": 80,
+      "score": 28.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/task_categories.py",
+      "changes": 2,
+      "complexity": 79,
+      "score": 27.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/myjd/exception.py",
+      "changes": 1,
+      "complexity": 166,
+      "score": 26.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/progress_utils.py",
+      "changes": 2,
+      "complexity": 66,
+      "score": 26.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/dontorrent.py",
+      "changes": 1,
+      "complexity": 160,
+      "score": 26.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_metrics.py",
+      "changes": 2,
+      "complexity": 58,
+      "score": 25.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/divxtotal.py",
+      "changes": 1,
+      "complexity": 155,
+      "score": 25.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/esmeraldatorrent.py",
+      "changes": 1,
+      "complexity": 155,
+      "score": 25.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/naranjatorrent.py",
+      "changes": 1,
+      "complexity": 155,
+      "score": 25.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/conftest.py",
+      "changes": 2,
+      "complexity": 55,
+      "score": 25.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_integration.py",
+      "changes": 2,
+      "complexity": 55,
+      "score": 25.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_redis_manager.py",
+      "changes": 2,
+      "complexity": 54,
+      "score": 25.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/uniondht.py",
+      "changes": 1,
+      "complexity": 152,
+      "score": 25.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/nova2.py",
+      "changes": 1,
+      "complexity": 140,
+      "score": 24.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrent9.py",
+      "changes": 1,
+      "complexity": 134,
+      "score": 23.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/history_utils.py",
+      "changes": 2,
+      "complexity": 34,
+      "score": 23.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/mejortorrent.py",
+      "changes": 1,
+      "complexity": 133,
+      "score": 23.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/therarbg.py",
+      "changes": 1,
+      "complexity": 133,
+      "score": 23.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrentdownloads.py",
+      "changes": 1,
+      "complexity": 131,
+      "score": 23.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/acgrip.py",
+      "changes": 1,
+      "complexity": 130,
+      "score": 23.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/nyaasi.py",
+      "changes": 1,
+      "complexity": 129,
+      "score": 22.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/yts.py",
+      "changes": 1,
+      "complexity": 127,
+      "score": 22.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/cpasbien.py",
+      "changes": 1,
+      "complexity": 123,
+      "score": 22.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/modules/history.py",
+      "changes": 2,
+      "complexity": 21,
+      "score": 22.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/solidtorrents.py",
+      "changes": 1,
+      "complexity": 120,
+      "score": 22.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "scripts/verify_config.py",
+      "changes": 1,
+      "complexity": 114,
+      "score": 21.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/limetorrents.py",
+      "changes": 1,
+      "complexity": 111,
+      "score": 21.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrentproject.py",
+      "changes": 1,
+      "complexity": 110,
+      "score": 21.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "tests/test_load_performance.py",
+      "changes": 1,
+      "complexity": 110,
+      "score": 21.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrentgalaxy.py",
+      "changes": 1,
+      "complexity": 108,
+      "score": 20.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/celery_config.py",
+      "changes": 1,
+      "complexity": 108,
+      "score": 20.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/bt4gprx.py",
+      "changes": 1,
+      "complexity": 100,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/linuxtracker.py",
+      "changes": 1,
+      "complexity": 100,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/ext_utils/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/listeners/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/rclone_utils/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/status_utils/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/helper/telegram_helper/__init__.py",
+      "changes": 2,
+      "complexity": 0,
+      "score": 20.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/calidadtorrent.py",
+      "changes": 1,
+      "complexity": 99,
+      "score": 19.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/elitetorrent.py",
+      "changes": 1,
+      "complexity": 96,
+      "score": 19.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/anidex.py",
+      "changes": 1,
+      "complexity": 94,
+      "score": 19.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torlock.py",
+      "changes": 1,
+      "complexity": 94,
+      "score": 19.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/academictorrents.py",
+      "changes": 1,
+      "complexity": 93,
+      "score": 19.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "scripts/update.py",
+      "changes": 1,
+      "complexity": 91,
+      "score": 19.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/leetx.py",
+      "changes": 1,
+      "complexity": 90,
+      "score": 19.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/piratebay.py",
+      "changes": 1,
+      "complexity": 89,
+      "score": 18.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/eztv.py",
+      "changes": 1,
+      "complexity": 87,
+      "score": 18.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/pediatorrent.py",
+      "changes": 1,
+      "complexity": 85,
+      "score": 18.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/pirateiro.py",
+      "changes": 1,
+      "complexity": 73,
+      "score": 17.3,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/btdig.py",
+      "changes": 1,
+      "complexity": 72,
+      "score": 17.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/myjd/__init__.py",
+      "changes": 1,
+      "complexity": 71,
+      "score": 17.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/ettv.py",
+      "changes": 1,
+      "complexity": 70,
+      "score": 17.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/helpers.py",
+      "changes": 1,
+      "complexity": 67,
+      "score": 16.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/sabnzbdapi/requests.py",
+      "changes": 1,
+      "complexity": 65,
+      "score": 16.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/ali213.py",
+      "changes": 1,
+      "complexity": 64,
+      "score": 16.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/glotorrents.py",
+      "changes": 1,
+      "complexity": 62,
+      "score": 16.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrentdownload.py",
+      "changes": 1,
+      "complexity": 62,
+      "score": 16.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/yourbittorrent.py",
+      "changes": 1,
+      "complexity": 62,
+      "score": 16.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/rockbox.py",
+      "changes": 1,
+      "complexity": 61,
+      "score": 16.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/cloudtorrents.py",
+      "changes": 1,
+      "complexity": 57,
+      "score": 15.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/kickasstorrents.py",
+      "changes": 1,
+      "complexity": 57,
+      "score": 15.7,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/enhanced_startup_phase3.py",
+      "changes": 1,
+      "complexity": 56,
+      "score": 15.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/novaprinter.py",
+      "changes": 1,
+      "complexity": 46,
+      "score": 14.6,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/torrentscsv.py",
+      "changes": 1,
+      "complexity": 41,
+      "score": 14.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "bot/core/metrics_server.py",
+      "changes": 1,
+      "complexity": 41,
+      "score": 14.1,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/mikan.py",
+      "changes": 1,
+      "complexity": 38,
+      "score": 13.8,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/magnetdl.py",
+      "changes": 1,
+      "complexity": 35,
+      "score": 13.5,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/thepiratebay.py",
+      "changes": 1,
+      "complexity": 32,
+      "score": 13.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/myjd/const.py",
+      "changes": 1,
+      "complexity": 30,
+      "score": 13.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/animetosho.py",
+      "changes": 1,
+      "complexity": 29,
+      "score": 12.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/dodi_repacks.py",
+      "changes": 1,
+      "complexity": 29,
+      "score": 12.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/fitgirl_repacks.py",
+      "changes": 1,
+      "complexity": 29,
+      "score": 12.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/sabnzbdapi/bound_methods.py",
+      "changes": 1,
+      "complexity": 29,
+      "score": 12.9,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/nova2dl.py",
+      "changes": 1,
+      "complexity": 24,
+      "score": 12.4,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/sabnzbdapi/exception.py",
+      "changes": 1,
+      "complexity": 10,
+      "score": 11.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "integrations/sabnzbdapi/__init__.py",
+      "changes": 1,
+      "complexity": 2,
+      "score": 10.2,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/__init__.py",
+      "changes": 1,
+      "complexity": 0,
+      "score": 10.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/__init__.py",
+      "changes": 1,
+      "complexity": 0,
+      "score": 10.0,
+      "priority": "Low",
+      "recommendation": "Low: Normal change pattern"
+    }
+  ],
+  "summary": {
+    "total_commits": 5302,
+    "most_changed_files": [
+      {
+        "file": "bot/__init__.py",
+        "changes": 201
+      },
+      {
+        "file": "bot/modules/bot_settings.py",
+        "changes": 154
+      },
+      {
+        "file": "bot/helper/ext_utils/bot_utils.py",
+        "changes": 141
+      },
+      {
+        "file": "bot/helper/common.py",
+        "changes": 132
+      },
+      {
+        "file": "bot/modules/ytdlp.py",
+        "changes": 138
+      },
+      {
+        "file": "bot/modules/mirror_leech.py",
+        "changes": 129
+      },
+      {
+        "file": "bot/__main__.py",
+        "changes": 126
+      },
+      {
+        "file": "bot/modules/clone.py",
+        "changes": 121
+      },
+      {
+        "file": "bot/modules/rss.py",
+        "changes": 103
+      },
+      {
+        "file": "bot/modules/users_settings.py",
+        "changes": 96
+      }
+    ],
+    "coupling_detected": []
+  }
+}
+🔥 Hotspot Analysis Summary:
+   Total Commits Analyzed: 5302
+   Hotspots Detected: 221
+
+🎯 Top 10 Critical Hotspots:
+   1. bot/__init__.py
+      Changes: 201 | Complexity: 86 | Score: 2018.6
+      Priority: Critical
+      → Medium: Monitor for stability issues
+
+   2. bot/modules/bot_settings.py
+      Changes: 154 | Complexity: 856 | Score: 1625.6
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+   3. bot/helper/ext_utils/bot_utils.py
+      Changes: 141 | Complexity: 228 | Score: 1432.8
+      Priority: Critical
+      → High: Refactor to reduce complexity and improve stability
+
+   4. bot/helper/common.py
+      Changes: 132 | Complexity: 1116 | Score: 1431.6
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+   5. bot/modules/ytdlp.py
+      Changes: 138 | Complexity: 422 | Score: 1422.2
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+   6. bot/modules/mirror_leech.py
+      Changes: 129 | Complexity: 365 | Score: 1326.5
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+   7. bot/__main__.py
+      Changes: 126 | Complexity: 174 | Score: 1277.4
+      Priority: Critical
+      → Medium: Monitor for stability issues
+
+   8. bot/modules/clone.py
+      Changes: 121 | Complexity: 275 | Score: 1237.5
+      Priority: Critical
+      → High: Refactor to reduce complexity and improve stability
+
+   9. bot/modules/rss.py
+      Changes: 103 | Complexity: 800 | Score: 1110.0
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+   10. bot/modules/users_settings.py
+      Changes: 96 | Complexity: 711 | Score: 1031.1
+      Priority: Critical
+      → Critical: Consider splitting this file - high change rate and complexity
+
+

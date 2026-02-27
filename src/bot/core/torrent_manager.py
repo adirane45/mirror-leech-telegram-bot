@@ -45,8 +45,8 @@ class TorrentManager:
         aria2_secret = environ.get("ARIA2_SECRET", "")
         qb_host = environ.get("QB_HOST", "localhost")
         qb_port = environ.get("QB_PORT", "8090")
-        qb_username = environ.get("QB_USERNAME", "admin")
-        qb_password = environ.get("QB_PASSWORD", "mltbmltb")
+        qb_username = environ.get("QB_USERNAME") or environ.get("WEBUI_USERNAME", "admin")
+        qb_password = environ.get("QB_PASSWORD") or environ.get("WEBUI_PASSWORD", "mltbmltb")
         
         # Proxy configuration for 403 errors - disabled for now
         enable_tor = environ.get("ENABLE_TOR", "false").lower() == "true"
@@ -63,9 +63,6 @@ class TorrentManager:
         
         # Create custom session with proxy if needed
         connector_kwargs = {}
-                LOGGER.warning("aiohttp-socks not installed, proxy may not work. Install with: pip install aiohttp-socks")
-            except Exception as e:
-                LOGGER.warning(f"Failed to setup proxy connector: {e}. Continuing without proxy.")
         
         # Try with password first
         try:

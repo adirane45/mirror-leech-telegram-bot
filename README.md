@@ -1,370 +1,247 @@
+# Mirror Leech Telegram Bot
+
 <div align="center">
 
-# 🚀 Mirror-Leech Telegram Bot
-
-> **Enterprise-Grade Download Manager & Cloud Sync Bot for Telegram**
-
-[![Python](https://img.shields.io/badge/Python-3.13+-3776ab.svg?logo=python)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker)](https://www.docker.com/)
-[![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4.svg?logo=telegram)](https://telegram.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-brightgreen.svg)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/LICENSE)
 
-**[📚 Documentation](#documentation) • [⚙️ Setup](#installation) • [🎮 Commands](#commands--features) • [🧪 Testing](#testing--validation) • [📞 Support](#support)**
+**A powerful Telegram bot for mirroring, leeching, and managing downloads with enterprise-grade reliability**
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Production Setup](#-production-deployment)
 
 </div>
 
 ---
 
-## 🎯 What Is This?
+## 📋 Overview
 
-**Mirror-Leech Telegram Bot** is a powerful, production-grade Telegram bot for managing downloads, automating cloud synchronization, and streamlining media workflows at scale.
+Mirror Leech Telegram Bot is a production-ready bot that enables efficient file downloading, uploading, and management through Telegram. Built with reliability and scalability in mind, it features advanced queue management, intelligent retry mechanisms, and comprehensive monitoring.
 
-Download files from **HTTP, torrents, NZB, YouTube, Google Drive** and stream them to **Telegram, Google Drive, or any cloud storage**. Built with enterprise-grade automation, monitoring, and observability from the ground up.
+### ✨ Key Highlights
 
-### Perfect For:
-- 🔄 **Automating downloads** at scale with queueing and priority management
-- ☁️ **Cloud sync workflows** with Google Drive, rclone, and multi-provider support
-- 📊 **Monitoring downloads** with real-time dashboards and deep observability
-- 🎯 **Batch operations** with scheduling, retries, and auto-recovery
-- 📱 **Remote management** via Telegram with instant notifications
-
----
-
-## ✨ Core Features
-
-| Category | Features |
-|----------|----------|
-| **📥 Downloads** | HTTP/HTTPS • Torrents • NZB • YouTube • Google Drive • Mediafire • 1000+ sites |
-| **☁️ Uploads** | Google Drive • Telegram • Rclone (40+ providers) • MyJDownloader |
-| **🤖 Automation** | Queueing • Scheduling • RSS feeds • Auto-retry • Health monitoring |
-| **📊 Management** | Real-time status • Web dashboard • User permissions • Download history |
-| **🔍 Tools** | Archive management • Media extraction • Thumbnail generation • Search |
-| **🛠️ Clients** | Aria2c • qBittorrent • SABnzbd • yt-dlp |
-| **📈 Enterprise** | Phase 6-11 advanced features (see [testing docs](TESTING.md)) |
+- **🚀 Category B Features** - Advanced reliability with circuit breakers, smart retry, and priority queues
+- **📦 Docker Deployment** - Containerized for easy deployment and scaling
+- **🔄 Auto-Healing** - Self-monitoring with automated health checks and recovery
+- **📊 Monitoring** - Built-in metrics, logging, and alerting capabilities
+- **🔒 Secure** - Production-grade security with authentication and rate limiting
 
 ---
 
-## 🚀 Quick Start (3 Minutes)
+## 🎯 Features
 
-### Option 1: Docker (Recommended)
+### Core Capabilities
+- **Multi-Protocol Downloads** - HTTP, FTP, Torrent, Mega, Google Drive
+- **Cloud Integration** - Upload to Google Drive, Telegram, and more
+- **Format Support** - Videos, Archives, Documents with automatic extraction
+- **Queue Management** - Priority-based task scheduling with VIP support
+- **Progress Tracking** - Real-time download/upload progress with ETA
 
-```bash
-# Clone repository
-git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
-cd mirror-leech-telegram-bot
+### Advanced Features (Category B)
+- **Circuit Breakers** - Prevent cascading failures across services
+- **Smart Retry Engine** - Exponential backoff with checkpoint recovery
+- **Parallel Downloads** - Multi-chunk downloads for faster speeds
+- **Health Monitoring** - Component-level health checks and diagnostics
+- **Metrics & Analytics** - Prometheus-compatible metrics export
 
-# Configure
-cp config/.env.production.example config/.env.production
-nano config/.env.production
-# Update: BOT_TOKEN, TELEGRAM_API, TELEGRAM_HASH, OWNER_ID
-
-# Deploy
-docker compose -f deployment/docker-compose.yml up -d --build
-
-# Verify (wait 30 seconds)
-sleep 30 && docker compose -f deployment/docker-compose.yml logs app --tail=20
-```
-
-### Option 2: Manual Setup
-
-```bash
-# Prerequisites: Python 3.13+, pip, aria2c, qbittorrent-nox
-
-# Setup
-git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
-cd mirror-leech-telegram-bot
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Configure
-cp config/.env.production.example config/.env.production
-nano config/.env.production
-
-# In separate terminals:
-aria2c --enable-rpc --rpc-listen-all=true --rpc-port=6800
-qbittorrent-nox --webui-port=8090
-python3 -m bot
-```
-
-### Test It
-
-Send `/ping` to your bot on Telegram → Should respond `Pong!`
+### Operations
+- **Automated Backups** - Scheduled configuration and data backups
+- **Auto-Cleanup** - Intelligent storage management
+- **Log Rotation** - Automatic log management and archival
+- **Cron Integration** - Scheduled maintenance tasks
 
 ---
 
-## ⚙️ Installation
+## 🚀 Quick Start
 
-| Topic | Link |
-|-------|------|
-| **Detailed Setup** | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
-| **Configuration Reference** | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
-| **Docker Deployment** | [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) |
-| **Troubleshooting** | [docs/PRODUCTION_DEPLOYMENT_GUIDE.md](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) |
+### Prerequisites
 
----
+- Docker & Docker Compose
+- Python 3.11+ (for local development)
+- Telegram Bot Token ([Get one from @BotFather](https://t.me/botfather))
+- MongoDB & Redis (included in Docker setup)
 
-## 🎮 Commands & Features
+### Installation
 
-### Start Here
-```
-/start              Launch the bot
-/help               View help menu
-/cmdlist            See all available commands (+ BotFather file)
-/ping               Verify bot is working
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
+   cd mirror-leech-telegram-bot
+   ```
 
-### Download & Upload
-```
-/mirror <link>      Download and mirror to cloud
-/leech <link>       Download and send to Telegram
-/qmirror <magnet>   Torrent download via qBittorrent
-/qbleech <magnet>   Torrent leech to Telegram
-/clone <folder>     Copy Google Drive folders
-/ytdl <url>         Download YouTube and 1000+ sites
-```
+2. **Configure environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   nano .env
+   ```
 
-### Queue & Status
-```
-/status             Show active downloads
-/queue              List all tasks
-/cancel <id>        Cancel a task
-/pqueue <id>        Pause task
-/rqueue <id>        Resume task
-```
+3. **Start with Docker**
+   ```bash
+   docker-compose up -d
+   ```
 
-### Web Dashboard
-Access portal: **http://localhost:8060**
-- Real-time download progress
-- System metrics
-- User settings
-- Download history
+4. **Verify deployment**
+   ```bash
+   ./scripts/quick_check.sh
+   ```
 
-See complete command list: [docs/COMMANDS.md](docs/COMMANDS.md)
+### First Run
+
+1. Send `/start` to your bot on Telegram
+2. Test with a small download: `/mirror https://speed.hetzner.de/10MB.bin`
+3. Check queue status: `/qstatus` (admin only)
 
 ---
 
 ## 📚 Documentation
 
-### Getting Started (30 min)
-1. [Installation](docs/INSTALLATION.md) – Setup guide
-2. [Configuration](docs/CONFIGURATION.md) – All settings explained
-3. [Commands](docs/COMMANDS.md) – Full command reference
-4. [Testing](TESTING.md) – Verify everything works ⭐
-
-### Advanced (1-2 hours)
-- [API Reference](docs/API_REFERENCE.md) – Integration details
-- [Automation Features](docs/AUTOMATION_FEATURES.md) – Tasks, scheduling, RSS
-- [Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md) – Production deployment
-- [Roadmap](docs/FEATURE_IMPLEMENTATION_ROADMAP.md) – Phases 6-11 details
+### User Guides
+- **[Installation Guide](docs/guides/INSTALLATION.md)** - Detailed setup instructions
+- **[Commands Reference](docs/guides/COMMANDS.md)** - All available bot commands
+- **[Configuration Guide](docs/guides/CONFIGURATION.md)** - Configuration options explained
+- **[Setup Complete Guide](docs/guides/SETUP_COMPLETE.md)** - Post-installation steps
 
 ### Operations
-- [Production Deployment](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) – Scale it up
-- [Development Journey](docs/DEVELOPMENT_JOURNEY.md) – Architecture & timeline
-- [Runbooks](docs/runbooks/README.md) – On-call, recovery, and service guides
-- [Postmortem Template](docs/runbooks/postmortem_template.md) – Incident writeups
+- **[Monitoring Guide](docs/operations/MONITORING.md)** - Health checks and monitoring tools
+- **[Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT_GUIDE.md)** - Enterprise deployment guide
+- **[Configuration Tuning](docs/operations/CONFIGURATION_TUNING.md)** - Performance optimization
+- **[Deployment Checklist](docs/operations/DEPLOYMENT_CHECKLIST.md)** - Pre-production checklist
+
+### API & Development
+- **[API Reference](docs/api/API_REFERENCE.md)** - API documentation
+- **[Contributing Guide](CONTRIBUTING.md)** - Development and contribution guidelines
+
+### Complete Index
+See **[Documentation Index](docs/README.md)** for all available documentation.
 
 ---
 
-## 🧪 Testing & Validation
+## 🏭 Production Deployment
 
-All features (Phase 1-11) are tested and documented. See **[TESTING.md](TESTING.md)** for:
+### Automated Setup
 
-✅ **How to verify features work:**
-- Short checklist for quick validation
-- Step-by-step commands with expected output
-- Phase-by-phase testing guide
-
-❌ **When something breaks:**
-- How to capture logs and debug info
-- Steps to report issues on GitHub
-- How to fix common problems locally
-
-→ **[Open TESTING.md →](TESTING.md)**
-
----
-
-## 🌟 Advanced Features (Phase 6-11)
-
-| Phase | Features | Status |
-|-------|----------|--------|
-| **6** | Stream links, web logs, circuit breaker, auto-update | ✅ Complete |
-| **7** | Performance optimization, reliability, monitoring | ✅ Complete |
-| **8** | Advanced intelligence, metadata, cross-seed | ✅ Complete |
-| **9** | Enterprise features, quota bypass, CAPTCHA | ✅ Complete |
-| **10** | Ecosystem integrations, debrid, link bypassing | ✅ Complete |
-| **11** | Zero-copy transfers, batch operations, optimization | ✅ Complete |
-
-Each phase is fully tested. Run tests:
 ```bash
-python -m pytest tests/ -o addopts=""
+# Run production deployment script
+./scripts/deploy/deploy_bot.sh
+
+# Enable monitoring and backups
+./scripts/setup_cron.sh
+
+# Start auto-cleanup
+./scripts/start_auto_cleanup.sh
 ```
 
-See detailed Phase 6-11 validation in [TESTING.md](TESTING.md).
+### Manual Setup
+
+1. **Deploy with Docker Compose**
+   ```bash
+   docker-compose -f docker-compose.secure.yml up -d
+   ```
+
+2. **Configure monitoring**
+   ```bash
+   # Run cron setup
+   ./scripts/setup_cron.sh
+   ```
+
+3. **Enable alerts**
+   ```bash
+   ./scripts/start_alerts.sh <your_telegram_chat_id>
+   ```
 
 ---
 
-## 💡 Key Concepts
+## 🔧 Management
 
-### Mirroring vs Leeching
-- **Mirror**: Download to cloud (Google Drive, rclone)
-- **Leech**: Download to Telegram (as media files)
+### Health Monitoring
 
-### Download Clients
-- **Aria2**: HTTP/FTP/torrent fast downloader
-- **qBittorrent**: Advanced torrent management
-- **SABnzbd**: Usenet (NZB) client
-- **yt-dlp**: Video downloaders (YouTube, etc.)
+```bash
+# Quick status check
+./scripts/health/quick_check.sh
 
-### Automation
-- **Scheduling**: Run commands at specific times (`/schedule`)
-- **RSS Feeds**: Auto-download new episodes (`/rss`)
-- **Queue**: Download multiple files with priority
-- **Health Checks**: Auto-recovery on failures
+# Full health dashboard
+./scripts/health/monitor_bot.sh
 
----
+# Watch in real-time
+./scripts/health/monitor_bot.sh watch
 
-## 🐳 Docker Compose Services
+# View logs
+./scripts/health/view_logs.sh 100
+```
 
-```yaml
-Services running after deployment:
-├─ app          Python bot (main)
-├─ mongo        Database (MongoDB)
-├─ redis        Cache & queue
-├─ aria2c       Download engine
-├─ qbittorrent  Torrent client
-└─ web          Dashboard (FastAPI)
+### Backup & Recovery
 
-Ports:
-├─ 8060    Web dashboard
-├─ 8090    qBittorrent UI
-├─ 6800    Aria2 RPC
-└─ 27017   MongoDB
+```bash
+# Manual backup
+./scripts/backup/backup_current_state.sh
+
+# List backups
+ls -lh data/backups/
+
+# Restore from backup
+./scripts/backup/backup_restore.sh
 ```
 
 ---
 
-## 📋 System Requirements
-
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| **OS** | Ubuntu 20.04+ | Ubuntu 22.04+ |
-| **CPU** | 2 cores | 4+ cores |
-| **RAM** | 2 GB | 8+ GB |
-| **Disk** | 10 GB | 50+ GB |
-| **Internet** | 10 Mbps | 50+ Mbps |
-| **Docker** | 20.10+ | Latest |
-| **Python** | 3.11+ | 3.13+ |
-
----
-
-## 🔧 Environment Variables
-
-### Required
-```env
-BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_API=your_api_id
-TELEGRAM_HASH=your_api_hash
-OWNER_ID=your_telegram_user_id
-```
-
-### Important
-```env
-AUTHORIZED_CHATS=-1001234567890           # Chat IDs (comma-separated)
-SUDO_USERS=123456789,987654321            # Sudo user IDs
-GOOGLE_DRIVE_FOLDER_ID=your_folder_id
-RCLONE_CONFIG_PATH=/path/to/rclone.conf
-```
-
-See all 50+ options: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
-
----
-
-## 🆘 Support & Issues
-
-### Getting Help
-1. **Read docs**: Check [docs/](docs/) and [TESTING.md](TESTING.md)
-2. **Check logs**: `tail -n 100 data/logs/log.txt`
-3. **Search issues**: [GitHub Issues](https://github.com/adirane45/mirror-leech-telegram-bot/issues)
-4. **Ask community**: Telegram group (link in issues)
-
-### Reporting Problems
-See [TESTING.md - Reporting Issues](TESTING.md#reporting-issues) for:
-- How to capture error logs
-- What info to include
-- How to submit a GitHub issue
-
-### Common Issues
-| Problem | Solution |
-|---------|----------|
-| Bot not responding | Check `docker compose logs app` |
-| Download errors | Verify client running (aria2c/qbittorrent) |
-| Database issues | Delete `data/bak/` and restart |
-| Dashboard not loading | Check port 8060 is open |
-
----
-
-## 📦 Project Structure
+## 🏗️ Project Structure
 
 ```
 mirror-leech-telegram-bot/
-├─ bot/              Main bot code
-│  ├─ core/          Core modules & functionality
-│  ├─ modules/       Feature modules (commands)
-│  └─ helper/        Utilities & helpers
-├─ docs/             Documentation
-├─ tests/            Test suite (pytest)
-├─ config/           Configuration templates
-├─ data/             Runtime data (logs, cache, downloads)
-├─ deployment/       Docker & deployment files
-├─ scripts/          Utility scripts
-└─ README.md         This file
+├── src/bot/                    # Bot core application
+│   ├── core/                   # Core functionality
+│   │   ├── category_b_integration.py
+│   │   ├── circuit_breaker.py
+│   │   ├── smart_retry.py
+│   │   └── priority_queue.py
+│   ├── modules/                # Command modules
+│   └── helper/                 # Utility functions
+├── config/                     # Configuration files
+├── scripts/                    # Management scripts
+├── docs/                       # Documentation
+│   ├── guides/                 # User guides
+│   ├── operations/             # Operational docs
+│   ├── api/                    # API documentation
+│   └── development/            # Development docs
+├── data/                       # Runtime data
+│   ├── downloads/              # Download storage
+│   ├── logs/                   # Application logs
+│   └── backups/                # Backup storage
+└── deployment/                 # Deployment configs
 ```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+---
+
+## 📊 Status
+
+- **Version:** 3.1.0
+- **Status:** Production Ready ✅
+- **Python:** 3.11.14
+- **Category B:** Enabled
+- **Last Updated:** 2026-02-28
 
 ---
 
 ## 📝 License
 
-MIT License - See [docs/LICENSE](docs/LICENSE) for details.
-
----
-
-## 👤 Author
-
-**Aditya Rane** ([@rane_adi45](https://instagram.com/rane_adi45))
-- Enhanced and maintained this project
-- Built Phase 6-11 enterprise features
-- Date: February 22, 2026
-
----
-
-## 🎓 Learning Resources
-
-### For Users
-1. Start with this README
-2. Read [docs/INSTALLATION.md](docs/INSTALLATION.md)
-3. Run `python -m pytest tests/ -o addopts=""` to verify setup
-4. Try commands from [docs/COMMANDS.md](docs/COMMANDS.md)
-
-### For Operators
-1. [PRODUCTION_DEPLOYMENT_GUIDE.md](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) – Scale to production
-2. [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) – Pre-deployment tasks
-3. [AUTOMATION_FEATURES.md](docs/AUTOMATION_FEATURES.md) – Advanced workflows
-
-### For Developers
-1. [DEVELOPMENT_JOURNEY.md](docs/DEVELOPMENT_JOURNEY.md) – Architecture & design
-2. [FEATURE_IMPLEMENTATION_ROADMAP.md](docs/FEATURE_IMPLEMENTATION_ROADMAP.md) – Future features
-3. [API_REFERENCE.md](docs/API_REFERENCE.md) – Code structures
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
 
-**⭐ If you find this project useful, please star it on GitHub!**
+**Made with ❤️ for the community**
 
-[View on GitHub](https://github.com/adirane45/mirror-leech-telegram-bot) • [Report Issues](https://github.com/adirane45/mirror-leech-telegram-bot/issues) • [Documentation](docs/)
+Star ⭐ this repository if you find it helpful!
 
-Made with ❤️ for the community
+[Documentation](docs/) • [Issues](https://github.com/yourusername/mirror-leech-telegram-bot/issues) • [Discussions](https://github.com/yourusername/mirror-leech-telegram-bot/discussions)
 
 </div>

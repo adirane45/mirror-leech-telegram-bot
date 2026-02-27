@@ -1,6 +1,7 @@
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from importlib import import_module
+from os import getenv
 from pymongo import AsyncMongoClient
 from pymongo.server_api import ServerApi
 from pymongo.errors import PyMongoError
@@ -26,7 +27,9 @@ class DbManager:
                 connectTimeoutMS=60000,
                 serverSelectionTimeoutMS=60000,
             )
-            self.db = self._conn[Config.DATABASE_NAME]
+            # Get database name from Config or environment, with fallback
+            db_name = getattr(Config, 'DATABASE_NAME', None) or getenv('DATABASE_NAME', 'mirror-leech-bot')
+            self.db = self._conn[db_name]
             self._return = False
         except PyMongoError as e:
             LOGGER.error(f"Error in DB connection: {e}")

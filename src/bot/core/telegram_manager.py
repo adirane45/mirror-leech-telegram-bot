@@ -1,5 +1,4 @@
 from pyrogram import Client, enums
-from pyrogram.types import LinkPreviewOptions
 from asyncio import Lock
 from pathlib import Path
 from os import getenv
@@ -41,10 +40,7 @@ class TgClient:
                 workdir=cls._get_workdir(),
                 parse_mode=enums.ParseMode.HTML,
                 max_concurrent_transmissions=10,
-                max_message_cache_size=15000,
-                max_topic_cache_size=15000,
                 sleep_threshold=0,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
             )
             LOGGER.info("Starting Telegram bot client...")
             await cls.bot.start()
@@ -68,9 +64,6 @@ class TgClient:
                     parse_mode=enums.ParseMode.HTML,
                     sleep_threshold=60,
                     max_concurrent_transmissions=10,
-                    max_message_cache_size=15000,
-                    max_topic_cache_size=15000,
-                    link_preview_options=LinkPreviewOptions(is_disabled=True),
                 )
                 await cls.user.start()
                 cls.IS_PREMIUM_USER = cls.user.me.is_premium

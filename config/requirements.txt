@@ -18,6 +18,9 @@ graphene
 gunicorn
 httpx
 jinja2
+PyJWT
+passlib
+bcrypt
 lxml
 natsort
 par2cmdline-turbo
@@ -32,6 +35,7 @@ psutil
 pymongo
 kurigram
 python-magic
+qrcode[pil]
 redis
 requests
 speedtest-cli

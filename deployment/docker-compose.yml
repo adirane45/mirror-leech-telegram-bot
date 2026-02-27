@@ -7,7 +7,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - PUID=1000
       - PGID=1000
@@ -37,12 +37,14 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
       - WEBUI_PORT=8090
+      - WEBUI_USERNAME=mltb
+      - WEBUI_PASSWORD=mltbmltb
     volumes:
       - downloads:/downloads
       - ./clients/qbittorrent/config:/config
@@ -150,7 +152,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
@@ -192,7 +194,7 @@ services:
       - "8060:8060"
       - "9090:9090"
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - BASE_URL_PORT=8060
       - REDIS_HOST=redis
@@ -201,10 +203,9 @@ services:
       - ARIA2_PORT=6800
       - QB_HOST=qbittorrent
       - QB_PORT=8090
-      # Disable MongoDB to speed up startup (set to empty string)
-      - DATABASE_URL=
-      - MONGODB_URI=
+      # MongoDB connection is configured via config/.env.production
     volumes:
+      - ./config:/app/config
       - downloads:/app/downloads
       - logs:/app/logs
     depends_on:
@@ -230,7 +231,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -260,7 +261,7 @@ services:
     networks:
       - mltb-net
     env_file:
-      - ../config/.env.production
+      - config/.env.production
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -272,26 +273,7 @@ services:
       redis:
         condition: service_healthy
 
-  # ===== Tor Proxy for IP Rotation (OPTIONAL - Use: --profile tor) =====
-  tor:
-    image: osminogin/tor-simple:latest
-    container_name: mltb-tor
-    restart: unless-stopped
-    networks:
-      - mltb-net
-    ports:
-      - "9050:9050"    # SOCKS5 proxy port
-      - "9051:9051"    # Tor control port
-    volumes:
-      - tor-data:/var/lib/tor
-    profiles:
-      - tor
-    healthcheck:
-      test: ["CMD", "curl", "-x", "socks5://localhost:9050", "-f", "https://api.ipify.org"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
+# ===== Networks =====
 networks:
   mltb-net:
     driver: bridge
@@ -311,6 +293,4 @@ volumes:
   alertmanager-data:
     driver: local
   logs:
-    driver: local
-  tor-data:
     driver: local

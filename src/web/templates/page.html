@@ -803,6 +803,7 @@
                     fetch(requestUrl, {
                         'method': 'POST',
                         'body': JSON.stringify(body),
+                        'headers': { 'Content-Type': 'application/json' }
                     }).then(response => {
                         if (response.ok) {
                             modalTitle.textContent = 'Success!';
@@ -811,9 +812,14 @@
                             renderFileTree(currentFolder ? currentFolder.children : files);
                         } else {
                             modalTitle.textContent = 'Error';
-                            modalBody.innerHTML = '<p>There was an error submitting your Rename. Try Again!.</p>';
+                            modalBody.innerHTML = '<p>There was an error submitting your Rename. Status: ' + response.status + '. Try Again!.</p>';
                         }
                         modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Okay</button>';
+                        openModal();
+                    }).catch(error => {
+                        modalTitle.textContent = 'Server Error';
+                        modalBody.innerHTML = '<p>There was an error connecting to the server. Try Again!</p><br>' + error.message;
+                        modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
                         openModal();
                     });
                 }
@@ -851,7 +857,11 @@
             modalFooter.innerHTML = '';
             openModal();
             const requestUrl = `/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=selection`;
-            fetch(requestUrl, { 'method': 'POST', 'body': JSON.stringify(files) }).then(response => {
+            fetch(requestUrl, { 
+                'method': 'POST', 
+                'body': JSON.stringify(files),
+                'headers': { 'Content-Type': 'application/json' }
+            }).then(response => {
                 if (reusableModal.style.display === 'block') {
                     closeModal();
                 }
@@ -860,9 +870,17 @@
                     modalBody.innerHTML = '<p>Your selection has been submitted successfully.</p>';
                 } else {
                     modalTitle.textContent = 'Error';
-                    modalBody.innerHTML = '<p>An error occurred while submitting your selection. Try Again!</p>';
+                    modalBody.innerHTML = '<p>An error occurred while submitting your selection. Status: ' + response.status + '. Try Again!</p>';
                 }
                 modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Okay</button>';
+                openModal();
+            }).catch(error => {
+                if (reusableModal.style.display === 'block') {
+                    closeModal();
+                }
+                modalTitle.textContent = 'Server Error';
+                modalBody.innerHTML = '<p>There was an error connecting to the server. Try Again!</p><br>' + error.message;
+                modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
                 openModal();
             });
         }
@@ -913,10 +931,19 @@
                         }
                     });
                 } else {
-                    modalTitle.textContent = 'Something Went Wrong!';
-                    modalBody.innerHTML = '<p>Check console. Status Code: ' + response.status + '</p>';
-                    modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
-                    openModal();
+                    // Try to parse error response even on non-ok status
+                    return response.json().then(data => {
+                        modalTitle.textContent = data.error || 'Error';
+                        modalBody.innerHTML = `<p>${data.message || 'An error occurred. Status: ' + response.status}. Try Again!</p>`;
+                        modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
+                        openModal();
+                    }).catch(() => {
+                        // Failed to parse JSON, show status code
+                        modalTitle.textContent = 'Something Went Wrong!';
+                        modalBody.innerHTML = '<p>Server error (Status: ' + response.status + '). Try Again!</p>';
+                        modalFooter.innerHTML = '<button class="btn btn-primary" onclick="closeModal()">Retry</button>';
+                        openModal();
+                    });
                 }
             }).catch(error => {
                 modalTitle.textContent = 'Server Error';

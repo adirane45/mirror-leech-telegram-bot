@@ -1,282 +1,166 @@
-# ============================================================================
-# Mirror-Leech Telegram Bot - Git Ignore Configuration
-# ============================================================================
-
-# PYTHON BUILD & DEPENDENCIES
-# ============================================================================
+# Python
 __pycache__/
 *.py[cod]
-*.pyc
-*.pyo
-*.pyd
+*$py.class
 *.so
 .Python
-*.egg
-*.egg-info/
-dist/
 build/
-*.whl
-*.tar.gz
-*.zip
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+.venv/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# VIRTUAL ENVIRONMENTS
-# ============================================================================
-venv/
-env/
-.venv/
-ENV/
-build/
-mltbenv/
-*.egg-info/
-
-# PYTHON TESTING & COVERAGE
-# ============================================================================
-.pytest_cache/
-.coverage
-coverage.xml
-htmlcov/
-*.prof
-*.pstat
+# Testing
 .tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 .hypothesis/
-test_output_*.txt
+.pytest_cache/
 
-# IDE & EDITOR FILES
-# ============================================================================
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
-*.iml
 .project
 .pydevproject
 .settings/
-.sublime-project
-.sublime-workspace
-# Emacs
-*~
-.#*
-# Vim
-.vim
-# PyCharm
-.graddle
-# VS Code specific
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/launch.json
+*.sublime-project
+*.sublime-workspace
+.history/
+.vscode-server/
 
-# OS & SYSTEM FILES
-# ============================================================================
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-.AppleDouble
-.LSOverride
-*.lnk
-*Thumbs.db
-
-# SENSITIVE & CONFIGURATION FILES
-# ============================================================================
-# Environment variables
+# Environment Variables
 .env
 .env.local
 .env.*.local
-.env.production
-!.env.example
-!.env.security.example
-config/.env.production
-
-# Credentials & Secrets
-credentials.json
-config.py
-token.pickle
+.env.*.vault
+config.env
 rclone.conf
 .netrc
-accounts/
-tokens/
-cfg.zip
-cookies.txt
-list_drives.txt
+
+# Bot Data (User/Runtime)
+data/downloads/*
+data/logs/*.log
+data/backups/*.tar.gz
+data/tokens/*
+data/certs/*
+data/sessions/
 *.session
-.session
+*.session-journal
+session.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+.dockerignore
+
+# Temporary Files
+*.tmp
+*.temp
+*.cache
+*.lock
+f1.txt
+f2.txt
+DEPLOYMENT_COMPLETE.txt
+=6.0.0
+
+# Security & Secrets
+secrets/
+.secrets/
 *.pem
 *.key
+*.crt
 *.p12
 *.pfx
-*.crt
-*.p8
-*.jks
-secrets.txt
-secrets.yml
-secrets.yaml
-
-# RUNTIME DATA & LOGS
-# ============================================================================
-# Logs
-*.log
-log.txt
-logs/
-bot_output.log
-*.log.*
-data/logs/
-
-# Running data
-downloads/
-rclone/
-sabnzbd/
-thumbnails/
-runtime/
-*.pid
-.pid
-data/downloads/
-data/backups/
-data/tokens/
-data/thumbnails/
-clients/qbittorrent/config/qBittorrent/lockfile
-clients/qbittorrent/config/qBittorrent/rss/
+token.txt
+credential*.json
+oauth*.json
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+*.dbf
+mongo*.log
+redis*.log
 
-# DOCKER & DEPLOYMENT
-# ============================================================================
-docker-compose.production.yml
-docker-compose.local.yml
-Dockerfile.local
-.dockerignore
+# Logs
+*.log
+logs/
+*.txt.log
 
-# BUILD & DISTRIBUTION ARTIFACTS
-# ============================================================================
-build/
-dist/
-*.egg-info/
-*.egg
-*.whl
-MANIFEST
-pip-log.txt
-
-# CACHE & TEMP FILES
-# ============================================================================
-.cache/
-*.cache
-*.tmp
-*.temp
+# Backups
 *.bak
-*_backup.*
-*~
-.~*
-*.swp
-*.swo
+*.backup
+*.old
+*.sav
+snapshots/
+checkpoint*/
 
-# GENERATED REPORTS & ARTIFACTS
-# ============================================================================
-# Performance & Metrics
-metrics_snapshot_*.json
-performance_report_*.html
-health_check_report_*.txt
-
-# CodeScene Analysis
-.codescene/
-.codescene/reports/
-.codescene/.token
-.codescene/*.json
-
-# Generated Documentation
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-
-# TEMPORARY PROJECT FILES (can be removed)
-# ============================================================================
-deploy-production.sh
-requirements-phase*.txt
-requirements-enhanced.txt
-PHASE*.md
-INTEGRATION_SUMMARY.md
-DEPLOYMENT_GUIDE.md
-*_VERIFICATION.md
-*_COMPLETION_*.txt
-
-# NODE & FRONTEND (if applicable)
-# ============================================================================
+# Node (if used)
 node_modules/
 npm-debug.log
 yarn-error.log
-.npm
-.eslintcache
 
-# MISC
-# ============================================================================
-*.local
-*.private
-*.backup
-.bundle/
-.byebug_history
-.ruby-version
-Gemfile.lock
+# OS
+Thumbs.db
+.Trash-*
+.DS_Store
+**/Desktop.ini
 
-# Git
-.git/
-.gitignore
+# IDE Metadata
+*.iml
+*.iws
+*.ipr
 
-# IDE Workspace
-.workspace
-workspace.xml
+# Build outputs
+/build/
+/dist/
+*.egg-info/
+.eggs/
 
-# MacOS Specific
+# Misc
+.cache/
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+*.orig
+.metadata/
 .AppleDouble
 .LSOverride
 ._*
-.Spotlight-V100
-.Trashes
 
-# Windows Specific
-*.lnk
-ehthumbs.db
-Thumbs.db
-desktop.ini
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+virtualenv/
 
-# VENV-specific for different Python versions
-venv3.8/
-venv3.9/
-venv3.10/
-venv3.11/
-venv3.12/
-venv3.13/
-
-# Development tools
-.env.development
-develop_notes.md
-scratch/
-temp/
-tmp/
-
-# ============================================================================
-# SECURITY - NEVER COMMIT ENVIRONMENT FILES WITH CREDENTIALS
-# ============================================================================
-.env.production
-config/.env.production
-config/.env.production.secure
-config/.env.*.local
-!config/.env.production.example
-!config/.env.*.example
-
-# API KEYS, TOKENS, CREDENTIALS
-.credentials
-secrets/
-*.pem
-*.key
-cert/
-docker.env
+# Archived/Legacy
+legacy_*/
+archive_*/

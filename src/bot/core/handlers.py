@@ -8,6 +8,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler, EditedMessag
 from ..modules import *
 from ..modules.archive import compress_file, extract_archive, list_archive
 from ..modules.mediainfo import get_media_info, extract_thumbnail, quick_media_stats
+from ..modules.services import web_logs, reload_config
 from ..modules.enhanced_dashboard import (
     enhanced_stats_handler,
     enhanced_dashboard_handler,
@@ -251,6 +252,20 @@ def add_handlers():
                 MessageHandler(
                     log,
                     filters=command(BotCommands.LogCommand, case_sensitive=True)
+                    & CustomFilters.sudo,
+                )
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(
+                    web_logs,
+                    filters=command(BotCommands.WebLogsCommand, case_sensitive=True)
+                    & CustomFilters.sudo,
+                )
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(
+                    reload_config,
+                    filters=command(BotCommands.ReloadConfigCommand, case_sensitive=True)
                     & CustomFilters.sudo,
                 )
             )
@@ -674,8 +689,47 @@ def add_handlers():
                     & CustomFilters.authorized,
                 )
             )
+                # Category B: Advanced Features Handlers
+        try:
+            from ..modules.category_b_commands import (
+                queue_status, dlq_status, circuit_status, 
+                boost_task, cancel_task, my_queue_position, 
+                system_health, category_b_help
+            )
+            
+            # Admin commands
+            TgClient.bot.add_handler(
+                MessageHandler(queue_status, filters=command(["qstatus"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(dlq_status, filters=command(["dlq"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(circuit_status, filters=command(["circuits"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(boost_task, filters=command(["boost"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(cancel_task, filters=command(["cancel"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(system_health, filters=command(["health"], case_sensitive=True) & CustomFilters.sudo)
+            )
+            
+            # User commands
+            TgClient.bot.add_handler(
+                MessageHandler(my_queue_position, filters=command(["myqueue"], case_sensitive=True))
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(category_b_help, filters=command(["categoryb", "catb", "advancedhelp"], case_sensitive=True))
+            )
+            
+            LOGGER.info('✅ Category B command handlers registered')
+        except Exception as e:
+            LOGGER.warning(f'⚠️  Category B handlers skipped: {e}')
         
-        LOGGER.info('??? All bot command handlers registered successfully')
+        LOGGER.info('✅ All bot command handlers registered successfully')
         
     except Exception as e:
         from .. import LOGGER

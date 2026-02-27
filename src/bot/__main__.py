@@ -6,7 +6,17 @@ Config.load()
 validate_required_config(strict=True)
 
 
+
+
+_main_executed = False
+
 async def main():
+    global _main_executed
+    if _main_executed:
+        LOGGER.error("❌ main() called more than once - preventing restart!")
+        return
+    _main_executed = True
+    
     from asyncio import gather
     import aiohttp
     from .core.startup import (
@@ -95,6 +105,23 @@ async def main():
             LOGGER.info("✅ Automation System initialized")
     except Exception as e:
         LOGGER.info(f"⚠️  Automation System initialization skipped: {e}")
+    
+    # Initialize Config Watcher (optional, non-breaking)
+    try:
+        if getattr(Config, "ENABLE_CONFIG_WATCHER", True):
+            from .core.config_watcher import config_watcher
+            
+            # Add config files to watch
+            import os
+            if os.path.exists("config/.env"):
+                config_watcher.add_watch("config/.env")
+            if os.path.exists(".env"):
+                config_watcher.add_watch(".env")
+            
+            await config_watcher.start()
+            LOGGER.info("✅ Config watcher initialized")
+    except Exception as e:
+        LOGGER.info(f"⚠️  Config watcher initialization skipped: {e}")
 
     LOGGER.info("Loading settings...")
     await load_settings()
@@ -214,6 +241,18 @@ async def main():
     
     LOGGER.info("✅ Final initialization tasks completed")
     
+    # Initialize Category B features (Advanced reliability & performance)
+    if getattr(Config, "ENABLE_CATEGORY_B", True):
+        LOGGER.info("🚀 Initializing Category B features...")
+        try:
+            from .core.category_b_integration import category_b
+            await wait_for(category_b.initialize(), timeout=15.0)
+            LOGGER.info("✅ Category B features initialized")
+        except AsyncioTimeoutError:
+            LOGGER.warning("⏱️  Category B initialization timed out (15s)")
+        except Exception as e:
+            LOGGER.warning(f"⚠️  Category B initialization failed: {e}")
+    
     # Set bot commands for Telegram menu
     LOGGER.info("Setting bot commands...")
     try:
@@ -229,6 +268,8 @@ async def main():
 
 
 bot_loop.run_until_complete(main())
+LOGGER.info("✅ main() completed successfully")
+LOGGER.info("📝 Proceeding to handler registration and start bot listener loop...")
 
 # Register Phase 5 shutdown handler (consolidated from all phases)
 import atexit
@@ -256,6 +297,14 @@ LOGGER.info("📝 Calling add_handlers()...")
 add_handlers()
 LOGGER.info("📝 Initializing UI monitor...")
 init_ui_monitor()
+
+# Start admin download processor
+try:
+    from web.admin_download_handler import start_admin_download_processor
+    bot_loop.create_task(start_admin_download_processor())
+    LOGGER.info("✅ Admin download processor started")
+except Exception as e:
+    LOGGER.warning(f"⚠️  Admin download processor failed to start: {e}")
 
 LOGGER.info("Bot Started!")
 

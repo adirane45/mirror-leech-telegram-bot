@@ -146,7 +146,7 @@ class TaskConfig:
 
     def get_config_path(self, dest):
         return (
-            f"rclone/{self.user_id}.conf" if dest.startswith("mrcc:") else "rclone.conf"
+            f"rclone/{self.user_id}.conf" if dest.startswith('mrcc:') else "rclone.conf"
         )
 
     async def is_token_exists(self, path, status):

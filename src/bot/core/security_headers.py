@@ -4,6 +4,7 @@ Implements HTTP security headers and HTTPS enforcement
 """
 
 import logging
+import os
 from typing import Dict, Optional, Tuple
 from datetime import datetime, UTC
 
@@ -102,8 +103,10 @@ class SecurityHeaders:
             "base-uri": ["'self'"],
             "form-action": ["'self'"],
             "object-src": ["'none'"],
-            "upgrade-insecure-requests": [""],
         }
+
+        if self.enforce_https:
+            rules["upgrade-insecure-requests"] = [""]
         
         # Convert to CSP string
         csp_parts = []
@@ -300,6 +303,13 @@ _https_enforcer_instance: Optional[HTTPSEnforcer] = None
 
 def get_security_headers(enforce_https: bool = True) -> SecurityHeaders:
     """Get or create SecurityHeaders singleton"""
+    env_value = (
+        os.getenv("ENABLE_HTTPS_HEADERS")
+        or os.getenv("ENABLE_HTTPS")
+        or os.getenv("ENABLE_HTTPS_REDIRECT")
+    )
+    if env_value is not None:
+        enforce_https = env_value.lower() == "true"
     global _security_headers_instance
     if _security_headers_instance is None:
         _security_headers_instance = SecurityHeaders(enforce_https=enforce_https)

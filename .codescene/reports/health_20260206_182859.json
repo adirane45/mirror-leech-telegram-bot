@@ -1,0 +1,92 @@
+Analyzing documentation...
+Analyzing structure...
+Analyzing maintainability...
+Calculating health score...
+
+💊 Code Health Summary:
+   Overall Health Score: 71.0/100
+
+📚 Documentation:
+   Function Documentation: 21.24%
+   File Documentation: 21.62%
+
+🏗️  Structure:
+   Average Lines per File: 225.43
+   Very Large Files (>500 lines): 12
+
+🔧 Maintainability:
+   Total Anti-patterns: 201
+
+💡 Top Recommendations:
+   1. [High] Documentation: Low function documentation rate: 21.24%
+      → Add docstrings to functions, especially in bot/core/ and bot/modules/
+   2. [Medium] Structure: 12 files exceed 500 lines
+      → Consider splitting large files into smaller, focused modules
+   3. [High] Maintainability: 100 bare except clauses found
+      → Replace bare except with specific exception types
+   4. [Medium] Maintainability: 23 functions with >5 parameters
+      → Refactor to use configuration objects or keyword arguments
+{
+  "health_score": 71.0,
+  "metrics": {
+    "documentation": {
+      "total_files": 148,
+      "documented_files": 32,
+      "file_documentation_rate": 21.62,
+      "total_functions": 937,
+      "documented_functions": 199,
+      "function_documentation_rate": 21.24,
+      "score": 21.43
+    },
+    "structure": {
+      "total_files": 148,
+      "total_lines": 33364,
+      "avg_lines_per_file": 225.43,
+      "files_by_size": {
+        "small": 50,
+        "medium": 57,
+        "large": 29,
+        "very_large": 12
+      },
+      "score": 100
+    },
+    "duplication": {},
+    "maintainability": {
+      "antipatterns": {
+        "long_parameter_lists": 23,
+        "deep_nesting": 0,
+        "global_variables": 78,
+        "bare_except": 100
+      },
+      "total_antipatterns": 201,
+      "antipatterns_per_file": 1.36,
+      "score": 86.42
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "High",
+      "category": "Documentation",
+      "issue": "Low function documentation rate: 21.24%",
+      "action": "Add docstrings to functions, especially in bot/core/ and bot/modules/"
+    },
+    {
+      "priority": "Medium",
+      "category": "Structure",
+      "issue": "12 files exceed 500 lines",
+      "action": "Consider splitting large files into smaller, focused modules"
+    },
+    {
+      "priority": "High",
+      "category": "Maintainability",
+      "issue": "100 bare except clauses found",
+      "action": "Replace bare except with specific exception types"
+    },
+    {
+      "priority": "Medium",
+      "category": "Maintainability",
+      "issue": "23 functions with >5 parameters",
+      "action": "Refactor to use configuration objects or keyword arguments"
+    }
+  ]
+}

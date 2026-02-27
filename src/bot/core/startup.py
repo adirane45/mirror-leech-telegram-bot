@@ -81,14 +81,27 @@ async def update_nzb_options():
 
 async def load_settings():
     # Skip MongoDB if DATABASE_URL is empty or points to non-existent local service
+    LOGGER.info(f"🔍 DEBUG: DATABASE_URL is {'EMPTY' if not Config.DATABASE_URL else f'SET to {str(Config.DATABASE_URL)[:50]}'}")
     if not Config.DATABASE_URL or not Config.DATABASE_URL.strip():
         LOGGER.info("📊 MongoDB disabled - using local config only")
         return
     for p in ["thumbnails", "tokens", "rclone"]:
         if await aiopath.exists(p):
             await rmtree(p, ignore_errors=True)
-    await database.connect()
+    
+    # Try to connect to MongoDB with timeout to avoid hanging bot startup
+    LOGGER.info("🔌 Attempting MongoDB connection with 10-second timeout...")
+    try:
+        from asyncio import wait_for, TimeoutError as AsyncTimeoutError
+        LOGGER.info("⏳ Starting wait_for(database.connect(), timeout=10.0)...")
+        await wait_for(database.connect(), timeout=10.0)
+        LOGGER.info("✅ MongoDB connected successfully")
+    except (AsyncTimeoutError, Exception) as e:
+        LOGGER.warning(f"⏱️  MongoDB connection timeout/failed ({type(e).__name__}: {str(e)[:40]}). Continuing without database...")
+        return
+    
     if database.db is not None:
+        LOGGER.info("📌 Entering database query block...")
         BOT_ID = Config.BOT_TOKEN.split(":", 1)[0]
         settings = import_module("config")
         config_file = {
@@ -96,10 +109,24 @@ async def load_settings():
             for key, value in vars(settings).items()
             if not key.startswith("__")
         }
+        
+        # Wrap all MongoDB queries with timeouts to prevent hanging
+        from asyncio import wait_for, TimeoutError as AsyncTimeoutError
+        
         try:
-            old_config = await database.db.settings.deployConfig.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
+            LOGGER.info("🔍 START: Querying deployConfig (5s timeout)...")
+            old_config = await wait_for(
+                database.db.settings.deployConfig.find_one(
+                    {"_id": BOT_ID}, {"_id": 0}
+                ),
+                timeout=5.0
             )
+            LOGGER.info("🔍 END: deployConfig query complete")
+        except AsyncTimeoutError:
+            LOGGER.warning("⏱️  deployConfig query timed out (5s) - disabling database usage")
+            database.db = None
+            database._return = True
+            return
         except Exception as e:
             # Handle MongoDB 4.4 compatibility with newer pymongo versions
             # Fallback: Assume no existing config and proceed
@@ -299,11 +326,15 @@ async def load_configurations():
         async with aiopen(".netrc", "w"):
             pass
 
-    await (
-        await create_subprocess_shell(
-            "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox-nzb.sh && ./aria-nox-nzb.sh"
-        )
-    ).wait()
+    if await aiopath.exists("aria-nox-nzb.sh"):
+        await (
+            await create_subprocess_shell(
+                "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox-nzb.sh && ./aria-nox-nzb.sh"
+            )
+        ).wait()
+    else:
+        await create_subprocess_shell("chmod 600 .netrc && cp .netrc /root/.netrc")
+        LOGGER.warning("aria-nox-nzb.sh not found; skipping aria-nox bootstrap")
 
     if Config.BASE_URL:
         await create_subprocess_shell(

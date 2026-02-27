@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=anasty17/mltb@sha256:cc58f595bb12bab00c373069a4a90169ab4fe470ee5084c87690dc92899fcfd6
+ARG BASE_IMAGE=python:3.11-slim
 
 FROM ${BASE_IMAGE} AS build
 
@@ -20,10 +20,18 @@ RUN chmod 777 /app && mkdir -p /app/downloads && chmod 777 /app/downloads
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
+		curl \
+		ca-certificates \
+		openjdk-21-jre-headless \
+		procps \
 		ffmpeg \
 		p7zip-full \
-		unrar \
+		libmagic1 \
 	&& rm -rf /var/lib/apt/lists/*
+
+# JDownloader runtime
+RUN mkdir -p /JDownloader \
+	&& curl -fsSL -o /JDownloader/JDownloader.jar https://installer.jdownloader.org/JDownloader.jar
 
 COPY --from=build /app /app
 

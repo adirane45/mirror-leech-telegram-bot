@@ -1,4 +1,5 @@
 from time import time
+from datetime import datetime
 
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.files_utils import get_mime_type
@@ -24,7 +25,8 @@ async def start(_, message):
     buttons.data_button("Settings", "quick_settings")
     reply_markup = buttons.build_menu(2)
     
-    auth_result = await CustomFilters.authorized(_, message)
+    cf = CustomFilters()
+    auth_result = await cf.authorized_user(_, message)
     LOGGER.info(f"🔵 User auth check result: {auth_result}")
     
     if auth_result:
@@ -58,6 +60,134 @@ async def log(_, message):
     await send_file(message, "data/logs/log.txt")
 
 
+@new_task
+async def web_logs(_, message):
+    """Generate secure token for web log viewer access"""
+    from logging import getLogger
+    LOGGER = getLogger(__name__)
+    
+    cf = CustomFilters()
+    if not await cf.sudo_user(_, message):
+        await send_message(message, "⛔ This command is only for sudo users.")
+        return
+    
+    try:
+        # Import admin auth manager from web module
+        from web.admin_logs import admin_auth_manager
+        
+        # Get user ID
+        user_id = str(message.from_user.id)
+        
+        # Create token
+        token = await admin_auth_manager.create_token(user_id)
+        
+        if not token:
+            await send_message(message, "❌ Failed to generate access token. Please try again.")
+            return
+        
+        # Build log viewer URL
+        base_url = getattr(Config, 'WEB_SERVER_URL', 'http://localhost:8060')
+        viewer_url = f"{base_url}/admin/logs/viewer?token={token}"
+        
+        # Generate QR code for easy access
+        qr_image_path = None
+        try:
+            import qrcode
+            import os
+            
+            qr = qrcode.QRCode(version=1, box_size=10, border=4)
+            qr.add_data(viewer_url)
+            qr.make(fit=True)
+            
+            qr_img = qr.make_image(fill_color="black", back_color="white")
+            qr_image_path = f"/tmp/weblogs_qr_{user_id}.png"
+            qr_img.save(qr_image_path)
+            
+        except Exception as e:
+            LOGGER.warning(f"QR code generation failed: {e}")
+        
+        # Create message
+        text = (
+            "<b>📊 Real-Time Web Log Viewer</b>\n\n"
+            f"🔗 <b>Access URL:</b>\n<code>{viewer_url}</code>\n\n"
+            "⏰ <b>Expires in:</b> 10 minutes\n"
+            "🔐 <b>Security:</b> One-time use token\n\n"
+            "<i>Features:</i>\n"
+            "• Live log streaming with color coding\n"
+            "• Filter by ERROR/WARNING/INFO/DEBUG\n"
+            "• Search functionality\n"
+            "• Auto-scroll and pause controls\n\n"
+            "Scan the QR code or click the link to access logs!"
+        )
+        
+        # Send with QR code if available
+        if qr_image_path and os.path.exists(qr_image_path):
+            try:
+                await send_file(message, qr_image_path, caption=text)
+                os.remove(qr_image_path)
+            except Exception as e:
+                LOGGER.warning(f"Failed to send QR code: {e}")
+                await send_message(message, text)
+        else:
+            await send_message(message, text)
+            
+    except Exception as e:
+        LOGGER.error(f"Error in web_logs command: {e}", exc_info=True)
+        await send_message(
+            message,
+            "❌ An error occurred while generating the log viewer access.\n"
+            "Please ensure the web server is running."
+        )
+
+
+@new_task
+async def reload_config(_, message):
+    """Manually trigger configuration reload"""
+    from logging import getLogger
+    LOGGER = getLogger(__name__)
+    
+    cf = CustomFilters()
+    if not await cf.sudo_user(_, message):
+        await send_message(message, "⛔ This command is only for sudo users.")
+        return
+    
+    status_msg = await send_message(message, "🔄 Reloading configuration...")
+    
+    try:
+        from ..core.config_watcher import config_watcher
+        from ..core.config_manager import Config
+        from pathlib import Path
+        
+        # Reload main config file
+        config_file = Path("config/.env") if Path("config/.env").exists() else None
+        
+        if not config_file:
+            await edit_message(status_msg, "❌ No config file found to reload.")
+            return
+        
+        # Trigger reload
+        await config_watcher._reload_config(config_file)
+        
+        # Show summary
+        text = (
+            "<b>✅ Configuration Reloaded</b>\n\n"
+            f"📄 <b>File:</b> <code>{config_file.name}</code>\n"
+            f"🕐 <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            "<i>Note: Changes applied to all running workers.\n"
+            "No restart required!</i>"
+        )
+        
+        await edit_message(status_msg, text)
+        LOGGER.info(f"Config reloaded by user {message.from_user.id}")
+        
+    except Exception as e:
+        LOGGER.error(f"Error in reload_config command: {e}", exc_info=True)
+        await edit_message(
+            status_msg,
+            f"❌ Config reload failed:\n<code>{str(e)}</code>"
+        )
+
+
 def _extract_stream_media(message):
     media = (
         message.document
@@ -76,7 +206,8 @@ def _extract_stream_media(message):
 
 @new_task
 async def stream_link(_, message):
-    if not await CustomFilters.authorized(_, message):
+    cf = CustomFilters()
+    if not await cf.authorized_user(_, message):
         return
 
     reply = message.reply_to_message
@@ -116,13 +247,46 @@ async def stream_link(_, message):
 
     link = stream_proxy.build_url(token.token)
     ttl_minutes = int(getattr(Config, "STREAM_LINK_TTL_SECONDS", 1800) / 60)
+    
+    # Generate QR code for easy mobile sharing
+    qr_image_path = None
+    try:
+        import qrcode
+        from io import BytesIO
+        import os
+        
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(link)
+        qr.make(fit=True)
+        
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save to temp file
+        qr_image_path = f"/tmp/qr_{token.token[:16]}.png"
+        qr_img.save(qr_image_path)
+        
+    except Exception as e:
+        LOGGER.warning(f"QR code generation failed: {e}")
+    
     text = (
         "<b>🔗 Stream Link Generated</b>\n\n"
-        f"Link: <code>{link}</code>\n"
-        f"Expires in: {ttl_minutes} minutes\n"
-        "Share this link to download the file."
+        f"📱 <b>File:</b> <code>{file_name}</code>\n"
+        f"🔗 <b>Link:</b> <code>{link}</code>\n"
+        f"⏰ <b>Expires in:</b> {ttl_minutes} minutes\n\n"
+        "Share this link to download via browser, IDM, or any download manager.\n"
+        "Scan the QR code for instant mobile access!"
     )
-    await send_message(message, text)
+    
+    # Send with QR code if generated
+    if qr_image_path and os.path.exists(qr_image_path):
+        try:
+            await send_file(message, qr_image_path, caption=text)
+            os.remove(qr_image_path)  # Clean up temp file
+        except Exception as e:
+            LOGGER.warning(f"Failed to send QR code: {e}")
+            await send_message(message, text)
+    else:
+        await send_message(message, text)
 
 
 @new_task

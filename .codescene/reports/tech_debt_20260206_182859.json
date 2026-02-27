@@ -1,0 +1,503 @@
+Finding TODOs and FIXMEs...
+Finding deprecated code...
+Finding code smells...
+{
+  "total_debt_hours": 224.0,
+  "debt_by_category": {
+    "HACK": {
+      "count": 1,
+      "hours": 6.0
+    },
+    "TODO": {
+      "count": 5,
+      "hours": 10.0
+    },
+    "DEPRECATED": {
+      "count": 2,
+      "hours": 4.0
+    },
+    "CODE_SMELL": {
+      "count": 47,
+      "hours": 204.0
+    }
+  },
+  "debt_items": [
+    {
+      "file": "bot/core/redis_manager.py",
+      "line": 20,
+      "category": "CODE_SMELL",
+      "description": "God object: RedisManager (21 methods)",
+      "effort_hours": 8.0,
+      "priority": "High"
+    },
+    {
+      "file": "bot/helper/ext_utils/db_handler.py",
+      "line": 13,
+      "category": "CODE_SMELL",
+      "description": "God object: DbManager (22 methods)",
+      "effort_hours": 8.0,
+      "priority": "High"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/socks.py",
+      "line": 273,
+      "category": "CODE_SMELL",
+      "description": "God object: socksocket (25 methods)",
+      "effort_hours": 8.0,
+      "priority": "High"
+    },
+    {
+      "file": "integrations/sabnzbdapi/job_functions.py",
+      "line": 4,
+      "category": "CODE_SMELL",
+      "description": "God object: JobFunctions (26 methods)",
+      "effort_hours": 8.0,
+      "priority": "High"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py",
+      "line": 24,
+      "category": "HACK",
+      "description": "to fix changing extension",
+      "effort_hours": 6.0,
+      "priority": "High"
+    },
+    {
+      "file": "scripts/security_setup.py",
+      "line": 113,
+      "category": "CODE_SMELL",
+      "description": "Long function: create_security_config() (108 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/__main__.py",
+      "line": 8,
+      "category": "CODE_SMELL",
+      "description": "Long function: main() (186 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "web/nodes.py",
+      "line": 42,
+      "category": "CODE_SMELL",
+      "description": "Long function: make_tree() (119 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "config/main_config.py",
+      "line": 14,
+      "category": "CODE_SMELL",
+      "description": "Long function: _get_safe_int() (527 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/bot_settings.py",
+      "line": 70,
+      "category": "CODE_SMELL",
+      "description": "Long function: get_buttons() (165 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/bot_settings.py",
+      "line": 548,
+      "category": "CODE_SMELL",
+      "description": "Long function: edit_bot_settings() (298 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/mediainfo.py",
+      "line": 131,
+      "category": "CODE_SMELL",
+      "description": "Long function: extract_thumbnail() (123 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/mirror_leech.py",
+      "line": 75,
+      "category": "CODE_SMELL",
+      "description": "Long function: new_event() (296 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/rss.py",
+      "line": 79,
+      "category": "CODE_SMELL",
+      "description": "Long function: rss_sub() (134 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/rss.py",
+      "line": 474,
+      "category": "CODE_SMELL",
+      "description": "Long function: rss_listener() (187 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/rss.py",
+      "line": 662,
+      "category": "CODE_SMELL",
+      "description": "Long function: rss_monitor() (158 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/archive.py",
+      "line": 33,
+      "category": "CODE_SMELL",
+      "description": "Long function: compress_file() (111 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/speedtest.py",
+      "line": 9,
+      "category": "CODE_SMELL",
+      "description": "Long function: speedtest() (104 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/ytdlp.py",
+      "line": 283,
+      "category": "CODE_SMELL",
+      "description": "Long function: new_event() (180 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/status.py",
+      "line": 82,
+      "category": "CODE_SMELL",
+      "description": "Long function: status_pages() (109 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/clone.py",
+      "line": 124,
+      "category": "CODE_SMELL",
+      "description": "Long function: _proceed_to_clone() (170 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/users_settings.py",
+      "line": 50,
+      "category": "CODE_SMELL",
+      "description": "Long function: get_user_settings() (295 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/modules/users_settings.py",
+      "line": 596,
+      "category": "CODE_SMELL",
+      "description": "Long function: edit_user_settings() (145 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/common.py",
+      "line": 171,
+      "category": "CODE_SMELL",
+      "description": "Long function: before_start() (343 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/common.py",
+      "line": 699,
+      "category": "CODE_SMELL",
+      "description": "Long function: proceed_ffmpeg() (168 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/common.py",
+      "line": 939,
+      "category": "CODE_SMELL",
+      "description": "Long function: convert_media() (106 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/metrics.py",
+      "line": 28,
+      "category": "CODE_SMELL",
+      "description": "Long function: __init__() (211 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/handlers.py",
+      "line": 16,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_handlers() (514 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/advanced_dashboard.py",
+      "line": 313,
+      "category": "CODE_SMELL",
+      "description": "Long function: dashboard() (283 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/startup.py",
+      "line": 80,
+      "category": "CODE_SMELL",
+      "description": "Long function: load_settings() (133 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/enhanced_startup_phase4.py",
+      "line": 40,
+      "category": "CODE_SMELL",
+      "description": "Long function: initialize_phase4_services() (148 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/web_dashboard.py",
+      "line": 365,
+      "category": "CODE_SMELL",
+      "description": "Long function: _get_dashboard_html() (475 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/core/jdownloader_booter.py",
+      "line": 26,
+      "category": "CODE_SMELL",
+      "description": "Long function: boot() (133 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/ext_utils/status_utils.py",
+      "line": 193,
+      "category": "CODE_SMELL",
+      "description": "Long function: get_readable_message() (141 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/ext_utils/media_utils.py",
+      "line": 654,
+      "category": "CODE_SMELL",
+      "description": "Long function: split() (104 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/telegram_uploader.py",
+      "line": 213,
+      "category": "CODE_SMELL",
+      "description": "Long function: upload() (112 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/telegram_uploader.py",
+      "line": 326,
+      "category": "CODE_SMELL",
+      "description": "Long function: _upload_file() (155 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/listeners/task_listener.py",
+      "line": 95,
+      "category": "CODE_SMELL",
+      "description": "Long function: on_download_complete() (251 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/rclone_utils/list.py",
+      "line": 27,
+      "category": "CODE_SMELL",
+      "description": "Long function: path_updates() (107 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/qbit_download.py",
+      "line": 51,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_qb_torrent() (106 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/rclone_download.py",
+      "line": 15,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_rclone_download() (110 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/jd_download.py",
+      "line": 116,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_jd_download() (259 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py",
+      "line": 193,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_download() (146 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py",
+      "line": 27,
+      "category": "CODE_SMELL",
+      "description": "Long function: direct_link_generator() (193 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "bot/helper/mirror_leech_utils/download_utils/nzb_downloader.py",
+      "line": 67,
+      "category": "CODE_SMELL",
+      "description": "Long function: add_nzb() (101 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "integrations/myjd/exception.py",
+      "line": 70,
+      "category": "CODE_SMELL",
+      "description": "Long function: __init__() (197 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "integrations/sabnzbdapi/job_functions.py",
+      "line": 40,
+      "category": "CODE_SMELL",
+      "description": "Long function: get_downloads() (115 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "integrations/sabnzbdapi/job_functions.py",
+      "line": 218,
+      "category": "CODE_SMELL",
+      "description": "Long function: get_history() (173 lines)",
+      "effort_hours": 4.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/novaprinter.py",
+      "line": 33,
+      "category": "TODO",
+      "description": "use `float | int | str` when using Python >= 3.10",
+      "effort_hours": 2.0,
+      "priority": "Low"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/novaprinter.py",
+      "line": 37,
+      "category": "TODO",
+      "description": "use `NotRequired[str]` when using Python >= 3.11",
+      "effort_hours": 2.0,
+      "priority": "Low"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/novaprinter.py",
+      "line": 38,
+      "category": "TODO",
+      "description": "use `NotRequired[int]` when using Python >= 3.11",
+      "effort_hours": 2.0,
+      "priority": "Low"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/novaprinter.py",
+      "line": 62,
+      "category": "TODO",
+      "description": "use `float | int | str` when using Python >= 3.10",
+      "effort_hours": 2.0,
+      "priority": "Low"
+    },
+    {
+      "file": "clients/qbittorrent/config/qBittorrent/nova3/engines/yts.py",
+      "line": 72,
+      "category": "TODO",
+      "description": "??",
+      "effort_hours": 2.0,
+      "priority": "Low"
+    },
+    {
+      "file": "scripts/analyze_tech_debt.py",
+      "line": 80,
+      "category": "DEPRECATED",
+      "description": "Deprecated code found",
+      "effort_hours": 2.0,
+      "priority": "Medium"
+    },
+    {
+      "file": "scripts/analyze_tech_debt.py",
+      "line": 81,
+      "category": "DEPRECATED",
+      "description": "Deprecated code found",
+      "effort_hours": 2.0,
+      "priority": "Medium"
+    }
+  ],
+  "summary": {
+    "total_items": 55,
+    "total_hours": 224.0,
+    "total_days": 28.0,
+    "critical_items": 0,
+    "high_priority_items": 5
+  }
+}
+💳 Technical Debt Summary:
+   Total Debt Items: 55
+   Estimated Hours: 224.0
+   Estimated Days: 28.0
+   Critical Items: 0
+   High Priority Items: 5
+
+📊 Debt by Category:
+   CODE_SMELL: 47 items (204.0 hours)
+   TODO: 5 items (10.0 hours)
+   HACK: 1 items (6.0 hours)
+   DEPRECATED: 2 items (4.0 hours)
+
+🔴 Top 5 Technical Debt Items:
+   1. [High] bot/core/redis_manager.py:20
+      CODE_SMELL: God object: RedisManager (21 methods)
+      Estimated effort: 8.0 hours
+   2. [High] bot/helper/ext_utils/db_handler.py:13
+      CODE_SMELL: God object: DbManager (22 methods)
+      Estimated effort: 8.0 hours
+   3. [High] clients/qbittorrent/config/qBittorrent/nova3/socks.py:273
+      CODE_SMELL: God object: socksocket (25 methods)
+      Estimated effort: 8.0 hours
+   4. [High] integrations/sabnzbdapi/job_functions.py:4
+      CODE_SMELL: God object: JobFunctions (26 methods)
+      Estimated effort: 8.0 hours
+   5. [High] bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py:24
+      HACK: to fix changing extension
+      Estimated effort: 6.0 hours
+

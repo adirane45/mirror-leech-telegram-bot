@@ -36,7 +36,8 @@ CMD_SUFFIX = ""
 AUTHORIZED_CHATS = os.getenv("AUTHORIZED_CHATS", "1041454699")
 SUDO_USERS = os.getenv("SUDO_USERS", "1041454699")
 # DATABASE_URL is configured in MongoDB Configuration section below
-DATABASE_URL = os.getenv("DATABASE_URL", "mongodb+srv://mitalm129:Aditya912004@cluster0.zi2jrfr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "mirror-leech-bot")
 STATUS_LIMIT = 4
 DEFAULT_UPLOAD = "gd"
 STATUS_UPDATE_INTERVAL = 15
@@ -63,8 +64,9 @@ RCLONE_SERVE_PORT = 0
 RCLONE_SERVE_USER = ""
 RCLONE_SERVE_PASS = ""
 # JDownloader
-JD_EMAIL = "mitalm129@gmail.com"
-JD_PASS = "7620703042@45Adi"
+JD_EMAIL = os.getenv("JD_EMAIL", "")
+JD_PASS = os.getenv("JD_PASS", "")
+JD_DEVICE_NAME = os.getenv("JD_DEVICE_NAME", "")
 # Sabnzbd
 USENET_SERVERS = [
     {
@@ -106,7 +108,7 @@ THUMBNAIL_LAYOUT = ""
 TORRENT_TIMEOUT = 3600  # Torrent timeout in seconds (0 = no timeout, recommended: 3600 for 1 hour)
 BASE_URL = os.getenv("BASE_URL", "http://localhost")
 BASE_URL_PORT = _get_safe_int("BASE_URL_PORT", 8060)
-WEB_PINCODE = True
+WEB_PINCODE = False
 
 # Notification on download completion
 ALERT_ON_DOWNLOAD_COMPLETE = True  # Send Telegram notification when download finishes
