@@ -28,7 +28,7 @@ pytest-xdist==3.5.0
 # Security
 bandit==1.7.6
 safety==3.0.1
-pip-audit==2.7.0
+pip-audit==2.10.0
 
 # Linting
 pylint==3.0.3
