@@ -8,29 +8,28 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://telegram.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![GitHub](https://img.shields.io/github/stars/adirane45/mirror-leech-telegram-bot?style=for-the-badge)](https://github.com/adirane45/mirror-leech-telegram-bot)
 
-**[📚 Documentation](#-documentation) • [⚡ Quick Start](#-quick-start) • [✨ Features](#-features) • [🔧 Setup](#-installation) • [💬 Support](#-support)**
+**[📚 Documentation](#-documentation) • [⚡ Quick Start](#-quick-start) • [✨ Features](#-features) • [🔧 Installation](#-installation) • [💬 Support](#-support)**
 
 ---
 
-![Bot Banner](https://raw.githubusercontent.com/Readme-Workflows/Readme-Icons/main/svg/dev/misc/cloud.svg)
-
-<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="800">
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="100%">
 
 </div>
 
 ---
 
-## 📖 What is this?
+## 📖 About
 
-**Mirror Leech Telegram Bot** is a powerful, production-ready Telegram bot designed for downloading files from multiple sources and uploading them to various cloud platforms. Built with enterprise-grade reliability, it features advanced queue management, intelligent retry mechanisms, comprehensive monitoring, and automated health checks.
+**Mirror Leech Telegram Bot** is a powerful, production-ready Telegram bot for downloading files from multiple sources and uploading them to various cloud platforms. Built with enterprise-grade reliability, it features advanced queue management, intelligent retry mechanisms, comprehensive monitoring, and automated health checks.
 
-### 🎯 Perfect For:
-- 🌐 **Multi-source downloads** - HTTP, Torrents, NZB, YouTube, Google Drive
-- ☁️ **Cloud synchronization** - Upload to Google Drive, Telegram, rclone
-- 📦 **Batch operations** - Queue management with priority support
-- 🔄 **Automation** - Scheduled tasks, auto-retry, self-healing
-- 📊 **Monitoring** - Real-time metrics, logs, and alerting
+### 🎯 Key Capabilities:
+- 🌐 **Multi-Protocol Downloads** - HTTP, Torrents, NZB, YouTube, Google Drive
+- ☁️ **Cloud Integration** - Upload to Google Drive, Telegram, Rclone (40+ providers)
+- 📦 **Smart Queue Management** - Priority-based task handling with VIP support
+- 🔄 **Advanced Automation** - Scheduled tasks, auto-retry, self-healing
+- 📊 **Real-Time Monitoring** - Metrics, logs, alerts, and health dashboards
 
 ---
 
@@ -43,20 +42,19 @@
 ### 📥 **Download Sources**
 - 🌐 HTTP/HTTPS/FTP
 - 🧲 BitTorrent & Magnet Links
-- 📰 NZB Files (via SABnzbd)
-- 🎥 YouTube & 1000+ sites
-- ☁️ Google Drive & Cloud Storage
+- 📰 NZB Files (SABnzbd)
+- 🎥 YouTube & 1000+ sites (yt-dlp)
+- ☁️ Google Drive
 - 📦 Direct file links
 
 </td>
 <td width="50%">
 
 ### ☁️ **Upload Destinations**
-- 📱 Telegram
+- 📱 Telegram (split files support)
 - 🔵 Google Drive
 - 🌍 Rclone (40+ providers)
 - 💾 Local storage
-- 🔗 Custom webhooks
 - 🌐 MyJDownloader
 
 </td>
@@ -64,24 +62,24 @@
 <tr>
 <td width="50%">
 
-### 🤖 **Automation**
-- ⚡ Priority Queue System
-- 🔄 Smart Retry Engine
-- 🛡️ Circuit Breakers
+### 🤖 **Automation & Reliability**
+- ⚡ Priority Queue System (4 levels)
+- 🔄 Smart Retry with Exponential Backoff
+- 🛡️ Circuit Breakers (prevent cascading failures)
 - ⏰ Scheduled Tasks
-- 🏥 Auto-Healing
-- 📊 Progress Tracking
+- 🏥 Auto-Healing & Health Checks
+- 📊 Real-Time Progress Tracking
 
 </td>
 <td width="50%">
 
-### 🔧 **Management**
-- 🎛️ Web Dashboard
-- 👥 User Permissions
-- 📈 Real-time Metrics
-- 🗂️ Archive Management
-- 🔍 Search Functionality
-- 📝 Comprehensive Logging
+### 🔧 **Management & Monitoring**
+- 🎛️ Web Dashboard (FastAPI)
+- 👥 User Permissions & Authentication
+- 📈 Prometheus Metrics
+- 🗂️ Archive Management (ZIP/TAR/RAR)
+- 🔍 Search & Filter
+- 📝 Structured Logging
 
 </td>
 </tr>
@@ -106,9 +104,9 @@ graph TB
     I -->|Cloud| J[Google Drive]
     I -->|Telegram| K[Telegram API]
     I -->|Rclone| L[Remote Storage]
-    B --> M[MongoDB]
-    B --> N[Redis Cache]
-    B --> O[Prometheus Metrics]
+    B --> M[(MongoDB)]
+    B --> N[(Redis Cache)]
+    B --> O[Prometheus]
     O --> P[Monitoring Dashboard]
 ```
 
@@ -122,7 +120,7 @@ graph TB
 
 ```bash
 # 1️⃣ Clone repository
-git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 
 # 2️⃣ Configure environment
@@ -133,15 +131,15 @@ nano config/.env.production
 docker-compose up -d
 
 # 4️⃣ Check status
-docker-compose ps
+docker-compose ps && docker-compose logs -f app
 ```
 
-### 📝 Minimal Configuration
+### 📝 Essential Configuration
 
 Edit `config/.env.production`:
 
 ```env
-# Required
+# Required Settings
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_API=1234567
 TELEGRAM_HASH=0123456789abcdef0123456789abcdef
@@ -150,7 +148,10 @@ OWNER_ID=123456789
 # Optional (with defaults)
 DATABASE_URL=mongodb://mongodb:27017/mltb
 REDIS_HOST=redis
+REDIS_PORT=6379
 ```
+
+Get your bot token from [@BotFather](https://t.me/BotFather) and API credentials from [my.telegram.org](https://my.telegram.org).
 
 ---
 
@@ -161,7 +162,7 @@ REDIS_HOST=redis
 <td align="center" width="33%">
 
 ### 📘 [User Guides](docs/guides/)
-**For End Users**
+**Getting Started**
 
 [Installation](docs/guides/INSTALLATION.md)<br>
 [Commands](docs/guides/COMMANDS.md)<br>
@@ -175,7 +176,7 @@ REDIS_HOST=redis
 
 [Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT_GUIDE.md)<br>
 [Monitoring](docs/operations/MONITORING.md)<br>
-[Tuning](docs/operations/CONFIGURATION_TUNING.md)
+[Performance Tuning](docs/operations/CONFIGURATION_TUNING.md)
 
 </td>
 <td align="center" width="33%">
@@ -203,22 +204,22 @@ REDIS_HOST=redis
 |---------|-------------|---------|
 | `/start` | Start the bot | `/start` |
 | `/help` | Show help message | `/help` |
-| `/mirror` | Download & upload to Drive | `/mirror https://example.com/file.zip` |
-| `/leech` | Download & upload to Telegram | `/leech https://example.com/video.mp4` |
-| `/ytdl` | YouTube download | `/ytdl https://youtube.com/watch?v=...` |
+| `/mirror <url>` | Download & upload to Drive | `/mirror https://example.com/file.zip` |
+| `/leech <url>` | Download & upload to Telegram | `/leech https://example.com/video.mp4` |
+| `/ytdl <url>` | YouTube download | `/ytdl https://youtube.com/watch?v=...` |
 | `/status` | Check download status | `/status` |
-| `/cancel` | Cancel download | `/cancel` |
+| `/cancel` | Cancel active download | `/cancel` |
 
 ### 👑 Admin Commands
 
 | Command | Description |
 |---------|-------------|
-| `/qstatus` | View queue status |
+| `/qstatus` | View queue status & metrics |
 | `/stats` | System statistics |
-| `/users` | Manage users |
-| `/log` | View bot logs |
-| `/shell` | Execute commands |
-| `/restart` | Restart bot |
+| `/users` | Manage bot users |
+| `/log` | View recent bot logs |
+| `/shell` | Execute shell commands |
+| `/restart` | Restart the bot |
 
 **[📖 Complete Commands Reference](docs/guides/COMMANDS.md)**
 
@@ -231,10 +232,10 @@ REDIS_HOST=redis
 | Requirement | Version | Purpose |
 |-------------|---------|---------|
 | 🐧 **OS** | Ubuntu 20.04+ / Debian 10+ | Base system |
-| 🐍 **Python** | 3.11+ | Runtime |
+| 🐍 **Python** | 3.11+ | Runtime environment |
 | 🐳 **Docker** | 20.10+ | Containerization |
 | 💾 **RAM** | 2GB (4GB recommended) | System memory |
-| 💿 **Disk** | 10GB (20GB+ for downloads) | Storage |
+| 💿 **Disk** | 10GB (20GB+ for downloads) | Storage space |
 
 ### Installation Methods
 
@@ -242,9 +243,11 @@ REDIS_HOST=redis
 <summary><b>🐳 Docker Compose (Recommended)</b></summary>
 
 ```bash
-# Clone and configure
-git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
+# Clone repository
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
+
+# Configure
 cp config/.env.example config/.env.production
 nano config/.env.production
 
@@ -260,17 +263,20 @@ docker-compose logs -f app
 <details>
 <summary><b>🎯 Optimized Docker (Production)</b></summary>
 
-Uses optimized Docker images (79% smaller):
+**79% smaller Docker images** with optimized builds:
 
 ```bash
 # Deploy with optimized configuration
 docker-compose -f docker-compose.optimized.yml up -d
 
 # Benefits:
-# - 400MB vs 1.92GB (79% reduction)
+# - 400MB image (vs 1.92GB standard)
 # - 25s cold start (44% faster)
 # - 600MB RAM usage (25% less)
+# - Multi-stage builds with BuildKit
 ```
+
+**[📖 Docker Optimization Guide](docs/operations/DOCKER_IMAGE_OPTIMIZATION.md)**
 
 </details>
 
@@ -278,12 +284,12 @@ docker-compose -f docker-compose.optimized.yml up -d
 <summary><b>⚙️ Manual Installation</b></summary>
 
 ```bash
-# Install dependencies
+# Install system dependencies
 sudo apt update
 sudo apt install -y python3.11 python3-pip aria2 qbittorrent-nox
 
-# Setup project
-git clone https://github.com/yourusername/mirror-leech-telegram-bot.git
+# Clone and setup
+git clone https://github.com/adirane45/mirror-leech-telegram-bot.git
 cd mirror-leech-telegram-bot
 python3 -m venv venv
 source venv/bin/activate
@@ -305,10 +311,10 @@ python3 -m bot
 
 ## 🏭 Production Deployment
 
-### Automated Setup
+### Automated Deployment
 
 ```bash
-# Run production deployment
+# One-command production setup
 ./scripts/deploy/deploy_bot.sh
 
 # Enable monitoring
@@ -317,34 +323,23 @@ python3 -m bot
 # Start auto-cleanup
 ./scripts/start_auto_cleanup.sh
 
-# Configure alerts
-./scripts/start_alerts.sh YOUR_CHAT_ID
+# Configure alerts (optional)
+./scripts/start_alerts.sh YOUR_TELEGRAM_CHAT_ID
 ```
 
-### Manual Production Steps
+### Manual Production Setup
 
-1. **Deploy with secure compose**
-   ```bash
-   docker-compose -f docker-compose.secure.yml up -d
-   ```
+```bash
+# 1. Deploy with secure configuration
+docker-compose -f docker-compose.secure.yml up -d
 
-2. **Configure monitoring**
-   ```bash
-   ./scripts/setup_cron.sh
-   ```
+# 2. Setup automated health checks (every 15 min)
+crontab -e
+# Add: */15 * * * * /path/to/scripts/health/quick_check.sh
 
-3. **Enable health checks**
-   ```bash
-   # Auto health monitoring (every 15 min)
-   crontab -e
-   # Add: */15 * * * * /path/to/scripts/health/quick_check.sh
-   ```
-
-4. **Setup backups**
-   ```bash
-   # Automated backups (every 6 hours)
-   # Add: 0 */6 * * * /path/to/scripts/backup/backup_current_state.sh
-   ```
+# 3. Setup automated backups (every 6 hours)
+# Add: 0 */6 * * * /path/to/scripts/backup/backup_current_state.sh
+```
 
 **[📖 Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT_GUIDE.md)**
 
@@ -352,40 +347,41 @@ python3 -m bot
 
 ## 📊 Monitoring & Management
 
-### Health Dashboard
+### Health Monitoring
 
 ```bash
 # Quick health check
 ./scripts/health/quick_check.sh
 
-# Full monitoring
+# Full health dashboard
 ./scripts/health/monitor_bot.sh
 
-# Watch mode (real-time)
+# Real-time monitoring
 ./scripts/health/monitor_bot.sh watch
 
-# View logs (last 100 lines)
+# View logs
 ./scripts/health/view_logs.sh 100
 ```
 
 ### Backup & Recovery
 
 ```bash
-# Create backup
+# Create manual backup
 ./scripts/backup/backup_current_state.sh
 
-# List backups
+# List available backups
 ls -lh data/backups/
 
-# Restore backup
+# Restore from backup
 ./scripts/backup/backup_restore.sh
 ```
 
-### Metrics
+### Access Dashboards
 
-- **Prometheus**: http://localhost:9090
+- **Prometheus Metrics**: http://localhost:9090
 - **Web Dashboard**: http://localhost:8060
-- **API Docs**: http://localhost:8060/docs
+- **API Documentation**: http://localhost:8060/docs
+- **Health Status**: http://localhost:8060/health
 
 **[📖 Monitoring Guide](docs/operations/MONITORING.md)**
 
@@ -398,7 +394,7 @@ mirror-leech-telegram-bot/
 ├── 📱 src/bot/                  # Bot core application
 │   ├── core/                    # Core functionality
 │   │   ├── circuit_breaker.py   # Circuit breaker pattern
-│   │   ├── smart_retry.py       # Smart retry logic
+│   │   ├── smart_retry.py       # Smart retry engine
 │   │   ├── priority_queue.py    # Priority queue manager
 │   │   └── category_b_integration.py
 │   ├── modules/                 # Command handlers
@@ -414,34 +410,26 @@ mirror-leech-telegram-bot/
 │   └── main_config.py          # Main configuration
 │
 ├── 🐳 deployment/               # Docker & deployment
-│   ├── Dockerfile              # Standard Docker image
 │   ├── Dockerfile.optimized    # Optimized (400MB)
 │   ├── Dockerfile.alpine       # Alpine-based (300MB)
-│   ├── docker-compose.yml      # Standard compose
-│   └── docker-compose.optimized.yml
+│   └── docker-compose.yml      # Docker configuration
 │
 ├── 📚 docs/                     # Documentation
 │   ├── guides/                 # User guides
 │   ├── operations/             # Operations docs
-│   ├── api/                    # API documentation
-│   └── development/            # Dev docs
+│   └── api/                    # API documentation
 │
 ├── 🔧 scripts/                  # Management scripts
-│   ├── deploy/                 # Deployment scripts
+│   ├── deploy/                 # Deployment
 │   ├── health/                 # Health monitoring
-│   ├── backup/                 # Backup utilities
-│   └── test_scripts/           # Testing tools
+│   └── backup/                 # Backup utilities
 │
 ├── 💾 data/                     # Runtime data
 │   ├── downloads/              # Downloaded files
 │   ├── logs/                   # Application logs
-│   ├── backups/                # Backup storage
-│   └── thumbnails/             # Thumbnail cache
+│   └── backups/                # Backup storage
 │
 └── 🧪 tests/                    # Test suite
-    ├── test_api_*.py           # API tests
-    ├── test_integration.py     # Integration tests
-    └── conftest.py             # Test configuration
 ```
 
 ---
@@ -451,19 +439,19 @@ mirror-leech-telegram-bot/
 <div align="center">
 
 ### Bot Interface
-<img src="https://user-images.githubusercontent.com/74038190/212257454-16e3712e-945a-4ca2-b238-408ad0bf87e6.gif" width="800">
+<img src="https://user-images.githubusercontent.com/74038190/212257454-16e3712e-945a-4ca2-b238-408ad0bf87e6.gif" width="100%">
 
-### Web Dashboard
-<img src="https://user-images.githubusercontent.com/74038190/212257472-08e52665-c503-4bd9-aa20-f5a4dae769b5.gif" width="800">
+### Web Dashboard & Metrics
+<img src="https://user-images.githubusercontent.com/74038190/212257472-08e52665-c503-4bd9-aa20-f5a4dae769b5.gif" width="100%">
 
-### Download Progress
-<img src="https://user-images.githubusercontent.com/74038190/212284136-03988914-d899-44b4-b1d9-4eeccf656e44.gif" width="800">
+### Download Progress Tracking
+<img src="https://user-images.githubusercontent.com/74038190/212284136-03988914-d899-44b4-b1d9-4eeccf656e44.gif" width="100%">
 
 </div>
 
 ---
 
-## 🚦 Status & Metrics
+## 🚦 Status
 
 <div align="center">
 
@@ -472,20 +460,19 @@ mirror-leech-telegram-bot/
 | **Version** | v3.3.0 |
 | **Status** | ✅ Production Ready |
 | **Python** | 3.11.14 |
-| **Docker** | Optimized |
-| **Category B** | Enabled |
-| **Tests** | Passing |
+| **Docker Image** | Optimized (400MB) |
+| **Category B Features** | ✅ Enabled |
+| **Tests** | ✅ Passing |
 | **Coverage** | 85%+ |
 
 </div>
 
 ### Recent Updates (v3.3.0)
 
-✅ **Docker Image Optimization** - 79% size reduction (1.92GB → 400MB)<br>
-✅ **Async I/O Hardening** - Zero event loop blocking<br>
-✅ **Performance Improvements** - 44% faster cold start<br>
-✅ **Memory Optimization** - 25% reduction in usage<br>
-✅ **CI/CD Integration** - Automated testing & deployment
+- ✅ **Docker Image Optimization** - 79% size reduction (1.92GB → 400MB)
+- ✅ **Async I/O Hardening** - Zero event loop blocking
+- ✅ **Performance Boost** - 44% faster cold start, 25% less memory
+- ✅ **Professional Documentation** - Complete overhaul with guides
 
 **[📖 Full Changelog](CHANGELOG.md)** • **[📊 Project Status](PROJECT_STATUS.md)**
 
@@ -495,11 +482,11 @@ mirror-leech-telegram-bot/
 
 We welcome contributions! Here's how you can help:
 
-1. **🐛 Report Bugs** - Open an issue with detailed information
-2. **💡 Suggest Features** - Share your ideas for improvements
-3. **🔧 Submit PRs** - Follow our contribution guidelines
-4. **📖 Improve Docs** - Help make documentation better
-5. **⭐ Star the Project** - Show your support!
+1. 🐛 **Report Bugs** - Open an issue with details
+2. 💡 **Suggest Features** - Share your ideas
+3. 🔧 **Submit PRs** - Follow contribution guidelines
+4. 📖 **Improve Docs** - Help others understand
+5. ⭐ **Star the Repo** - Show your support!
 
 ### Development Setup
 
@@ -512,11 +499,11 @@ cd mirror-leech-telegram-bot
 pip install -r requirements-dev.txt
 
 # Run tests
-pytest tests/
+pytest tests/ -v
 
 # Run linting
 flake8 src/
-black src/
+black src/ --check
 ```
 
 **[📖 Contributing Guide](CONTRIBUTING.md)** • **[📋 Code of Conduct](CODE_OF_CONDUCT.md)**
@@ -525,19 +512,21 @@ black src/
 
 ## 🔒 Security
 
-Security is a top priority. We follow industry best practices:
+Security is our top priority:
 
 - 🔐 **Secure by Default** - No hardcoded credentials
 - 🛡️ **Input Validation** - All user inputs sanitized
 - 🔑 **Authentication** - User-based permissions
-- 📝 **Audit Logging** - Comprehensive activity logs
-- 🚨 **Vulnerability Scanning** - Automated security checks
+- 📝 **Audit Logging** - Comprehensive activity tracking
+- 🚨 **Automated Scanning** - Regular vulnerability checks
 
 ### Reporting Security Issues
 
-**Do not report security vulnerabilities through public GitHub issues.**
+**Do not report security vulnerabilities through public issues.**
 
-Email: support@campusping.in
+📧 Email: **support@campusping.in**
+
+We'll respond within 48 hours.
 
 **[📖 Security Policy](SECURITY.md)**
 
@@ -547,22 +536,22 @@ Email: support@campusping.in
 
 ### Benchmarks
 
-| Metric | Value |
-|--------|-------|
-| **Cold Start Time** | 25s |
-| **Memory Usage** | 600MB |
-| **Docker Image Size** | 400MB |
-| **Concurrent Downloads** | 5-10 |
-| **Queue Processing** | <100ms |
-| **API Response Time** | <50ms |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Cold Start** | 25s | Optimized Docker image |
+| **Memory Usage** | 600MB | With all services running |
+| **Docker Image** | 400MB | 79% smaller than standard |
+| **Concurrent Downloads** | 5-10 | Parallel processing |
+| **Queue Processing** | <100ms | Per task |
+| **API Response** | <50ms | Average latency |
 
 ### Optimization Features
 
-- ⚡ **Multi-chunk downloads** (3-5 chunks)
-- 🧠 **Intelligent caching** (Redis)
-- 🔄 **Connection pooling**
-- 📦 **Lazy loading** of modules
-- 🗜️ **Compressed responses**
+- ⚡ **Multi-chunk downloads** - 3-5 parallel chunks
+- 🧠 **Intelligent caching** - Redis with LRU eviction
+- 🔄 **Connection pooling** - Reuse HTTP connections
+- 📦 **Lazy loading** - Load modules on demand
+- 🗜️ **Response compression** - gzip/brotli support
 
 ---
 
@@ -571,22 +560,22 @@ Email: support@campusping.in
 ### Get Help
 
 - 📖 **[Documentation](docs/)** - Comprehensive guides
-- ❓ **[FAQ](docs/guides/FAQ.md)** - Frequently asked questions
-- 🐛 **[Issues](https://github.com/yourusername/mirror-leech-telegram-bot/issues)** - Report bugs
-- 💬 **[Discussions](https://github.com/yourusername/mirror-leech-telegram-bot/discussions)** - Community chat
+- 🐛 **[Issues](https://github.com/adirane45/mirror-leech-telegram-bot/issues)** - Report bugs or request features
+- 💬 **[Discussions](https://github.com/adirane45/mirror-leech-telegram-bot/discussions)** - Community Q&A
 - 📧 **Email** - support@campusping.in
 
-### Community
+### Useful Links
 
-- 💬 **Telegram Group** - [Join Discussion](https://t.me/yourgroup)
-- 📢 **Telegram Channel** - [Updates & News](https://t.me/yourchannel)
-- 🐦 **Twitter** - [@yourhandle](https://twitter.com/yourhandle)
+- **[Installation Guide](docs/guides/INSTALLATION.md)** - Get started
+- **[Commands Reference](docs/guides/COMMANDS.md)** - Bot commands
+- **[Troubleshooting](docs/runbooks/)** - Common issues
+- **[API Docs](docs/api/API_REFERENCE.md)** - API reference
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**.
 
 ```
 MIT License
@@ -595,8 +584,12 @@ Copyright (c) 2024-2026 Mirror Leech Telegram Bot Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software...
 ```
+
+**[📄 Full License](LICENSE)**
 
 ---
 
@@ -604,19 +597,20 @@ in the Software without restriction...
 
 ### Built With
 
-- [Python-Telegram-Bot](https://github.com/python-telegram-bot/python-telegram-bot) - Telegram Bot API wrapper
-- [Aria2](https://aria2.github.io/) - Download manager
+- [Python-Telegram-Bot](https://github.com/python-telegram-bot/python-telegram-bot) - Telegram Bot API
+- [Aria2](https://aria2.github.io/) - Download utility
 - [qBittorrent](https://www.qbittorrent.org/) - BitTorrent client
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader
-- [FastAPI](https://fastapi.tiangolo.com/) - Web framework
-- [MongoDB](https://www.mongodb.com/) - Database
-- [Redis](https://redis.io/) - Caching layer
-- [Docker](https://www.docker.com/) - Containerization
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
+- [MongoDB](https://www.mongodb.com/) - NoSQL database
+- [Redis](https://redis.io/) - In-memory cache
+- [Docker](https://www.docker.com/) - Container platform
+- [Prometheus](https://prometheus.io/) - Monitoring system
 
 ### Special Thanks
 
-- 🎉 All contributors who helped improve this project
-- 💻 Open source community for amazing tools
+- 🎉 All contributors who made this project better
+- 💻 The open source community
 - ⭐ Everyone who starred this repository
 
 ---
@@ -625,13 +619,15 @@ in the Software without restriction...
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/mirror-leech-telegram-bot&type=Date)](https://star-history.com/#yourusername/mirror-leech-telegram-bot&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=adirane45/mirror-leech-telegram-bot&type=Date)](https://star-history.com/#adirane45/mirror-leech-telegram-bot&Date)
 
 ---
 
-### Made with ❤️ by the community
+### Made with ❤️ for the community
 
-**If you find this project useful, please consider giving it a ⭐!**
+**If you find this project useful, please give it a ⭐!**
+
+<img src="https://user-images.githubusercontent.com/74038190/212284158-e840e285-664b-44d7-b79b-e264b5e54825.gif" width="400">
 
 [⬆ Back to Top](#-mirror-leech-telegram-bot)
 
