@@ -1,1 +1,162 @@
-mltbenv/*
+# ============================================================================
+# .dockerignore - Exclude unnecessary files from Docker build context
+# Impact: Reduces build context size, faster builds, smaller images
+# ============================================================================
+
+# ===== Version Control =====
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ===== Python Cache & Compiled Files =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.dmypy.json
+dmypy.json
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+mltbenv/
+.venv/
+
+# ===== IDE & Editor Files =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# ===== Documentation & Markdown (not needed in runtime) =====
+*.md
+!README.md
+docs/
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_HEALTH_REFACTORING.md
+PHASE*.md
+PROJECT_STATUS.md
+LICENSE
+
+# ===== Testing =====
+tests/
+test_*.py
+*_test.py
+.pytest_cache/
+pytest.ini
+.coveragerc
+conftest.py
+
+# ===== Development & Build Files =====
+Makefile
+Makefile.*
+.pre-commit-config.yaml
+
+# ===== Logs & Runtime Data =====
+*.log
+logs/
+data/logs/
+data/downloads/
+data/backups/
+data/certs/
+data/tokens/
+data/thumbnails/
+
+# ===== Deployment Files (not needed in image) =====
+deployment/compose/
+deployment/docker/
+deployment/bluegreen/
+deployment/scripts/
+deployment/*.yml
+deployment/*.yaml
+!deployment/Dockerfile*
+!deployment/otel-collector-config.yml
+
+# ===== Integration Configs (mounted at runtime) =====
+integrations/
+clients/
+
+# ===== Backups & Archives =====
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+metadata_backups/
+scripts/backup/
+
+# ===== Database Files =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Secrets & Environment Files =====
+.env
+.env.*
+config/.env*
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+
+# ===== Temporary Files =====
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# ===== Node.js (if any) =====
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===== OS Files =====
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# ===== Archives =====
+ARCHIVE/
+scripts/ARCHIVE/
+docs/ARCHIVE/
+
+# ===== Scripts not needed in container =====
+scripts/dev_setup.sh
+scripts/security_setup.py
+scripts/production_hardening.py
+scripts/optimize_performance.sh
+scripts/setup_*.sh
+scripts/start_*.sh
+scripts/test_scripts/
+
+# ===== Requirements dev files =====
+requirements/dev.txt
+requirements/test.txt
+requirements-dev.txt

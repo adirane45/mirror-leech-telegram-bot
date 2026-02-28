@@ -1,0 +1,111 @@
+# ============================================================================
+# ULTRA-OPTIMIZED ALPINE DOCKERFILE - Mirror Leech Telegram Bot
+# Size Optimization: Target <300MB (85% reduction from 1.92GB)
+# Trade-off: Alpine requires careful dependency management but results in smallest image
+# ============================================================================
+
+# ============================================================================
+# STAGE 1: Builder - Compile dependencies on Alpine
+# ============================================================================
+FROM python:3.11-alpine AS builder
+
+# Install build dependencies for Alpine
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
+    libffi-dev \
+    openssl-dev \
+    cargo \
+    rust \
+    make \
+    git \
+    curl
+
+# Create virtual environment
+WORKDIR /build
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements
+COPY requirements/ /build/requirements/
+
+# Upgrade pip and build tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Build wheels for Alpine (slower but results in smaller binaries)
+RUN pip wheel --no-cache-dir --wheel-dir /build/wheels \
+    -r /build/requirements/prod.txt
+
+# Install dependencies into virtual environment
+RUN pip install --no-cache-dir --find-links=/build/wheels \
+    -r /build/requirements/prod.txt
+
+# Copy application source
+COPY src/ /build/src/
+COPY config/ /build/config/
+COPY scripts/ /build/scripts/
+COPY pyproject.toml /build/
+
+# Aggressive cleanup of Python environment
+RUN find /opt/venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/venv -type f -name "*.pyc" -delete && \
+    find /opt/venv -type f -name "*.pyo" -delete && \
+    find /opt/venv -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/venv -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/venv -type d -name "*.dist-info" -exec rm -rf {}/direct_url.json {} + 2>/dev/null || true && \
+    find /opt/venv -name "*.so" -exec strip --strip-unneeded {} \; 2>/dev/null || true
+
+# ============================================================================
+# STAGE 2: Runtime - Ultra-minimal Alpine production image
+# ============================================================================
+FROM python:3.11-alpine AS runtime
+
+# Install only essential runtime dependencies (Alpine packages are much smaller)
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    procps \
+    libmagic \
+    p7zip \
+    ffmpeg \
+    libffi \
+    openssl \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup -g 1000 mltb && \
+    adduser -u 1000 -G mltb -h /app -D mltb
+
+# Setup application directory
+WORKDIR /app
+RUN mkdir -p /app/downloads /app/logs /app/data && \
+    chown -R mltb:mltb /app
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=mltb:mltb /opt/venv /opt/venv
+
+# Copy application files
+COPY --from=builder --chown=mltb:mltb /build/src /app/src
+COPY --from=builder --chown=mltb:mltb /build/config /app/config
+COPY --from=builder --chown=mltb:mltb /build/scripts /app/scripts
+COPY --from=builder --chown=mltb:mltb /build/pyproject.toml /app/
+
+# Set environment variables
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app/src:$PYTHONPATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Switch to non-root user
+USER mltb
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8060/ || exit 1
+
+# Default command
+CMD ["/opt/venv/bin/python3", "-m", "bot"]
