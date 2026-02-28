@@ -99,59 +99,33 @@ status = auto_recovery.get_status()
 
 ---
 
-### 3. **Worker Autoscaler** (Option 10) ✅
-**File**: `bot/core/worker_autoscaler.py` (13 KB | 380+ lines)
+### 3. **Worker Autoscaler** ❌ DEPRECATED
 
-**What it does:**
-- Monitors Celery task queue depth
-- Auto-spawns workers if queue grows (> 50 tasks)
-- Auto-kills workers if idle (< 5 tasks)
-- Scales between min (2) and max (10) workers
+**Status**: REMOVED as of 2026-03-01
 
-**Key Classes:**
-- `WorkerAutoscaler` - Main autoscaler (singleton)
-- `WorkerPool` - Manages worker processes
-- `ScalingAction` enum - SCALE_UP, SCALE_DOWN, MAINTAIN
+**Reason**: Over-engineered manual scaling. Use Kubernetes HPA or Docker Swarm native scaling instead.
 
-**Scaling Logic:**
+**Migration**:
+- Use **Kubernetes Horizontal Pod Autoscaler (HPA)** for automatic scaling based on:
+  - CPU/memory usage
+  - Custom metrics (queue depth via Prometheus)
+  - Request latency
+  
+See `DEPRECATION.md` for detailed migration guide.
+
+**Alternative**: Configure `resources.limits` and `resources.requests` in your Kubernetes manifests:
+```yaml
+spec:
+  containers:
+  - name: mltb-app
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
 ```
-Queue Depth Analysis:
-├─ Average last 5 checks
-├─ If avg >= 50 → SCALE_UP (add 2 workers)
-├─ If avg <= 5 AND workers > min → SCALE_DOWN (remove 1)
-└─ Else → MAINTAIN (no change)
-
-Rate Limiting:
-├─ Don't scale more than once per 5 minutes
-└─ Prevents oscillation from queue noise
-```
-
-**Usage Example:**
-```python
-from bot.core.worker_autoscaler import worker_autoscaler
-
-# Enable autoscaling
-await worker_autoscaler.enable(check_interval=30.0)  # Check every 30s
-
-# Adjust thresholds
-worker_autoscaler.set_thresholds(high=50, medium=25, low=5)
-
-# Manual scaling
-await worker_autoscaler.scale_to(8)  # Force 8 workers
-
-# Check status
-status = await worker_autoscaler.get_status()
-# Returns: {
-#   "current_workers": 5,
-#   "queue_depth": 23,
-#   "recent_actions": [...]
-# }
-```
-
-**History Tracking:**
-- Last 100 scaling actions recorded
-- Queue depth samples (rolling 5-window)
-- Timing and reasons for each scale
 
 ---
 

@@ -381,8 +381,9 @@ EXPERIMENTAL_FEATURES = {
 ENABLE_AUTOMATION_SYSTEM = True
 ENABLE_AUTOMATION_API = True
 ENABLE_CLIENT_SELECTION = True
-ENABLE_WORKER_AUTOSCALER = True
 ENABLE_SMART_THUMBNAILS = True
+# NOTE: ENABLE_WORKER_AUTOSCALER removed (2026-03-01)
+# Use Kubernetes HPA or Docker Swarm scaling instead
 
 # ==================== PHASE 2 CONFIGURATION ====================
 # Phase 2: Enhanced Logging, Monitoring & Recovery
