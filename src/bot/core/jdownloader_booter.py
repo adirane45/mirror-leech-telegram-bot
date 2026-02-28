@@ -74,18 +74,16 @@ class JDownloader(MyJdApi):
             "localapiserverheaderxxssprotection": "1; mode=block",
         }
         await makedirs("/JDownloader/cfg", exist_ok=True)
-        with open(
+        await asyncio.to_thread(
+            self._write_json_file,
             "/JDownloader/cfg/org.jdownloader.api.myjdownloader.MyJDownloaderSettings.json",
-            "w",
-        ) as sf:
-            sf.truncate(0)
-            dump(jdata, sf)
-        with open(
+            jdata,
+        )
+        await asyncio.to_thread(
+            self._write_json_file,
             "/JDownloader/cfg/org.jdownloader.api.RemoteAPIConfig.json",
-            "w",
-        ) as rf:
-            rf.truncate(0)
-            dump(remote_data, rf)
+            remote_data,
+        )
         if not await path.exists("/JDownloader/JDownloader.jar"):
             pattern = r"JDownloader\.jar\.backup.\d$"
             for filename in await listdir("/JDownloader"):
@@ -153,6 +151,13 @@ class JDownloader(MyJdApi):
             LOGGER.error(f"❌ JDownloader boot exception: {e}", exc_info=True)
             self.is_connected = False
             self.error = f"Exception: {str(e)[:50]}"
+
+    @staticmethod
+    def _write_json_file(file_path: str, data: dict):
+        """Write JSON data to file (blocking)."""
+        with open(file_path, "w") as handle:
+            handle.truncate(0)
+            dump(data, handle)
 
 
 jdownloader = JDownloader()

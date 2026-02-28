@@ -23,6 +23,7 @@ Created: 2026-01-30
 
 import os
 import logging
+import asyncio
 from bot.core.media_info import media_info_extractor
 from bot.helper.ext_utils.bot_utils import new_task, is_premium_user
 from bot.helper.telegram_helper.message_utils import send_message, edit_message, send_file
@@ -79,11 +80,11 @@ async def get_media_info(_, message: Message):
     brief_mode = len(parts) > 2 and parts[2].lower() == 'brief'
     
     # Validate file exists
-    if not os.path.exists(file_path):
+    if not await asyncio.to_thread(os.path.exists, file_path):
         await send_message(message, f"❌ File not found: {file_path}")
         return
     
-    if not os.path.isfile(file_path):
+    if not await asyncio.to_thread(os.path.isfile, file_path):
         await send_message(message, f"❌ {file_path} is not a file")
         return
     
@@ -178,11 +179,11 @@ async def extract_thumbnail(_, message: Message):
     timestamp = parts[2] if len(parts) > 2 else "00:00:05"
     
     # Validate file
-    if not os.path.exists(file_path):
+    if not await asyncio.to_thread(os.path.exists, file_path):
         await send_message(message, f"❌ File not found: {file_path}")
         return
     
-    if not os.path.isfile(file_path):
+    if not await asyncio.to_thread(os.path.isfile, file_path):
         await send_message(message, f"❌ {file_path} is not a file")
         return
     
@@ -227,13 +228,14 @@ async def extract_thumbnail(_, message: Message):
             timestamp=timestamp
         )
         
-        if success and os.path.exists(thumbnail_path):
+        if success and await asyncio.to_thread(os.path.exists, thumbnail_path):
+            thumb_size = await asyncio.to_thread(os.path.getsize, thumbnail_path)
             # Send thumbnail
             await edit_message(status_msg, 
                 f"✅ Thumbnail extracted successfully!\n\n"
                 f"📁 Source: <code>{file_name}</code>\n"
                 f"⏱️ Timestamp: {timestamp}\n"
-                f"💾 Size: {os.path.getsize(thumbnail_path)} bytes")
+                f"💾 Size: {thumb_size} bytes")
             
             # Send the image
             await send_file(message, thumbnail_path, 
@@ -277,7 +279,7 @@ async def quick_media_stats(_, message: Message):
     
     file_path = parts[1]
     
-    if not os.path.exists(file_path):
+    if not await asyncio.to_thread(os.path.exists, file_path):
         await send_message(message, f"❌ File not found: {file_path}")
         return
     

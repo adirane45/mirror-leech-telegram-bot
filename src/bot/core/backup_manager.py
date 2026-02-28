@@ -135,9 +135,14 @@ class BackupManager:
                     target = backup_dir / source.name
 
                     if source.is_dir():
-                        shutil.copytree(source, target, dirs_exist_ok=True)
+                        await asyncio.to_thread(
+                            shutil.copytree,
+                            source,
+                            target,
+                            dirs_exist_ok=True,
+                        )
                     else:
-                        shutil.copy2(source, target)
+                        await asyncio.to_thread(shutil.copy2, source, target)
 
                     size = self._get_size(target)
                     total_size += size
@@ -217,10 +222,10 @@ class BackupManager:
 
                     if backup_item.is_dir():
                         if target.exists():
-                            shutil.rmtree(target)
-                        shutil.copytree(backup_item, target)
+                            await asyncio.to_thread(shutil.rmtree, target)
+                        await asyncio.to_thread(shutil.copytree, backup_item, target)
                     else:
-                        shutil.copy2(backup_item, target)
+                        await asyncio.to_thread(shutil.copy2, backup_item, target)
 
                     LOGGER.debug(f"Restored: {target}")
 

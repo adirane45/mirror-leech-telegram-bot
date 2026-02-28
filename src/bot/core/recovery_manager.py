@@ -189,14 +189,14 @@ class RecoveryManager:
                             p.unlink()
                         else:
                             import shutil
-                            shutil.rmtree(p)
+                            await asyncio.to_thread(shutil.rmtree, p)
 
                     if backup.is_file():
                         import shutil
-                        shutil.copy2(backup, p)
+                        await asyncio.to_thread(shutil.copy2, backup, p)
                     else:
                         import shutil
-                        shutil.copytree(backup, p)
+                        await asyncio.to_thread(shutil.copytree, backup, p)
 
                     LOGGER.info(f"Data restored from backup: {path}")
                     return True

@@ -1,5 +1,6 @@
 from time import time
 from datetime import datetime
+import asyncio
 
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.files_utils import get_mime_type
@@ -121,10 +122,15 @@ async def web_logs(_, message):
         )
         
         # Send with QR code if available
-        if qr_image_path and os.path.exists(qr_image_path):
+        qr_exists = (
+            await asyncio.to_thread(os.path.exists, qr_image_path)
+            if qr_image_path
+            else False
+        )
+        if qr_exists:
             try:
                 await send_file(message, qr_image_path, caption=text)
-                os.remove(qr_image_path)
+                await asyncio.to_thread(os.remove, qr_image_path)
             except Exception as e:
                 LOGGER.warning(f"Failed to send QR code: {e}")
                 await send_message(message, text)
@@ -159,7 +165,11 @@ async def reload_config(_, message):
         from pathlib import Path
         
         # Reload main config file
-        config_file = Path("config/.env") if Path("config/.env").exists() else None
+        config_file = (
+            Path("config/.env")
+            if await asyncio.to_thread(Path("config/.env").exists)
+            else None
+        )
         
         if not config_file:
             await edit_message(status_msg, "❌ No config file found to reload.")
@@ -278,10 +288,15 @@ async def stream_link(_, message):
     )
     
     # Send with QR code if generated
-    if qr_image_path and os.path.exists(qr_image_path):
+    qr_exists = (
+        await asyncio.to_thread(os.path.exists, qr_image_path)
+        if qr_image_path
+        else False
+    )
+    if qr_exists:
         try:
             await send_file(message, qr_image_path, caption=text)
-            os.remove(qr_image_path)  # Clean up temp file
+            await asyncio.to_thread(os.remove, qr_image_path)  # Clean up temp file
         except Exception as e:
             LOGGER.warning(f"Failed to send QR code: {e}")
             await send_message(message, text)

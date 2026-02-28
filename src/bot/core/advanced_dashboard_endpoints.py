@@ -14,6 +14,7 @@ Date: February 8, 2026
 """
 
 import logging
+import asyncio
 from pathlib import Path
 from typing import Dict, Optional
 from fastapi import HTTPException
@@ -70,26 +71,34 @@ class AdvancedDashboardEndpoints:
     async def get_recent_logs(limit: int = 100):
         """Get recent log entries"""
         try:
-            log_files = list(Path("logs").glob("*.json.log"))
-            
-            if not log_files:
-                return {"status": "success", "logs": []}
-            
-            # Read latest log file
-            latest_log = max(log_files, key=lambda p: p.stat().st_mtime)
-            
-            import json
-            logs = []
-            with open(latest_log, 'r') as f:
-                for line in f.readlines()[-limit:]:
-                    try:
-                        logs.append(json.loads(line))
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+            logs = await asyncio.to_thread(
+                AdvancedDashboardEndpoints._read_recent_logs_sync,
+                limit,
+            )
             
             return {"status": "success", "logs": logs}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
+    @staticmethod
+    def _read_recent_logs_sync(limit: int):
+        """Read recent logs from latest JSON log file (blocking)."""
+        log_files = list(Path("logs").glob("*.json.log"))
+
+        if not log_files:
+            return []
+
+        latest_log = max(log_files, key=lambda p: p.stat().st_mtime)
+
+        import json
+        logs = []
+        with open(latest_log, 'r') as f:
+            for line in f.readlines()[-limit:]:
+                try:
+                    logs.append(json.loads(line))
+                except (json.JSONDecodeError, ValueError):
+                    pass
+        return logs
     
     # ========================================================================
     # Alert Endpoints

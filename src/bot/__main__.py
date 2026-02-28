@@ -17,7 +17,7 @@ async def main():
         return
     _main_executed = True
     
-    from asyncio import gather
+    from asyncio import gather, to_thread
     import aiohttp
     from .core.startup import (
         load_settings,
@@ -113,9 +113,9 @@ async def main():
             
             # Add config files to watch
             import os
-            if os.path.exists("config/.env"):
+            if await to_thread(os.path.exists, "config/.env"):
                 config_watcher.add_watch("config/.env")
-            if os.path.exists(".env"):
+            if await to_thread(os.path.exists, ".env"):
                 config_watcher.add_watch(".env")
             
             await config_watcher.start()

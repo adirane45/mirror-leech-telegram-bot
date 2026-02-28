@@ -41,7 +41,7 @@ class MTProtoParallelUploader:
         num_workers: int = 4,
         chunk_size: int = 4 * 1024 * 1024,
     ) -> ParallelUploadResult:
-        file_size = os.path.getsize(filepath)
+        file_size = await asyncio.to_thread(os.path.getsize, filepath)
         total_chunks = (file_size + chunk_size - 1) // chunk_size
         workers = max(1, min(num_workers, total_chunks))
 
@@ -82,9 +82,12 @@ class MTProtoParallelUploader:
         chunk_index: int,
         chunk_size: int,
     ) -> ChunkUploadResult:
-        with open(filepath, "rb") as handle:
-            handle.seek(chunk_index * chunk_size)
-            data = handle.read(chunk_size)
+        data = await asyncio.to_thread(
+            self._read_chunk_sync,
+            filepath,
+            chunk_index,
+            chunk_size,
+        )
 
         result = await self._send_chunk(chat_id, data, chunk_index)
         return ChunkUploadResult(
@@ -92,6 +95,13 @@ class MTProtoParallelUploader:
             file_id=result,
             size_bytes=len(data),
         )
+
+    @staticmethod
+    def _read_chunk_sync(filepath: str, chunk_index: int, chunk_size: int) -> bytes:
+        """Read one file chunk (blocking)."""
+        with open(filepath, "rb") as handle:
+            handle.seek(chunk_index * chunk_size)
+            return handle.read(chunk_size)
 
     async def _send_chunk(self, chat_id: int, data: bytes, chunk_index: int) -> str:
         if self.client is None:

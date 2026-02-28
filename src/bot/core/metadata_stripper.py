@@ -408,8 +408,7 @@ class MetadataBackup:
         backup_path = self.backup_dir / backup_name
         
         # Save metadata
-        with open(backup_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
+        await asyncio.to_thread(self._save_json_sync, backup_path, metadata)
         
         logger.info(f"Backed up metadata: {backup_path}")
         
@@ -427,8 +426,7 @@ class MetadataBackup:
             True if successful
         """
         try:
-            with open(backup_path, 'r') as f:
-                metadata = json.load(f)
+            metadata = await asyncio.to_thread(self._load_json_sync, backup_path)
             
             # Mock restore (in production, use exiftool to write back)
             await asyncio.sleep(0.05)
@@ -439,6 +437,18 @@ class MetadataBackup:
         except Exception as e:
             logger.error(f"Failed to restore metadata: {e}")
             return False
+
+    @staticmethod
+    def _save_json_sync(file_path: Path, data: Dict[str, Any]):
+        """Save JSON data to disk (blocking)."""
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    @staticmethod
+    def _load_json_sync(file_path: str) -> Dict[str, Any]:
+        """Load JSON data from disk (blocking)."""
+        with open(file_path, 'r') as f:
+            return json.load(f)
 
 
 # Convenience functions

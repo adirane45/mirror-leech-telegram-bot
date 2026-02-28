@@ -82,7 +82,7 @@ class MediaInfoExtractor:
             print(f"Resolution: {info['video_streams'][0]['resolution']}")
         """
         try:
-            if not os.path.exists(file_path):
+            if not await asyncio.to_thread(os.path.exists, file_path):
                 LOGGER.error(f"File not found: {file_path}")
                 return None
             
@@ -167,7 +167,7 @@ class MediaInfoExtractor:
                 num, den = map(int, stream['r_frame_rate'].split('/'))
                 fps = num / den if den != 0 else 0
             except (ValueError, ZeroDivisionError, AttributeError) as e:
-                logger.debug(f"Could not parse frame rate {stream.get('r_frame_rate')}: {e}")
+                LOGGER.debug(f"Could not parse frame rate {stream.get('r_frame_rate')}: {e}")
                 fps = 0
         
         return {
@@ -360,7 +360,8 @@ class MediaInfoExtractor:
             
             await process.communicate()
             
-            return process.returncode == 0 and os.path.exists(output_path)
+            output_exists = await asyncio.to_thread(os.path.exists, output_path)
+            return process.returncode == 0 and output_exists
             
         except Exception as e:
             LOGGER.error(f"Thumbnail extraction error: {e}")

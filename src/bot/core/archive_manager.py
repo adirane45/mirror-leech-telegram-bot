@@ -93,7 +93,7 @@ class ArchiveManager:
         self.current_operation = f"Compressing {os.path.basename(source_path)}"
         
         try:
-            if not os.path.exists(source_path):
+            if not await asyncio.to_thread(os.path.exists, source_path):
                 return False, f"Source path not found: {source_path}", {}
                 
             if format not in self.SUPPORTED_COMPRESS:
@@ -116,7 +116,7 @@ class ArchiveManager:
                 return False, msg, {}
             
             # Calculate stats
-            compressed_size = os.path.getsize(output_path)
+            compressed_size = await asyncio.to_thread(os.path.getsize, output_path)
             ratio = (1 - compressed_size / original_size) * 100 if original_size > 0 else 0
             time_taken = time() - start_time
             
@@ -168,7 +168,7 @@ class ArchiveManager:
         self.current_operation = f"Extracting {os.path.basename(archive_path)}"
         
         try:
-            if not os.path.exists(archive_path):
+            if not await asyncio.to_thread(os.path.exists, archive_path):
                 return False, f"Archive not found: {archive_path}", {}
             
             # Detect format from extension
@@ -177,7 +177,7 @@ class ArchiveManager:
                 return False, f"Unsupported archive format", {}
             
             # Create extraction directory
-            os.makedirs(extract_to, exist_ok=True)
+            await asyncio.to_thread(os.makedirs, extract_to, exist_ok=True)
             
             # Perform extraction based on format
             if format == 'zip':
@@ -215,19 +215,13 @@ class ArchiveManager:
     async def _compress_zip(self, source_path, output_path, level, callback):
         """Compress using ZIP format"""
         try:
-            compression = zipfile.ZIP_DEFLATED if level > 0 else zipfile.ZIP_STORED
-            
-            with zipfile.ZipFile(output_path, 'w', compression, compresslevel=level) as zipf:
-                if os.path.isfile(source_path):
-                    zipf.write(source_path, os.path.basename(source_path))
-                else:
-                    for root, dirs, files in os.walk(source_path):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(file_path, source_path)
-                            zipf.write(file_path, arcname)
-                            if callback:
-                                await callback(f"Adding {arcname}")
+            if callback:
+                await callback("Starting ZIP compression")
+
+            await asyncio.to_thread(self._compress_zip_sync, source_path, output_path, level)
+
+            if callback:
+                await callback("ZIP compression completed")
             
             return True, "ZIP compression complete"
         except Exception as e:
@@ -236,17 +230,10 @@ class ArchiveManager:
     async def _compress_tar(self, source_path, output_path, format, callback):
         """Compress using TAR format"""
         try:
-            mode_map = {
-                'tar': 'w',
-                'tar.gz': 'w:gz',
-                'tar.bz2': 'w:bz2'
-            }
-            mode = mode_map.get(format, 'w')
-            
-            with tarfile.open(output_path, mode) as tar:
-                tar.add(source_path, arcname=os.path.basename(source_path))
-                if callback:
-                    await callback(f"Compressing with {format}")
+            if callback:
+                await callback(f"Compressing with {format}")
+
+            await asyncio.to_thread(self._compress_tar_sync, source_path, output_path, format)
             
             return True, f"{format.upper()} compression complete"
         except Exception as e:
@@ -275,30 +262,34 @@ class ArchiveManager:
     async def _extract_zip(self, archive_path, extract_to, password, files, callback):
         """Extract ZIP archive"""
         try:
-            pwd = password.encode() if password else None
-            
-            with zipfile.ZipFile(archive_path, 'r') as zipf:
-                members = files if files else zipf.namelist()
-                for member in members:
-                    zipf.extract(member, extract_to, pwd=pwd)
-                    if callback:
-                        await callback(f"Extracted {member}")
-                
-                return True, "ZIP extraction complete", len(members)
+            file_count = await asyncio.to_thread(
+                self._extract_zip_sync,
+                archive_path,
+                extract_to,
+                password,
+                files,
+            )
+            if callback:
+                await callback(f"Extracted {file_count} files")
+
+            return True, "ZIP extraction complete", file_count
         except Exception as e:
             return False, f"ZIP extraction error: {str(e)}", 0
     
     async def _extract_tar(self, archive_path, extract_to, files, callback):
         """Extract TAR archive"""
         try:
-            with tarfile.open(archive_path, 'r:*') as tar:
-                members = [tar.getmember(f) for f in files] if files else tar.getmembers()
-                tar.extractall(extract_to, members)
-                
-                if callback:
-                    await callback(f"Extracted {len(members)} files")
-                
-                return True, "TAR extraction complete", len(members)
+            file_count = await asyncio.to_thread(
+                self._extract_tar_sync,
+                archive_path,
+                extract_to,
+                files,
+            )
+
+            if callback:
+                await callback(f"Extracted {file_count} files")
+
+            return True, "TAR extraction complete", file_count
         except Exception as e:
             return False, f"TAR extraction error: {str(e)}", 0
     
@@ -318,7 +309,7 @@ class ArchiveManager:
             
             if process.returncode == 0:
                 # Count extracted files
-                file_count = len([f for f in Path(extract_to).rglob('*') if f.is_file()])
+                file_count = await asyncio.to_thread(self._count_files, extract_to)
                 return True, "7Z extraction complete", file_count
             else:
                 return False, f"7z error: {stderr.decode()}", 0
@@ -342,7 +333,7 @@ class ArchiveManager:
             stdout, stderr = await process.communicate()
             
             if process.returncode == 0:
-                file_count = len([f for f in Path(extract_to).rglob('*') if f.is_file()])
+                file_count = await asyncio.to_thread(self._count_files, extract_to)
                 return True, "RAR extraction complete", file_count
             else:
                 return False, f"unrar error: {stderr.decode()}", 0
@@ -370,17 +361,80 @@ class ArchiveManager:
     
     async def _get_size(self, path: str) -> int:
         """Calculate total size of file or directory"""
+        return await asyncio.to_thread(self._get_size_sync, path)
+
+    def _compress_zip_sync(self, source_path: str, output_path: str, level: int) -> None:
+        """Blocking ZIP compression implementation."""
+        compression = zipfile.ZIP_DEFLATED if level > 0 else zipfile.ZIP_STORED
+
+        with zipfile.ZipFile(output_path, 'w', compression, compresslevel=level) as zipf:
+            if os.path.isfile(source_path):
+                zipf.write(source_path, os.path.basename(source_path))
+                return
+
+            for root, _, files in os.walk(source_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, source_path)
+                    zipf.write(file_path, arcname)
+
+    def _compress_tar_sync(self, source_path: str, output_path: str, format: str) -> None:
+        """Blocking TAR compression implementation."""
+        mode_map = {
+            'tar': 'w',
+            'tar.gz': 'w:gz',
+            'tar.bz2': 'w:bz2'
+        }
+        mode = mode_map.get(format, 'w')
+
+        with tarfile.open(output_path, mode) as tar:
+            tar.add(source_path, arcname=os.path.basename(source_path))
+
+    def _extract_zip_sync(
+        self,
+        archive_path: str,
+        extract_to: str,
+        password: Optional[str],
+        files: Optional[List[str]],
+    ) -> int:
+        """Blocking ZIP extraction implementation."""
+        pwd = password.encode() if password else None
+
+        with zipfile.ZipFile(archive_path, 'r') as zipf:
+            members = files if files else zipf.namelist()
+            for member in members:
+                zipf.extract(member, extract_to, pwd=pwd)
+            return len(members)
+
+    def _extract_tar_sync(
+        self,
+        archive_path: str,
+        extract_to: str,
+        files: Optional[List[str]],
+    ) -> int:
+        """Blocking TAR extraction implementation."""
+        with tarfile.open(archive_path, 'r:*') as tar:
+            members = [tar.getmember(f) for f in files] if files else tar.getmembers()
+            tar.extractall(extract_to, members)
+            return len(members)
+
+    def _count_files(self, path: str) -> int:
+        """Count all files recursively in a path."""
+        return len([f for f in Path(path).rglob('*') if f.is_file()])
+
+    def _get_size_sync(self, path: str) -> int:
+        """Blocking total size calculation for file or directory."""
         if os.path.isfile(path):
             return os.path.getsize(path)
         
         total = 0
-        for root, dirs, files in os.walk(path):
+        for root, _, files in os.walk(path):
             for file in files:
                 file_path = os.path.join(root, file)
                 try:
                     total += os.path.getsize(file_path)
                 except (OSError, IOError) as e:
-                    logger.debug(f"Could not get size of {file_path}: {e}")
+                    LOGGER.debug(f"Could not get size of {file_path}: {e}")
                     pass
         return total
     

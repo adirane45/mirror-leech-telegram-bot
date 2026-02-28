@@ -94,7 +94,7 @@ class MemoryMappedFile:
     async def open(self):
         """Open and map file"""
         # Get file size
-        self.file_size = os.path.getsize(self.file_path)
+        self.file_size = await asyncio.to_thread(os.path.getsize, self.file_path)
         
         # Calculate map length
         if self.map_length is None:
@@ -102,7 +102,7 @@ class MemoryMappedFile:
         
         # Open file
         mode_str = "rb" if self.mode == MMapMode.READ_ONLY else "r+b"
-        self.file_handle = open(self.file_path, mode_str)
+        self.file_handle = await asyncio.to_thread(open, self.file_path, mode_str)
         
         # Create memory map
         access = {
@@ -111,11 +111,12 @@ class MemoryMappedFile:
             MMapMode.COPY_ON_WRITE: mmap.ACCESS_COPY
         }[self.mode]
         
-        self.mmap_obj = mmap.mmap(
+        self.mmap_obj = await asyncio.to_thread(
+            mmap.mmap,
             self.file_handle.fileno(),
             length=self.map_length,
             access=access,
-            offset=self.offset
+            offset=self.offset,
         )
         
         logger.info(
@@ -401,7 +402,7 @@ class MMapHasher:
                 hasher.update(chunk)
         
         duration = time.perf_counter() - start_time
-        file_size = os.path.getsize(file_path)
+        file_size = await asyncio.to_thread(os.path.getsize, file_path)
         throughput = (file_size / duration) / (1024 * 1024)
         
         digest = hasher.hexdigest()
@@ -446,11 +447,10 @@ class MMapCopier:
         start_time = time.perf_counter()
         
         # Get source size
-        file_size = os.path.getsize(source_path)
+        file_size = await asyncio.to_thread(os.path.getsize, source_path)
         
         # Create destination file
-        with open(dest_path, 'wb') as dest:
-            dest.write(b'\x00' * file_size)  # Pre-allocate
+        await asyncio.to_thread(self._preallocate_file_sync, dest_path, file_size)
         
         # Open both files as memory-mapped
         source_mmap = MemoryMappedFile(source_path, MMapMode.READ_ONLY)
@@ -515,7 +515,7 @@ class MMapSearcher:
             positions = mmap_file.search(pattern)
         
         duration = time.perf_counter() - start_time
-        file_size = os.path.getsize(file_path)
+        file_size = await asyncio.to_thread(os.path.getsize, file_path)
         
         logger.info(
             f"Searched {file_size:,} bytes in {duration:.2f}s: "
@@ -563,6 +563,12 @@ class MMapSearcher:
         )
         
         return len(positions)
+
+    @staticmethod
+    def _preallocate_file_sync(dest_path: str, file_size: int):
+        """Pre-allocate destination file to target size (blocking)."""
+        with open(dest_path, 'wb') as dest:
+            dest.write(b'\x00' * file_size)
 
 
 # Convenience functions

@@ -166,10 +166,11 @@ class AutomationSystem:
             LOGGER.warning("🔄 Attempting Redis recovery...")
             
             # Try to restart redis container
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 ["docker-compose", "restart", "redis"],
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
             
             if result.returncode == 0:
@@ -189,10 +190,11 @@ class AutomationSystem:
             LOGGER.warning("🔄 Attempting Aria2 recovery...")
             import subprocess
             
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 ["docker-compose", "restart", "aria2"],
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
             
             if result.returncode == 0:
@@ -212,10 +214,11 @@ class AutomationSystem:
             LOGGER.warning("🔄 Attempting qBittorrent recovery...")
             import subprocess
             
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 ["docker-compose", "restart", "qbittorrent"],
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
             
             if result.returncode == 0:
@@ -235,10 +238,11 @@ class AutomationSystem:
             LOGGER.warning("🔄 Attempting MongoDB recovery...")
             import subprocess
             
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 ["docker-compose", "restart", "mongodb"],
                 capture_output=True,
-                timeout=30
+                timeout=30,
             )
             
             if result.returncode == 0:

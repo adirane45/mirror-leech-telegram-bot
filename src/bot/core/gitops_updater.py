@@ -74,7 +74,7 @@ class GitOpsUpdater:
             
             # Run migrations if needed
             migration_script = os.path.join(self.repo_path, "scripts/db_update.sh")
-            if os.path.exists(migration_script):
+            if await asyncio.to_thread(os.path.exists, migration_script):
                 LOGGER.info("Running database migrations...")
                 result = await self._run_command(["bash", migration_script])
                 if result != 0:

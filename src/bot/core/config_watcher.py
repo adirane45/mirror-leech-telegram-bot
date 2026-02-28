@@ -60,20 +60,25 @@ class ConfigWatcher:
     async def _validate_env_file(self, file_path: Path) -> tuple[bool, Optional[Dict[str, str]]]:
         """Validate .env file syntax and parse"""
         try:
-            new_config = {}
-            with open(file_path, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
-                        continue
-                    if '=' in line:
-                        key, value = line.split('=', 1)
-                        new_config[key.strip()] = value.strip().strip('"').strip("'")
+            new_config = await asyncio.to_thread(self._parse_env_file_sync, file_path)
             
             return True, new_config
         except Exception as e:
             LOGGER.error(f"Failed to validate {file_path}: {e}")
             return False, None
+
+    def _parse_env_file_sync(self, file_path: Path) -> Dict[str, str]:
+        """Parse .env file content (blocking)."""
+        new_config = {}
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    new_config[key.strip()] = value.strip().strip('"').strip("'")
+        return new_config
     
     async def _broadcast_config_change(self, file_path: Path, new_config: Dict[str, str]):
         """Broadcast configuration change to all workers via Redis"""

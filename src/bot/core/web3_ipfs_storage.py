@@ -183,17 +183,21 @@ class IPFSClient:
         
         # Generate mock CID (Content Identifier) based on file hash
         path = Path(file_path)
-        hasher = hashlib.sha256()
-        
-        with open(path, 'rb') as f:
-            while chunk := f.read(8192):
-                hasher.update(chunk)
+        file_hash = await asyncio.to_thread(self._hash_file_sync, path)
         
         # IPFS CIDs typically start with "Qm" (base58 CIDv0)
-        file_hash = hasher.hexdigest()
         mock_cid = f"Qm{file_hash[:44]}"
         
         return mock_cid
+
+    @staticmethod
+    def _hash_file_sync(path: Path) -> str:
+        """Compute SHA256 hash of a file (blocking)."""
+        hasher = hashlib.sha256()
+        with open(path, 'rb') as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        return hasher.hexdigest()
     
     async def _pin_content(self, cid: str) -> bool:
         """

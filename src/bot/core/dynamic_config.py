@@ -127,8 +127,9 @@ class DynamicConfig:
                 modified = False
                 
                 for path in [self.config_file_path, self.env_file_path]:
-                    if os.path.exists(path):
-                        mtime = os.path.getmtime(path)
+                    exists = await asyncio.to_thread(os.path.exists, path)
+                    if exists:
+                        mtime = await asyncio.to_thread(os.path.getmtime, path)
                         if self._last_modified is None or mtime > self._last_modified:
                             modified = True
                             self._last_modified = mtime

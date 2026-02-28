@@ -19,6 +19,7 @@ Created: 2026-01-30
 
 import os
 import logging
+import asyncio
 from bot.core.archive_manager import archive_manager
 from bot.helper.ext_utils.bot_utils import new_task, is_premium_user
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -76,7 +77,7 @@ async def compress_file(_, message: Message):
             return
     
     # Validate source path
-    if not os.path.exists(source_path):
+    if not await asyncio.to_thread(os.path.exists, source_path):
         await send_message(message, f"❌ Source not found: {source_path}")
         return
     
@@ -172,12 +173,12 @@ async def extract_archive(_, message: Message):
     password = parts[3] if len(parts) > 3 else None
     
     # Validate archive path
-    if not os.path.exists(archive_path):
+    if not await asyncio.to_thread(os.path.exists, archive_path):
         await send_message(message, f"❌ Archive not found: {archive_path}")
         return
     
     # Check if file is actually an archive
-    if not os.path.isfile(archive_path):
+    if not await asyncio.to_thread(os.path.isfile, archive_path):
         await send_message(message, f"❌ {archive_path} is not a file")
         return
     
@@ -187,7 +188,7 @@ async def extract_archive(_, message: Message):
         return
     
     # Create extraction directory if needed
-    os.makedirs(extract_to, exist_ok=True)
+    await asyncio.to_thread(os.makedirs, extract_to, exist_ok=True)
     
     archive_name = os.path.basename(archive_path)
     
@@ -256,7 +257,7 @@ async def list_archive(_, message: Message):
     
     archive_path = parts[1]
     
-    if not os.path.exists(archive_path):
+    if not await asyncio.to_thread(os.path.exists, archive_path):
         await send_message(message, f"❌ Archive not found: {archive_path}")
         return
     
