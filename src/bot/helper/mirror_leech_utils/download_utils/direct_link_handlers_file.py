@@ -22,6 +22,7 @@ from urllib3.util.retry import Retry
 from base64 import b64decode, b64encode
 
 from ....core.config_manager import Config
+from .direct_link_handlers_base import TokenHandler
 from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.status_utils import speed_string_to_bytes
@@ -535,101 +536,118 @@ def berkasdrive(url):
         raise DirectDownloadLinkException("ERROR: File Not Found!")
 
 
-def swisstransfer(link):
-    matched_link = match(
-        r"https://www\.swisstransfer\.com/d/([\w-]+)(?:\:\:(\w+))?", link
-    )
-    if not matched_link:
-        raise DirectDownloadLinkException(
-            f"ERROR: Invalid SwissTransfer link format {link}"
+class SwissTransferManager(TokenHandler):
+    _shared_token_cache = {}
+
+    def __init__(self, link: str):
+        super().__init__(link, Session())
+        self.link = link
+        self.transfer_id, self.password = self._parse_link(link)
+
+    def _parse_link(self, link):
+        matched_link = match(
+            r"https://www\.swisstransfer\.com/d/([\w-]+)(?:\:\:(\w+))?", link
         )
+        if not matched_link:
+            raise DirectDownloadLinkException(
+                f"ERROR: Invalid SwissTransfer link format {link}"
+            )
+        transfer_id, password = matched_link.groups()
+        return transfer_id, (password or "")
 
-    transfer_id, password = matched_link.groups()
-    password = password or ""
-
-    def encode_password(password):
+    def _encode_password(self, password):
         return b64encode(password.encode("utf-8")).decode("utf-8") if password else ""
 
-    def getfile(transfer_id, password):
-        url = f"https://www.swisstransfer.com/api/links/{transfer_id}"
+    def _fetch_transfer_metadata(self):
+        url = f"https://www.swisstransfer.com/api/links/{self.transfer_id}"
         headers = {
             "User-Agent": "Mozilla/5.0",
-            "Authorization": encode_password(password) if password else "",
-            "Content-Type": "" if password else "application/json",
+            "Authorization": self._encode_password(self.password) if self.password else "",
+            "Content-Type": "" if self.password else "application/json",
         }
         response = get(url, headers=headers)
-
         if response.status_code == 200:
             try:
                 return response.json(), [f"{k}: {v}" for k, v in headers.items() if v]
-            except ValueError:
+            except ValueError as e:
                 raise DirectDownloadLinkException(
                     f"ERROR: Error parsing JSON response {response.text}"
-                )
+                ) from e
         raise DirectDownloadLinkException(
             f"ERROR: Error fetching file details {response.status_code}, {response.text}"
         )
 
-    def gettoken(password, containerUUID, fileUUID):
+    def _token_cache_key(self, container_uuid, file_uuid):
+        return f"{container_uuid}:{file_uuid}:{self.password}"
+
+    def _generate_download_token(self, container_uuid, file_uuid):
+        cache_key = self._token_cache_key(container_uuid, file_uuid)
+        if cache_key in self._shared_token_cache:
+            return self._shared_token_cache[cache_key]
+
         url = "https://www.swisstransfer.com/api/generateDownloadToken"
         headers = {
             "User-Agent": "Mozilla/5.0",
             "Content-Type": "application/json",
         }
         body = {
-            "password": password,
-            "containerUUID": containerUUID,
-            "fileUUID": fileUUID,
+            "password": self.password,
+            "containerUUID": container_uuid,
+            "fileUUID": file_uuid,
         }
 
         response = post(url, headers=headers, json=body)
-
         if response.status_code == 200:
-            return response.text.strip().replace('"', "")
+            token = response.text.strip().replace('"', "")
+            self._shared_token_cache[cache_key] = token
+            return token
         raise DirectDownloadLinkException(
             f"ERROR: Error generating download token {response.status_code}, {response.text}"
         )
 
-    data, _ = getfile(transfer_id, password)
-    if not data:
-        return None
+    def handle(self):
+        data, _ = self._fetch_transfer_metadata()
+        if not data:
+            return None
 
-    try:
-        container_uuid = data["data"]["containerUUID"]
-        download_host = data["data"]["downloadHost"]
-        files = data["data"]["container"]["files"]
-        folder_name = data["data"]["container"]["message"] or "unknown"
-    except (KeyError, IndexError, TypeError) as e:
-        raise DirectDownloadLinkException(f"ERROR: Error parsing file details {e}")
+        try:
+            container_uuid = data["data"]["containerUUID"]
+            download_host = data["data"]["downloadHost"]
+            files = data["data"]["container"]["files"]
+            folder_name = data["data"]["container"]["message"] or "unknown"
+        except (KeyError, IndexError, TypeError) as e:
+            raise DirectDownloadLinkException(f"ERROR: Error parsing file details {e}") from e
 
-    total_size = sum(file["fileSizeInBytes"] for file in files)
+        total_size = sum(file["fileSizeInBytes"] for file in files)
 
-    if len(files) == 1:
-        file = files[0]
-        file_uuid = file["UUID"]
-        token = gettoken(password, container_uuid, file_uuid)
-        download_url = f"https://{download_host}/api/download/{transfer_id}/{file_uuid}?token={token}"
-        return download_url, ["User-Agent:Mozilla/5.0"]
+        if len(files) == 1:
+            file = files[0]
+            file_uuid = file["UUID"]
+            token = self._generate_download_token(container_uuid, file_uuid)
+            download_url = f"https://{download_host}/api/download/{self.transfer_id}/{file_uuid}?token={token}"
+            return download_url, ["User-Agent:Mozilla/5.0"]
 
-    contents = []
-    for file in files:
-        file_uuid = file["UUID"]
-        file_name = file["fileName"]
-        file_size = file["fileSizeInBytes"]
+        contents = []
+        for file in files:
+            file_uuid = file["UUID"]
+            file_name = file["fileName"]
+            token = self._generate_download_token(container_uuid, file_uuid)
+            if not token:
+                continue
 
-        token = gettoken(password, container_uuid, file_uuid)
-        if not token:
-            continue
+            download_url = f"https://{download_host}/api/download/{self.transfer_id}/{file_uuid}?token={token}"
+            contents.append({"filename": file_name, "path": "", "url": download_url})
 
-        download_url = f"https://{download_host}/api/download/{transfer_id}/{file_uuid}?token={token}"
-        contents.append({"filename": file_name, "path": "", "url": download_url})
+        return {
+            "contents": contents,
+            "title": folder_name,
+            "total_size": total_size,
+            "header": "User-Agent:Mozilla/5.0",
+        }
 
-    return {
-        "contents": contents,
-        "title": folder_name,
-        "total_size": total_size,
-        "header": "User-Agent:Mozilla/5.0",
-    }
+
+def swisstransfer(link):
+    return SwissTransferManager(link).handle()
 
 
 def cf_bypass(url):

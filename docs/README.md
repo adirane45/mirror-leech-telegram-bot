@@ -23,6 +23,7 @@ Welcome to the Mirror Leech Telegram Bot documentation.
 
 ### 💻 Development
 - [API Reference](api/API_REFERENCE.md) - Complete API docs
+- [Development Documentation](development/README.md) - Development guides and Phase 3 refactoring
 - [Contributing Guide](../CONTRIBUTING.md) - How to contribute
 
 ---

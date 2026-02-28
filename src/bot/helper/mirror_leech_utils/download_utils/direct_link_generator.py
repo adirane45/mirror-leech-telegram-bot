@@ -39,55 +39,51 @@ from .direct_link_handlers_api import *
 from .direct_link_handlers_file import *
 
 
+class HandlerDispatcher:
+    def __init__(self, registry):
+        self.registry = registry
+
+    def _validate_url(self, link: str) -> str:
+        if not link or not isinstance(link, str):
+            raise DirectDownloadLinkException("ERROR: Invalid URL")
+        clean_link = link.strip()
+        parsed = urlparse(clean_link)
+        if not parsed.hostname:
+            raise DirectDownloadLinkException("ERROR: Invalid URL")
+        return clean_link
+
+    def _resolve_handler(self, link: str):
+        handler_name = self.registry.get_handler_name(link)
+        handler = globals().get(handler_name)
+        if not callable(handler):
+            raise DirectDownloadLinkException(
+                f"No Direct link function found for {link}"
+            )
+        return handler
+
+    def _execute_handler(self, handler, link: str):
+        try:
+            return handler(link)
+        except DirectDownloadLinkException:
+            raise
+        except Exception as e:
+            raise DirectDownloadLinkException(
+                f"ERROR: {e.__class__.__name__}"
+            ) from e
+
+    def execute(self, link: str):
+        clean_link = self._validate_url(link)
+        handler = self._resolve_handler(clean_link)
+        return self._execute_handler(handler, clean_link)
+
+
 def direct_link_generator(link: str) -> str:
     """
-    Generate direct download link using Strategy Pattern
-    
-    Uses clean domain routing leveraging HandlerRegistry for O(1) average lookup.
-    All handlers are functions with consistent signatures: handler(url) -> str or dict
-    
-    Args:
-        link: URL from supported hosting service
-        
-    Returns:
-        Direct download URL (str) or dict for multi-file responses
-        
-    Raises:
-        DirectDownloadLinkException: Handler not found or download failed
-    
-    Example:
-        >>> direct_link_generator("https://gofile.io/d/xxxxx")
-        "https://download-link.com/file.zip"
-        
-        >>> direct_link_generator("https://mediafire.com/folder/xxxxx")
-        {"contents": [...], "title": "...", "total_size": ...}
+    Generate direct download link using Strategy Pattern.
+
+    Backward-compatible wrapper around HandlerDispatcher.
     """
-    # Guard clauses for early returns
-    if not link or not isinstance(link, str):
-        raise DirectDownloadLinkException("ERROR: Invalid URL")
-    
-    link = link.strip()
-    parsed = urlparse(link)
-    domain = parsed.hostname
-    
-    if not domain:
-        raise DirectDownloadLinkException("ERROR: Invalid URL")
-    
-    # Get handler name using registry (handles special cases internally)
-    try:
-        handler_name = HandlerRegistry.get_handler_name(link)
-    except DirectDownloadLinkException:
-        raise
-    
-    # Look up and execute handler using globals()
-    # This dynamic lookup ensures all imported handlers are accessible
-    handler = globals().get(handler_name)
-    if not callable(handler):
-        raise DirectDownloadLinkException(
-            f"No Direct link function found for {link}"
-        )
-    
-    return handler(link)
+    return HandlerDispatcher(HandlerRegistry).execute(link)
 
 
 # Export primary entry point
