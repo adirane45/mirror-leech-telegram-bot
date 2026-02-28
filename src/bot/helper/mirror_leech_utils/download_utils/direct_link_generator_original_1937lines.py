@@ -1,97 +1,204 @@
-"""
-Direct Link Generator - Download Link Generator for Various Hosting Services
-
-Refactoring reduces complexity and improves maintainability:
-- Extracted utilities to direct_link_utils.py
-- Extracted handler registry to direct_link_handler_registry.py  
-- Extracted base classes to direct_link_handlers_base.py
-- Main generator uses strategy pattern for clean routing
-- Individual handlers below use consistent patterns
-
-Metrics:
-- Lines: 1937 (original) → ~800 (refactored, handlers moved out)
-- Functions: 56 handlers in one file
-- Complexity: Reduced through extraction and design patterns
-"""
-
-from urllib.parse import urlparse
+from cloudscraper import create_scraper
+from hashlib import sha256
+from http.cookiejar import MozillaCookieJar
+from json import loads
+from lxml.etree import HTML
+from os import path as ospath
+from re import findall, match, search
+from requests import Session, post, get
+from requests.adapters import HTTPAdapter
+from time import sleep
+from urllib.parse import parse_qs, urlparse, quote
+from urllib3.util.retry import Retry
+from uuid import uuid4
+from base64 import b64decode, b64encode
 
 from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
+from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.links_utils import is_share_link
-from .direct_link_handler_registry import HandlerRegistry
-from .direct_link_utils import (
-    user_agent,
-    create_session_with_retries as _create_session_with_retries,
-    extract_password as _extract_password,
-    validate_json_response as _validate_json_response,
-    make_api_request as _make_api_request,
-    parse_url_component as _parse_url_component,
-    get_captcha_token,
+from ...ext_utils.status_utils import speed_string_to_bytes
+
+user_agent = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
 )
 
-# Re-export utilities for use in handler functions
-create_session_with_retries = _create_session_with_retries
-extract_password = _extract_password
-validate_json_response = _validate_json_response
-make_api_request = _make_api_request
-parse_url_component = _parse_url_component
+
+# Domain to handler mapping - single domain mappings
+SINGLE_DOMAIN_HANDLERS = {
+    "buzzheavier.com": "buzzheavier",
+    "devuploads": "devuploads",
+    "lulacloud.com": "lulacloud",
+    "uploadhaven": "uploadhaven",
+    "fuckingfast.co": "fuckingfast_dl",
+    "mediafile.cc": "mediafile",
+    "mediafire.com": "mediafire",
+    "osdn.net": "osdn",
+    "github.com": "github",
+    "transfer.it": "transfer_it",
+    "hxfile.co": "hxfile",
+    "1drv.ms": "onedrive",
+    "racaty": "racaty",
+    "1fichier.com": "fichier",
+    "solidfiles.com": "solidfiles",
+    "krakenfiles.com": "krakenfiles",
+    "upload.ee": "uploadee",
+    "gofile.io": "gofile",
+    "send.cm": "send_cm",
+    "tmpsend.com": "tmpsend",
+    "easyupload.io": "easyupload",
+    "streamvid.net": "streamvid",
+    "shrdsk.me": "shrdsk",
+    "u.pcloud.link": "pcloud",
+    "qiwi.gg": "qiwi",
+    "mp4upload.com": "mp4upload",
+    "berkasdrive.com": "berkasdrive",
+    "swisstransfer.com": "swisstransfer",
+}
+
+# One-to-many domain mappings
+MULTI_DOMAIN_HANDLERS = {
+    ("pixeldrain.com", "pixeldra.in"): "pixeldrain",
+    ("akmfiles.com", "akmfls.xyz"): "akmfiles",
+    ("dood.watch", "doodstream.com", "dood.to", "dood.so", "dood.cx", "dood.la",
+     "dood.ws", "dood.sh", "doodstream.co", "dood.pm", "dood.wf", "dood.re",
+     "dood.video", "dooood.com", "dood.yt", "doods.yt", "dood.stream",
+     "doods.pro", "ds2play.com", "d0o0d.com", "ds2video.com", "do0od.com", "d000d.com"): "doods",
+    ("streamtape.com", "streamtape.co", "streamtape.cc", "streamtape.to",
+     "streamtape.net", "streamta.pe", "streamtape.xyz"): "streamtape",
+    ("wetransfer.com", "we.tl"): "wetransfer",
+    ("terabox.com", "nephobox.com", "4funbox.com", "mirrobox.com", "momerybox.com",
+     "teraboxapp.com", "1024tera.com", "terabox.app", "gibibox.com", "goaibox.com",
+     "terasharelink.com", "teraboxlink.com", "freeterabox.com", "1024terabox.com",
+     "teraboxshare.com", "terafileshare.com", "terabox.club"): "terabox",
+    ("filelions.co", "filelions.site", "filelions.live", "filelions.to", "mycloudz.cc",
+     "cabecabean.lol", "filelions.online", "embedwish.com", "kitabmarkaz.xyz",
+     "wishfast.top", "streamwish.to", "kissmovies.net"): "filelions_and_streamwish",
+    ("streamhub.ink", "streamhub.to"): "streamhub",
+    ("linkbox.to", "lbx.to", "teltobx.net", "telbx.net", "linkbox.cloud"): "linkBox",
+    ("anonfiles.com", "zippyshare.com", "letsupload.io", "hotfile.io", "bayfiles.com",
+     "megaupload.nz", "letsupload.cc", "filechan.org", "myfile.is", "vshare.is",
+     "rapidshare.nu", "lolabits.se", "openload.cc", "share-online.is", "upvid.cc",
+     "uptobox.com", "uptobox.fr"): "deprecated",
+}
 
 
-# Domain to handler mappings now in direct_link_handler_registry.py
-# ==============================================================================
-
-
-# Handler functions begin below (refactoring in progress)
-# Each handler should be extracted to a specialized module:
-# - cloud_storage_handlers.py: Google Drive, OneDrive, etc.
-# - streaming_handlers.py: DoodStream, StreamTape, etc.
-# - file_host_handlers.py: MediaFire, 1Fichier, etc.
-# - api_handlers.py: API-based services
-# ==============================================================================
-
-def direct_link_generator(link: str) -> str:
-    """
-    Generate direct download link using Strategy Pattern
+def _get_handler_for_domain(domain):
+    """Get handler function name for a domain using O(1) lookup"""
+    if handler := SINGLE_DOMAIN_HANDLERS.get(domain):
+        return handler
     
-    Uses clean domain routing leveraging HandlerRegistry for O(1) average lookup
-    All handlers are functions with consistent signatures: handler(url) -> str
+    for domains, handler in MULTI_DOMAIN_HANDLERS.items():
+        if any(d in domain for d in domains):
+            return handler
     
-    Args:
-        link: URL from supported hosting service
+    return None
+
+
+# Helper Functions - reduce complexity in main handlers
+def _parse_url_component(url, separator, index):
+    """Extract URL component safely with error handling"""
+    try:
+        return url.split(separator)[index]
+    except (IndexError, AttributeError) as e:
+        raise DirectDownloadLinkException(f"ERROR: Invalid URL format - {e.__class__.__name__}") from e
+
+
+def _extract_password(url, separator="::"):
+    """Extract and remove password from URL if present (guard clause style)"""
+    if separator not in url:
+        return url, ""
+    
+    parts = url.split(separator)
+    if len(parts) != 2:
+        return url, ""
+    
+    return parts[0], parts[1]
+
+
+def _create_session_with_retries(max_retries=10):
+    """Create session with retry logic"""
+    session = create_scraper()
+    adapter = HTTPAdapter(
+        max_retries=Retry(total=max_retries, read=max_retries, connect=max_retries, backoff_factor=0.3)
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+def _validate_json_response(json_data, error_key="message", ok_status="ok"):
+    """Validate API response with guard clauses"""
+    if isinstance(json_data, dict):
+        if "status" in json_data and json_data["status"] != ok_status:
+            raise DirectDownloadLinkException(f"ERROR: API returned status {json_data['status']}")
+        if error_key in json_data:
+            raise DirectDownloadLinkException(f"ERROR: {json_data[error_key]}")
+    return True
+
+
+def _make_api_request(session, method, url, use_scraper=False, **kwargs):
+    """Make API request with unified error handling"""
+    try:
+        if use_scraper:
+            session = create_scraper()
         
-    Returns:
-        Direct download URL or dict for multi-file responses
+        if method.lower() == "get":
+            response = session.get(url, **kwargs)
+        elif method.lower() == "post":
+            response = session.post(url, **kwargs)
+        else:
+            raise ValueError(f"Unsupported method: {method}")
         
-    Raises:
-        DirectDownloadLinkException: Handler not found or download failed
-    """
-    # Guard clauses for early returns
-    if not link or not isinstance(link, str):
-        raise DirectDownloadLinkException("ERROR: Invalid URL")
-    
+        return response
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+
+def direct_link_generator(link):
+    """direct links generator using Strategy Pattern for clean domain routing"""
     parsed = urlparse(link)
     domain = parsed.hostname
     
+    # Guard clauses for early returns
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     
-    # Get handler name using registry (handles special cases internally)
-    try:
-        handler_name = HandlerRegistry.get_handler_name(link)
-    except DirectDownloadLinkException:
-        raise
+    # Special case: Yandex Disk (uses link pattern, not just domain)
+    if "yadi.sk" in link or "disk.yandex." in link:
+        return yandex_disk(link)
     
-    # Look up and execute handler
-    handler = globals().get(handler_name)
-    if not callable(handler):
-        raise DirectDownloadLinkException(
-            f"No Direct link function found for {link}"
-        )
+    # Special case: Share links (requires additional logic)
+    if is_share_link(link):
+        return filepress(link) if "filepress" in domain else sharer_scraper(link)
     
-    return handler(link)
+    # Special case: Deprecated hosts (raise informative error)
+    for domains in MULTI_DOMAIN_HANDLERS:
+        if MULTI_DOMAIN_HANDLERS[domains] == "deprecated" and any(d in domain for d in domains):
+            raise DirectDownloadLinkException(f"ERROR: R.I.P {domain}")
+    
+    # Main handler lookup using domain mapping (O(1) average case)
+    handler_name = _get_handler_for_domain(domain)
+    if handler_name:
+        handler = globals().get(handler_name)
+        if callable(handler):
+            return handler(link)
+    
+    # No handler found
+    raise DirectDownloadLinkException(f"No Direct link function found for {link}")
 
 
+def get_captcha_token(session, params):
+    recaptcha_api = "https://www.google.com/recaptcha/api2"
+    res = session.get(f"{recaptcha_api}/anchor", params=params)
+    anchor_html = HTML(res.text)
+    if not (anchor_token := anchor_html.xpath('//input[@id="recaptcha-token"]/@value')):
+        return None
+    params["c"] = anchor_token[0]
+    params["reason"] = "q"
+    res = session.post(f"{recaptcha_api}/reload", params=params)
+    if token := findall(r'"rresp","(.*?)"', res.text):
+        return token[0]
 
 def transfer_it(url):
     resp = post('https://transfer-it-henna.vercel.app/post',json={'url': url})
