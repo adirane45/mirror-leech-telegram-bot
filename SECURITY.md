@@ -14,7 +14,7 @@ We release patches for security vulnerabilities. Which versions are eligible for
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to: **security@yourproject.com** (or create a private issue)
+Instead, please report them via email to: **support@campusping.in** (or create a private issue)
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
 
