@@ -279,14 +279,17 @@ def add_enhanced_endpoints(app: FastAPI):
 
     @app.get("/api/v1/automation/autoscaler")
     async def automation_autoscaler_status():
-        """Get worker autoscaler status"""
+        """Get worker autoscaler status - DEPRECATED"""
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
-            from .worker_autoscaler import worker_autoscaler
-
-            status = await worker_autoscaler.get_status()
-            return JSONResponse(content=status)
+            
+            # Feature removed as of 2026-03-01
+            # Use Kubernetes HPA or Docker Swarm scaling instead
+            raise HTTPException(
+                status_code=410,
+                detail="Worker autoscaler feature was removed (2026-03-01). Use Kubernetes HPA or Docker Swarm scaling instead. See DEPRECATION.md"
+            )
         except HTTPException:
             raise
         except Exception as e:
@@ -295,52 +298,17 @@ def add_enhanced_endpoints(app: FastAPI):
 
     @app.post("/api/v1/automation/autoscaler/scale")
     async def automation_autoscaler_scale(request: Request, payload: Dict[str, Any]):
-        """Manually scale worker autoscaler"""
+        """Manually scale worker autoscaler - DEPRECATED"""
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
             
-            # Phase 3: Input validation
-            if SECURITY_AVAILABLE:
-                validator = get_input_validator()
-                audit_logger = get_audit_logger()
-                
-                target = (payload or {}).get("target")
-                if target is None:
-                    raise HTTPException(status_code=400, detail="Missing target")
-                
-                # Validate integer range (0-100 workers max)
-                is_valid, error = validator.validate_field(target, "integer", min_value=0, max_value=100)
-                if not is_valid:
-                    audit_logger.log_security_event(
-                        event_type=AuditEventType.INVALID_INPUT_DETECTED,
-                        user_id="system",
-                        severity=AuditSeverity.WARNING,
-                        details={"target": target, "error": error},
-                        request_id=getattr(request.state, "request_id", "unknown")
-                    )
-                    raise HTTPException(status_code=400, detail=f"Invalid target value: {error}")
-                
-                target = int(target)
-                
-                # Log config change
-                audit_logger.log_config_change(
-                    user_id="api",
-                    config_key="worker_autoscaler.target",
-                    old_value="auto",
-                    new_value=str(target),
-                    ip_address=request.client.host if request.client else "unknown",
-                    request_id=getattr(request.state, "request_id", "unknown")
-                )
-            else:
-                target = (payload or {}).get("target")
-                if target is None:
-                    raise HTTPException(status_code=400, detail="Missing target")
-                target = int(target)
-            
-            from .worker_autoscaler import worker_autoscaler
-            ok = await worker_autoscaler.scale_to(target)
-            return JSONResponse(content={"scaled": bool(ok), "target": target})
+            # Feature removed as of 2026-03-01
+            # Use Kubernetes HPA or Docker Swarm scaling instead
+            raise HTTPException(
+                status_code=410,
+                detail="Worker autoscaler feature was removed (2026-03-01). Use Kubernetes HPA or Docker Swarm scaling instead. See DEPRECATION.md"
+            )
         except HTTPException:
             raise
         except Exception as e:

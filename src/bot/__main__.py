@@ -98,7 +98,6 @@ async def main():
             await automation_system.enable_all(
                 enable_client_selection=getattr(Config, "ENABLE_CLIENT_SELECTION", True),
                 enable_auto_recovery=getattr(Config, "ENABLE_AUTO_RECOVERY", True),
-                enable_worker_autoscaling=getattr(Config, "ENABLE_WORKER_AUTOSCALER", True),
                 enable_thumbnails=getattr(Config, "ENABLE_SMART_THUMBNAILS", True),
                 notify_callback=_notify_admin,
             )

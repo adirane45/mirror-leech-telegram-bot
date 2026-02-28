@@ -13,7 +13,6 @@ from .. import LOGGER
 from .config_manager import Config
 from .client_selector import client_selector
 from .auto_recovery_handler import auto_recovery, RecoverySeverity
-from .worker_autoscaler import worker_autoscaler
 from .thumbnail_manager import thumbnail_manager
 
 
@@ -48,7 +47,6 @@ class AutomationSystem:
         self,
         enable_client_selection: bool = True,
         enable_auto_recovery: bool = True,
-        enable_worker_autoscaling: bool = True,
         enable_thumbnails: bool = True,
         notify_callback: Optional[Callable] = None,
     ) -> bool:
@@ -58,7 +56,6 @@ class AutomationSystem:
         Args:
             enable_client_selection: Enable intelligent client selection
             enable_auto_recovery: Enable auto-recovery with health checks
-            enable_worker_autoscaling: Enable worker autoscaling
             enable_thumbnails: Enable smart thumbnail caching
             notify_callback: Callback for admin notifications
         """
@@ -76,12 +73,7 @@ class AutomationSystem:
                 await self._register_health_recovery_callbacks()
                 LOGGER.info("✓ Auto-Recovery enabled")
             
-            # 3. Worker Autoscaler
-            if enable_worker_autoscaling and getattr(Config, "ENABLE_WORKER_AUTOSCALER", True):
-                await worker_autoscaler.enable(check_interval=30.0)
-                LOGGER.info("✓ Worker Autoscaler enabled")
-            
-            # 4. Thumbnail Manager (ready, no init needed)
+            # 3. Thumbnail Manager (ready, no init needed)
             if enable_thumbnails and getattr(Config, "ENABLE_SMART_THUMBNAILS", True):
                 LOGGER.info("✓ Thumbnail Manager enabled")
             
