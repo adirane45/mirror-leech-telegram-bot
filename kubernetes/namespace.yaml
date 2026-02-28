@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mltb
+  labels:
+    app: mltb-app
+    environment: production
+  annotations:
+    description: "Mirror Leech Telegram Bot - Application Namespace"
+    secrets-management: "enabled with Kubernetes Secrets"
+    deployment-strategy: "rolling-updates with blue-green fallback"

@@ -1,0 +1,286 @@
+---
+# Kubernetes Deployment Configuration with Secrets Integration
+#
+# This deployment manifest shows how to:
+# 1. Mount secrets as environment variables
+# 2. Mount secrets as volume files
+# 3. Implement health checks using SecretReader
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mltb-app
+  namespace: mltb
+  labels:
+    app: mltb-app
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: mltb-app
+  template:
+    metadata:
+      labels:
+        app: mltb-app
+      annotations:
+        secrets-checksum: "auto"  # Forces pod restart when secrets change
+    spec:
+      serviceAccountName: mltb-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      initContainers:
+      # Validate secrets are available before starting
+      - name: verify-secrets
+        image: kubernetes/secrets:1.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Verifying secrets are available..."
+          [ -n "$BOT_TOKEN" ] || { echo "ERROR: BOT_TOKEN not set"; exit 1; }
+          [ -n "$TELEGRAM_API" ] || { echo "ERROR: TELEGRAM_API not set"; exit 1; }
+          [ -n "$DATABASE_URL" ] || { echo "ERROR: DATABASE_URL not set"; exit 1; }
+          [ -n "$REDIS_URL" ] || { echo "ERROR: REDIS_URL not set"; exit 1; }
+          echo "All required secrets verified"
+        env:
+        - name: BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: BOT_TOKEN
+        - name: TELEGRAM_API
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: TELEGRAM_API
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mltb-database-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: mltb-redis-secrets
+              key: REDIS_URL
+
+      containers:
+      - name: mltb-app
+        image: mirror-leech-telegram-bot:latest
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        
+        # Method 1: Secrets as Environment Variables (recommended for small secrets)
+        env:
+        - name: BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: BOT_TOKEN
+        - name: TELEGRAM_API
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: TELEGRAM_API
+        - name: TELEGRAM_HASH
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: TELEGRAM_HASH
+        - name: OWNER_ID
+          valueFrom:
+            secretKeyRef:
+              name: mltb-telegram-secrets
+              key: OWNER_ID
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: mltb-database-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: mltb-redis-secrets
+              key: REDIS_URL
+        - name: API_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mltb-api-secrets
+              key: API_SECRET_KEY
+        
+        # Standard environment variables
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: DEPLOYMENT_TYPE
+          value: "kubernetes"
+        - name: ENABLE_METRICS
+          value: "true"
+        
+        # Method 2: Secrets as Volume Mounts (recommended for large/binary secrets)
+        volumeMounts:
+        - name: rclone-config
+          mountPath: /etc/rclone
+          readOnly: true
+        - name: ssl-certs
+          mountPath: /etc/ssl/certs
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /cache
+        
+        # Health Checks with secret validation
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+            scheme: HTTP
+            httpHeaders:
+            - name: Authorization
+              value: Bearer $(API_SECRET_KEY)
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ready
+            port: http
+            scheme: HTTP
+            httpHeaders:
+            - name: Authorization
+              value: Bearer $(API_SECRET_KEY)
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Resource limits
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      
+      # Volumes
+      volumes:
+      - name: rclone-config
+        secret:
+          secretName: mltb-rclone-secrets
+          defaultMode: 0400
+      - name: ssl-certs
+        secret:
+          secretName: mltb-ssl-secrets
+          defaultMode: 0400
+      - name: tmp
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: cache
+        emptyDir:
+          sizeLimit: 5Gi
+      
+      # Pod disruption budget for rolling updates
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - mltb-app
+              topologyKey: kubernetes.io/hostname
+
+---
+# Pod Disruption Budget for controlled shutdown
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mltb-app-pdb
+  namespace: mltb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: mltb-app
+
+---
+# Service to expose the app
+apiVersion: v1
+kind: Service
+metadata:
+  name: mltb-app
+  namespace: mltb
+  labels:
+    app: mltb-app
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: mltb-app
+
+---
+# Horizontal Pod Autoscaler based on CPU/memory metrics
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mltb-app-hpa
+  namespace: mltb
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mltb-app
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

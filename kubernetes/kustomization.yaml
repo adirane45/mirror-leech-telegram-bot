@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mltb
+
+# Metadata
+metadata:
+  name: mltb-secrets-manager
+  labels:
+    app: mltb-app
+    component: secrets-management
+
+# Resources to include
+resources:
+- namespace.yaml
+- secrets.yaml
+- deployment.yaml
+
+# ConfigMap for scripts and documentation
+configMapGenerator:
+- name: secret-rotation-scripts
+  files:
+  - scripts/rotate-secret.sh
+  - scripts/validate-secrets.sh
+
+# Patches to apply
+patchesStrategicMerge:
+- |
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: mltb-app
+  spec:
+    template:
+      metadata:
+        annotations:
+          secrets.kustomize.config.k8s.io/rotation-policy: "rolling"
+          secrets.kustomize.config.k8s.io/validate-on-startup: "true"
+
+# Common labels applied to all resources
+commonLabels:
+  app: mltb-app
+  managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  deployment-strategy: "rolling-updates"
+  secrets-management: "enabled"
+  rotation-schedule: "automated"
+
+# Image configuration
+images:
+- name: mirror-leech-telegram-bot
+  newName: mirror-leech-telegram-bot
+  newTag: latest
+
+# Replicas override (optional)
+replicas:
+- name: mltb-app
+  count: 3
+
+# Vars for substitution in manifests
+vars:
+- name: NAMESPACE
+  objref:
+    kind: Namespace
+    name: mltb
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+
+# Deprecation/Migration info
+# This kustomization replaces environment-based secret management with Kubernetes native secrets
