@@ -76,6 +76,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # ===== Redis Exporter =====
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: mltb-redis-exporter
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9121/metrics"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   # ===== MongoDB Database (Upgraded to 7.0 - Not used, cloud MongoDB configured) =====
   mongodb:
     image: mongo:7.0
@@ -94,6 +114,52 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ===== Node Exporter =====
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: mltb-node-exporter
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+
+  # ===== cAdvisor (Docker metrics) =====
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: mltb-cadvisor
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8081:8080"
+
+  # ===== MongoDB Exporter =====
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mltb-mongodb-exporter
+    restart: unless-stopped
+    networks:
+      - mltb-net
+    command:
+      - '--mongodb.uri=mongodb://mongodb:27017'
+      - '--collect-all'
+    ports:
+      - "9216:9216"
 
   # ===== Prometheus Metrics =====
   prometheus:
