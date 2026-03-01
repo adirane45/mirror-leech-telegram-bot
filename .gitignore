@@ -99,6 +99,7 @@ secrets/
 token.txt
 credential*.json
 oauth*.json
+deployment/config/
 
 # Database
 *.db

@@ -1,0 +1,589 @@
+# External Secrets Operator Configuration Examples
+# 
+# External Secrets Operator enables syncing secrets from external backends
+# (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, etc.)
+# into Kubernetes as native Secrets.
+#
+# Installation: helm repo add external-secrets https://charts.external-secrets.io
+#               helm install external-secrets external-secrets/external-secrets
+
+---
+# ============================================================================
+# Scenario 1: HashiCorp Vault Integration (Recommended for Enterprise)
+# ============================================================================
+
+# 1. Create AppRole in Vault for mltb app
+# vault write auth/approle/role/mltb-app \
+#   token_num_uses=0 \
+#   token_ttl=24h \
+#   token_max_ttl=24h \
+#   policies=mltb-app
+#
+# vault read auth/approle/role/mltb-app/role-id
+# vault write -f auth/approle/role/mltb-app/secret-id
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-creds
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secret-backend
+type: Opaque
+stringData:
+  role-id: "replace-with-vault-role-id"
+  secret-id: "replace-with-vault-secret-id"
+
+---
+# SecretStore: Defines how to connect to Vault
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: mltb-vault-store
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secret-backend
+spec:
+  provider:
+    vault:
+      server: "https://vault.service:8200"
+      path: "secret"
+      version: "v2"
+      
+      # Authentication: AppRole
+      auth:
+        appRole:
+          path: "approle"
+          roleId:
+            secretRef:
+              name: vault-creds
+              key: role-id
+          secretRef:
+            name: vault-creds
+            key: secret-id
+      
+      # Certificate validation (for production)
+      caBundle: |
+        -----BEGIN CERTIFICATE-----
+        MIID9TCCA...
+        -----END CERTIFICATE-----
+
+---
+# ExternalSecret: Pulls secrets from Vault and creates K8s Secret
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-telegram-secrets
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secrets
+spec:
+  # How often to sync with Vault
+  refreshInterval: 1h
+  
+  # Connect to SecretStore
+  secretStoreRef:
+    name: mltb-vault-store
+    kind: SecretStore
+  
+  # Target Kubernetes Secret to create/update
+  target:
+    name: mltb-telegram-secrets
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          app: mltb-app
+  
+  # Map Vault paths to Kubernetes secret keys
+  data:
+  - secretKey: BOT_TOKEN
+    remoteRef:
+      key: mltb
+      property: bot_token
+  
+  - secretKey: TELEGRAM_API
+    remoteRef:
+      key: mltb
+      property: telegram_api_id
+  
+  - secretKey: TELEGRAM_HASH
+    remoteRef:
+      key: mltb
+      property: telegram_api_hash
+  
+  - secretKey: OWNER_ID
+    remoteRef:
+      key: mltb
+      property: owner_id
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-database-secrets
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secrets
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: mltb-vault-store
+    kind: SecretStore
+  
+  target:
+    name: mltb-database-secrets
+    creationPolicy: Owner
+  
+  data:
+  - secretKey: DATABASE_URL
+    remoteRef:
+      key: mltb/database
+      property: connection_string
+  
+  - secretKey: DATABASE_USERNAME
+    remoteRef:
+      key: mltb/database
+      property: username
+  
+  - secretKey: DATABASE_PASSWORD
+    remoteRef:
+      key: mltb/database
+      property: password
+
+---
+# ============================================================================
+# Scenario 2: AWS Secrets Manager Integration
+# ============================================================================
+
+# Prerequisites:
+# - AWS Secrets Manager has secrets: mltb/telegram, mltb/database, etc.
+# - IAM role attached to EKS nodes with access to secrets
+
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: mltb-aws-store
+  labels:
+    app: mltb-app
+    component: secret-backend
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      
+      # Use IAM role from pod
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: mltb-app
+      
+      # Optional: Use specific IAM role
+      # role: "arn:aws:iam::ACCOUNT:role/mltb-secrets-access"
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-telegram-secrets-aws
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secrets
+spec:
+  refreshInterval: 12h
+  secretStoreRef:
+    name: mltb-aws-store
+    kind: ClusterSecretStore
+  
+  target:
+    name: mltb-telegram-secrets
+    creationPolicy: Owner
+  
+  data:
+  - secretKey: BOT_TOKEN
+    remoteRef:
+      key: mltb/telegram
+      property: bot_token
+  
+  - secretKey: TELEGRAM_API
+    remoteRef:
+      key: mltb/telegram
+      property: api_id
+  
+  - secretKey: TELEGRAM_HASH
+    remoteRef:
+      key: mltb/telegram
+      property: api_hash
+
+---
+# ============================================================================
+# Scenario 3: Azure Key Vault Integration
+# ============================================================================
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-credentials
+  namespace: mltb
+type: Opaque
+stringData:
+  # Base64-encoded service principal credentials JSON
+  service-principal: |
+    {
+      "clientId": "REPLACE_ME",
+      "clientSecret": "REPLACE_ME",
+      "subscriptionId": "REPLACE_ME",
+      "tenantId": "REPLACE_ME"
+    }
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: mltb-azure-store
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secret-backend
+spec:
+  provider:
+    azurekv:
+      vaultUrl: "https://mltb-vault.vault.azure.net"
+      tenantId: "REPLACE_WITH_TENANT_ID"
+      
+      auth:
+        clientSecret:
+          clientId:
+            secretRef:
+              name: azure-credentials
+              key: clientId
+          clientSecret:
+            secretRef:
+              name: azure-credentials
+              key: clientSecret
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-secrets-azure
+  namespace: mltb
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: mltb-azure-store
+    kind: SecretStore
+  
+  target:
+    name: mltb-telegram-secrets
+    creationPolicy: Owner
+  
+  data:
+  - secretKey: BOT_TOKEN
+    remoteRef:
+      key: bot-token
+
+---
+# ============================================================================
+# Scenario 4: GCP Secret Manager Integration
+# ============================================================================
+
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: mltb-gcp-store
+  labels:
+    app: mltb-app
+    component: secret-backend
+spec:
+  provider:
+    gcpsm:
+      projectID: "mltb-project-id"
+      
+      auth:
+        workloadIdentity:
+          clusterLocation: "us-central1"
+          clusterName: "mltb-cluster"
+          serviceAccountRef:
+            name: mltb-app
+            namespace: mltb
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-secrets-gcp
+  namespace: mltb
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: mltb-gcp-store
+    kind: ClusterSecretStore
+  
+  target:
+    name: mltb-telegram-secrets
+    creationPolicy: Owner
+  
+  data:
+  - secretKey: BOT_TOKEN
+    remoteRef:
+      key: mltb-bot-token
+      version: latest
+
+---
+# ============================================================================
+# Scenario 5: Multi-Source with Priority (Vault → AWS → Local)
+# ============================================================================
+# Use Vault as primary, fall back to AWS Secrets Manager if Vault unavailable
+
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: mltb-multi-store
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secret-backend
+spec:
+  provider:
+    # Primary: HashiCorp Vault
+    vault:
+      server: "https://vault.service:8200"
+      path: "secret"
+      auth:
+        appRole:
+          path: "approle"
+          roleId:
+            secretRef:
+              name: vault-creds
+              key: role-id
+          secretRef:
+            name: vault-creds
+            key: secret-id
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-secrets-fallback
+  namespace: mltb
+spec:
+  refreshInterval: 1h
+  
+  secretStoreRef:
+    name: mltb-multi-store
+    kind: SecretStore
+  
+  # Fallback if primary fails
+  secretStoreRefs:
+  - name: mltb-vault-store
+    kind: SecretStore
+  - name: mltb-aws-store
+    kind: ClusterSecretStore
+  - name: mltb-local-store  # Local Kubernetes secrets as last resort
+    kind: SecretStore
+  
+  target:
+    name: mltb-telegram-secrets
+    creationPolicy: Owner
+  
+  data:
+  - secretKey: BOT_TOKEN
+    remoteRef:
+      key: mltb/telegram
+      property: bot_token
+
+---
+# ============================================================================
+# Scenario 6: Dynamic Secret Rotation with TTL
+# ============================================================================
+
+# Generate short-lived credentials that auto-refresh before expiry
+
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mltb-dynamic-database-secret
+  namespace: mltb
+  labels:
+    app: mltb-app
+    component: secrets
+    rotation: dynamic
+spec:
+  # Refresh every 6 hours (credentials have 8-hour TTL)
+  refreshInterval: 6h
+  
+  secretStoreRef:
+    name: mltb-vault-store
+    kind: SecretStore
+  
+  target:
+    name: mltb-database-secrets-dynamic
+    creationPolicy: Owner
+    template:
+      # Construct connection string from separate fields
+      engineVersion: v2
+      data:
+        DATABASE_URL: "postgresql://{{ .username }}:{{ .password }}@db.service:5432/mltb"
+  
+  # Request dynamic credentials from Vault
+  data:
+  - secretKey: username
+    remoteRef:
+      key: database/config/mltb
+      property: username
+  
+  - secretKey: password
+    remoteRef:
+      key: database/creds/short-lived
+      property: password
+
+---
+# ============================================================================
+# Scenario 7: Monitoring & Alerting for External Secrets
+# ============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-secrets-metrics
+  namespace: external-secrets-system
+  labels:
+    app: external-secrets
+  ports:
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: external-secrets-alerts
+  namespace: mltb
+spec:
+  groups:
+  - name: external-secrets
+    interval: 30s
+    rules:
+    
+    # Alert: Secret sync failed
+    - alert: ExternalSecretSyncFailed
+      expr: |
+        increase(externalsecret_sync_errors_total[1h]) > 0
+      for: 10m
+      labels:
+        severity: high
+        component: secrets
+      annotations:
+        summary: "ExternalSecret '{{ $labels.externalsecret }}' sync failed"
+        description: |
+          ExternalSecret failed to sync from backend.
+          Check connectivity to {{ $labels.backend }} and credentials.
+    
+    # Alert: Secret backend unreachable
+    - alert: SecretBackendUnreachable
+      expr: |
+        externalsecret_backend_status != 1
+      for: 5m
+      labels:
+        severity: high
+        component: secrets
+      annotations:
+        summary: "Secret backend '{{ $labels.backend }}' unreachable"
+        description: |
+          Cannot connect to {{ $labels.backend }}.
+          Check network connectivity and firewall rules.
+    
+    # Alert: Credential refresh failed
+    - alert: CredentialRefreshFailed
+      expr: |
+        increase(externalsecret_refresh_duration_seconds_count{status="failed"}[1h]) > 5
+      for: 30m
+      labels:
+        severity: critical
+        component: secrets
+      annotations:
+        summary: "Credential refresh failing for '{{ $labels.externalsecret }}'"
+        description: |
+          Credentials for {{ $labels.externalsecret }} are not being refreshed.
+          This could lead to expired credentials.
+
+---
+# ============================================================================
+# Deployment Integration
+# ============================================================================
+# Mount ExternalSecret into Deployment (automatic)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mltb-app-with-external-secrets
+  namespace: mltb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mltb-app
+  template:
+    metadata:
+      labels:
+        app: mltb-app
+    spec:
+      serviceAccountName: mltb-app
+      containers:
+      - name: app
+        image: mltb-app:latest
+        
+        # ExternalSecret automatically creates Secret
+        # Reference it like normal K8s Secret
+        envFrom:
+        - secretRef:
+            name: mltb-telegram-secrets
+        - secretRef:
+            name: mltb-database-secrets
+        
+        # Can also mount as files for configuration files
+        volumeMounts:
+        - name: rclone-config
+          mountPath: /etc/rclone
+          readOnly: true
+      
+      volumes:
+      - name: rclone-config
+        secret:
+          secretName: mltb-rclone-config
+          defaultMode: 0400
+
+---
+# ============================================================================
+# Best Practices & Comparison
+# ============================================================================
+
+# Comparison: Secret Management Approaches
+#
+# ╔════════════════╦══════════╦═════════════╦════════════╦═════════════════╗
+# ║ Approach       ║ Setup    ║ Encryption  ║ Rotation   ║ Multi-Backend   ║
+# ╠════════════════╬══════════╬═════════════╬════════════╬═════════════════╣
+# ║ K8s Secrets    ║ 5 min    ║ No (base64) ║ Manual     ║ N/A             ║
+# ║ Sealed Secrets ║ 15 min   ║ Yes (AES)   ║ Manual     ║ N/A             ║
+# ║ ESO + Vault    ║ 1 hour   ║ Yes (HSM)   ║ Auto       ║ Yes             ║
+# ║ ESO + AWS      ║ 30 min   ║ Yes (KMS)   ║ Auto       ║ Partial         ║
+# ║ ESO + Azure    ║ 45 min   ║ Yes (HSM)   ║ Auto       ║ Partial         ║
+# ║ ESO + GCP      ║ 45 min   ║ Yes (HSM)   ║ Auto       ║ Partial         ║
+# ╚════════════════╩══════════╩═════════════╩════════════╩═════════════════╝
+#
+# Recommendations by Use Case:
+# - Development:       K8s Secrets (simple, local testing)
+# - Staging:           Sealed Secrets (encrypted, gitops-friendly)
+# - Production (single): Sealed Secrets + CronJob rotation
+# - Production (multi): ESO + Vault (advanced rotation, multi-environment)
+# - Enterprise:        ESO + Vault + OIDC (federated identity)
