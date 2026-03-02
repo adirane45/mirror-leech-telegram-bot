@@ -66,6 +66,7 @@ class BotCommands:
     WebLogsCommand = [f"weblogs{i}", f"wlogs{i}"]
     ReloadConfigCommand = [f"reloadconfig{i}", f"reload{i}"]
     StreamLinkCommand = [f"streamlink{i}", f"sl{i}"]
+    BypassCommand = [f"bypass{i}", f"bp{i}"]
     ShellCommand = f"shell{i}"
     AExecCommand = f"aexec{i}"
     ExecCommand = f"exec{i}"

@@ -278,6 +278,13 @@ def add_handlers():
             )
             TgClient.bot.add_handler(
                 MessageHandler(
+                    bypass_link,
+                    filters=command(BotCommands.BypassCommand, case_sensitive=True)
+                    & CustomFilters.authorized,
+                )
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(
                     restart_bot,
                     filters=command(BotCommands.RestartCommand, case_sensitive=True)
                     & CustomFilters.sudo,

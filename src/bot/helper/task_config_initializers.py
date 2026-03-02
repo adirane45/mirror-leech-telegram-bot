@@ -4,7 +4,7 @@ Handles all initialization logic for TaskConfig settings
 """
 
 from bot import Config, TgClient
-from bot.helper.ext_utils.files_utils import get_size_bytes
+from bot.helper.ext_utils.bot_utils import get_size_bytes
 
 
 class TaskConfigInitializers:

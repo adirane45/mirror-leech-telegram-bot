@@ -395,6 +395,13 @@ HELP_CATEGORIES = {
         "example": f"/{_cmd_primary(BotCommands.StreamLinkCommand)} AgACAg...",
       },
       {
+        "name": "Bypass URL",
+        "cmd": BotCommands.BypassCommand,
+        "desc": "Expand short/redirect URLs",
+        "usage": f"/{_cmd_primary(BotCommands.BypassCommand)} <url>",
+        "example": f"/{_cmd_primary(BotCommands.BypassCommand)} https://bit.ly/example",
+      },
+      {
         "name": "Zip",
         "cmd": BotCommands.ZipCommand,
         "desc": "Create archives",

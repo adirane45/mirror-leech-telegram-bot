@@ -13,6 +13,7 @@ import pytest
 from bot.core.index_generator import IndexGenerator, IndexStorage, IndexFileItem
 from bot.core.batch_operations import BatchOperationsManager, BatchRequest
 from bot.core.link_bypassers import LinkBypassEngine
+from bot.core import link_bypassers
 from bot.core.debrid_manager import DebridManager, DebridService
 
 
@@ -99,6 +100,40 @@ async def test_link_bypass_engine_normalizes_and_tracks_stats():
     stats = engine.get_stats()
     assert stats["total"] == 1
     assert stats["bypassed"] in {0, 1}
+
+
+@pytest.mark.asyncio
+async def test_link_bypass_engine_unwraps_query_redirects_without_network():
+    engine = LinkBypassEngine(enabled=True)
+    source = "https://example.com/r?redirect=https%3A%2F%2Ffiles.example%2Fmovie.mkv"
+
+    result = await engine.normalize_link(source)
+
+    assert result.original_url == source
+    assert result.final_url == "https://files.example/movie.mkv"
+    assert result.bypassed is True
+
+
+@pytest.mark.asyncio
+async def test_link_bypass_engine_follows_redirect_chain(monkeypatch):
+    engine = LinkBypassEngine(enabled=True)
+
+    chain = {
+        "https://bit.ly/abc123": ("https://short.example/step2", "http_redirect"),
+        "https://short.example/step2": ("https://download.example/file.zip", "http_redirect"),
+        "https://download.example/file.zip": ("https://download.example/file.zip", "final"),
+    }
+
+    def fake_resolve_one_hop(url, timeout):
+        return chain.get(url, (url, "final"))
+
+    monkeypatch.setattr(link_bypassers, "_resolve_one_hop", fake_resolve_one_hop)
+
+    result = await engine.normalize_link("https://bit.ly/abc123")
+
+    assert result.final_url == "https://download.example/file.zip"
+    assert result.bypassed is True
+    assert result.reason in {"http_redirect", "final"}
 
 
 @pytest.mark.asyncio

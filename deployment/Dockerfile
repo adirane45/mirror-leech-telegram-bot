@@ -16,7 +16,7 @@ RUN sed -i 's/\r$//' deployment/scripts/*.sh 2>/dev/null || true
 FROM ${BASE_IMAGE}
 
 WORKDIR /app
-RUN chmod 777 /app && mkdir -p /app/downloads && chmod 777 /app/downloads
+RUN chmod 777 /app && mkdir -p /app/downloads && chmod 777 /app/downloads && mkdir -p /app/data/logs && chmod 777 /app/data/logs
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
@@ -36,7 +36,7 @@ RUN mkdir -p /JDownloader \
 COPY --from=build /app /app
 
 ENV PATH="/app/mltbenv/bin:$PATH"
-ENV PYTHONPATH="/app/src:$PYTHONPATH"
+ENV PYTHONPATH="/app:/app/src:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 CMD ["/app/mltbenv/bin/python3", "-m", "bot"]

@@ -44,6 +44,12 @@ from ..helper.telegram_helper.message_utils import send_message, get_tg_link_mes
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..core.config_manager import Config
 from ..core.client_selector import client_selector, ClientType
+from ..core.link_bypassers import LinkBypassEngine
+
+
+LINK_BYPASS_ENGINE = LinkBypassEngine(
+    enabled=getattr(Config, "ENABLE_LINK_BYPASS", True)
+)
 
 
 class Mirror(TaskListener):
@@ -75,6 +81,25 @@ class Mirror(TaskListener):
         self.is_leech = is_leech
         self.is_jd = is_jd
         self.is_nzb = is_nzb
+
+    async def _bypass_url_if_needed(self):
+        if not isinstance(self.link, str):
+            return
+        if not is_url(self.link) or is_telegram_link(self.link):
+            return
+
+        try:
+            result = await LINK_BYPASS_ENGINE.normalize_link(self.link)
+            if result.bypassed:
+                LOGGER.info(
+                    "Bypassed URL (%s): %s -> %s",
+                    result.service,
+                    result.original_url,
+                    result.final_url,
+                )
+            self.link = result.final_url
+        except Exception as e:
+            LOGGER.debug(f"URL bypass failed for {self.link}: {e}")
 
     async def new_event(self):
         text = self.message.text.split("\n")
@@ -221,6 +246,9 @@ class Mirror(TaskListener):
         if not self.link and (reply_to := self.message.reply_to_message):
             if reply_to.text:
                 self.link = reply_to.text.split("\n", 1)[0].strip()
+
+        await self._bypass_url_if_needed()
+
         if is_telegram_link(self.link):
             try:
                 reply_to, session = await get_tg_link_message(self.link)

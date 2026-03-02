@@ -3,25 +3,25 @@ Archive Operations Processor
 Handles extraction, compression, and file splitting operations
 """
 
-from aiofiles.os import path as aiopath, makedirs, move, remove
+from aiofiles.os import path as aiopath, makedirs, remove
 from os import path as ospath, walk
+from shutil import move
+from aioshutil import rmtree
 
 from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.files_utils import (
     get_path_size,
-    get_document_type,
     is_archive,
     is_archive_split,
     is_first_archive_split,
     get_base_name,
     split_file,
 )
-from bot.helper.ext_utils.task_manager import rmtree
+from bot.helper.ext_utils.media_utils import get_document_type, FFMpeg
+from bot.helper.ext_utils.files_utils import SevenZ
 from bot.helper.mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
 from bot.helper.mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
-from bot.helper.task_utils.ffmpeg_utils import FFMpeg
-from bot.helper.task_utils.zip_utils import SevenZ
 
 
 class ArchiveOperationsProcessor:
@@ -119,7 +119,7 @@ class ArchiveOperationsProcessor:
             name = ospath.basename(dl_path)
             await makedirs(new_folder, exist_ok=True)
             new_dl_path = f"{new_folder}/{name}"
-            await move(dl_path, new_dl_path)
+            await sync_to_async(move, dl_path, new_dl_path)
             dl_path = new_dl_path
             up_path = f"{new_dl_path}.zip"
             task_config.is_file = False

@@ -5,7 +5,7 @@ Handles file and directory name substitution with regex patterns
 
 from os import path as ospath, walk
 from re import sub, I
-from aiofiles.os import move
+from shutil import move
 
 from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
@@ -57,7 +57,7 @@ class NameSubstitutionProcessor:
         if not new_name:
             return dl_path
         new_path = ospath.join(up_dir, new_name)
-        await move(dl_path, new_path)
+        await sync_to_async(move, dl_path, new_path)
         return new_path
 
     @staticmethod
@@ -71,7 +71,7 @@ class NameSubstitutionProcessor:
                 )
                 if not new_name:
                     continue
-                await move(f_path, ospath.join(dirpath, new_name))
+                await sync_to_async(move, f_path, ospath.join(dirpath, new_name))
         return dl_path
 
     @staticmethod

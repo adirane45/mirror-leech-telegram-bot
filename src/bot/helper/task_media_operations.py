@@ -3,16 +3,16 @@ Media Operations Processor
 Handles media conversion, screenshot generation, and sample video creation
 """
 
-from aiofiles.os import path as aiopath, makedirs, move, remove
+from aiofiles.os import path as aiopath, makedirs, remove
 from asyncio import gather
 from os import path as ospath, walk
+from shutil import move
 
 from bot import LOGGER, cpu_eater_lock
 from bot.helper.ext_utils.bot_utils import sync_to_async
-from bot.helper.ext_utils.files_utils import get_path_size, get_document_type
-from bot.helper.ext_utils.media_utils import take_ss
+from bot.helper.ext_utils.files_utils import get_path_size
+from bot.helper.ext_utils.media_utils import FFMpeg, get_document_type, take_ss
 from bot.helper.mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
-from bot.helper.task_utils.ffmpeg_utils import FFMpeg
 
 
 class MediaOperationsProcessor:
@@ -93,8 +93,8 @@ class MediaOperationsProcessor:
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     await gather(
-                        move(dl_path, f"{new_folder}/{name}"),
-                        move(res, new_folder),
+                        sync_to_async(move, dl_path, f"{new_folder}/{name}"),
+                        sync_to_async(move, res, new_folder),
                     )
                     return new_folder
         else:
@@ -225,8 +225,8 @@ class MediaOperationsProcessor:
                         new_folder = ospath.splitext(f_path)[0]
                         await makedirs(new_folder, exist_ok=True)
                         await gather(
-                            move(f_path, f"{new_folder}/{file_}"),
-                            move(res, f"{new_folder}/SAMPLE.{file_}"),
+                            sync_to_async(move, f_path, f"{new_folder}/{file_}"),
+                            sync_to_async(move, res, f"{new_folder}/SAMPLE.{file_}"),
                         )
                         return new_folder
         return dl_path

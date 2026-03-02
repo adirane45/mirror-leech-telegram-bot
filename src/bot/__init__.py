@@ -19,7 +19,23 @@ from time import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from integrations.sabnzbdapi import SabnzbdClient
+try:
+    from integrations.sabnzbdapi import SabnzbdClient
+except ImportError:
+    # Fallback: SABnzbd integration is optional
+    SabnzbdClient = None
+
+# Import Config and TgClient for backwards compatibility
+try:
+    from config.main_config import Config
+except (ImportError, ModuleNotFoundError):
+    try:
+        from config import Config
+    except (ImportError, ModuleNotFoundError):
+        Config = None  # Defer loading if not available yet
+
+# TgClient will be imported later once config is loaded
+TgClient = None
 
 getLogger("requests").setLevel(WARNING)
 getLogger("urllib3").setLevel(WARNING)
@@ -78,10 +94,14 @@ jd_listener_lock = Lock()
 cpu_eater_lock = Lock()
 same_directory_lock = Lock()
 
-sabnzbd_client = SabnzbdClient(
-    host="http://localhost",
-    api_key="mltb",
-    port="8070",
+sabnzbd_client = (
+    SabnzbdClient(
+        host="http://localhost",
+        api_key="mltb",
+        port="8070",
+    )
+    if SabnzbdClient is not None
+    else None
 )
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)

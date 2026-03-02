@@ -76,26 +76,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ===== Redis Exporter =====
-  redis-exporter:
-    image: oliver006/redis_exporter:latest
-    container_name: mltb-redis-exporter
-    restart: unless-stopped
-    networks:
-      - mltb-net
-    environment:
-      - REDIS_ADDR=redis://redis:6379
-    ports:
-      - "9121:9121"
-    depends_on:
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/redis_exporter", "--version"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-
   # ===== MongoDB Database (Upgraded to 7.0 - Not used, cloud MongoDB configured) =====
   mongodb:
     image: mongo:7.0

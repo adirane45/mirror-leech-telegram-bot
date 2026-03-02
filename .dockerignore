@@ -83,6 +83,7 @@ data/backups/
 data/certs/
 data/tokens/
 data/thumbnails/
+runtime/*.session*
 
 # ===== Deployment Files (not needed in image) =====
 deployment/compose/
@@ -97,6 +98,12 @@ deployment/*.yaml
 # ===== Integration Configs (mounted at runtime) =====
 integrations/
 clients/
+!integrations/
+!integrations/__init__.py
+!integrations/myjd/
+!integrations/myjd/**
+!integrations/sabnzbdapi/
+!integrations/sabnzbdapi/**
 
 # ===== Backups & Archives =====
 *.zip

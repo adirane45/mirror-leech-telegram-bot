@@ -4,16 +4,18 @@ Handles all FFmpeg processing operations
 Extracts complex cc=23, 80-line proceed_ffmpeg method
 """
 
-from aiofiles.os import path as aiopath, makedirs, listdir, remove, move
+from aiofiles.os import path as aiopath, makedirs, listdir, remove
+from aioshutil import rmtree
 from os import path as ospath, walk
+from shutil import move
 from shlex import split
 
 from bot import LOGGER, cpu_eater_lock, cores
-from bot.helper.ext_utils.bot_utils import sync_to_async, is_telegram_link
-from bot.helper.ext_utils.files_utils import get_path_size, get_document_type
-from bot.helper.ext_utils.task_manager import rmtree
+from bot.helper.ext_utils.bot_utils import sync_to_async
+from bot.helper.ext_utils.links_utils import is_telegram_link
+from bot.helper.ext_utils.files_utils import get_path_size
+from bot.helper.ext_utils.media_utils import get_document_type, FFMpeg
 from bot.helper.mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
-from bot.helper.task_utils.ffmpeg_utils import FFMpeg
 
 
 async def get_tg_link_message(link):
@@ -254,7 +256,7 @@ class FFmpegTaskProcessor:
                             if file_name.startswith("ffmpeg"):
                                 newname = file_name.split(".", 1)[-1]
                                 newres = ospath.join(dirpath, newname)
-                                await move(res[0], newres)
+                                await sync_to_async(move, res[0], newres)
 
         return dl_path, checked
 
