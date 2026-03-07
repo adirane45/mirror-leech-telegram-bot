@@ -20,12 +20,15 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
 venv/
 env/
 ENV/
 .venv/
-pip-log.txt
-pip-delete-this-directory.txt
+virtualenv/
 
 # Testing
 .tox/
@@ -40,6 +43,7 @@ coverage.xml
 
 # IDE & Editors
 .vscode/
+.vscode-server/
 .idea/
 *.swp
 *.swo
@@ -51,7 +55,10 @@ coverage.xml
 *.sublime-project
 *.sublime-workspace
 .history/
-.vscode-server/
+
+# Code Analysis Tools
+.codescene/
+.metrics/
 
 # Environment Variables
 .env
@@ -72,11 +79,12 @@ data/sessions/
 *.session
 *.session-journal
 session.db
+/thumbnails/
+/tokens/
 
 # Docker
 *.pid
 docker-compose.override.yml
-.dockerignore
 
 # Temporary Files
 *.tmp
@@ -86,7 +94,6 @@ docker-compose.override.yml
 f1.txt
 f2.txt
 DEPLOYMENT_COMPLETE.txt
-=6.0.0
 
 # Security & Secrets
 secrets/
@@ -130,7 +137,6 @@ yarn-error.log
 # OS
 Thumbs.db
 .Trash-*
-.DS_Store
 **/Desktop.ini
 
 # IDE Metadata
@@ -138,31 +144,14 @@ Thumbs.db
 *.iws
 *.ipr
 
-# Build outputs
-/build/
-/dist/
-*.egg-info/
-.eggs/
-
 # Misc
-.cache/
-.pytest_cache/
 .mypy_cache/
-.hypothesis/
 *.orig
 .metadata/
 .AppleDouble
 .LSOverride
 ._*
 
-# Virtual environments
-venv/
-ENV/
-env/
-.venv/
-virtualenv/
-
 # Archived/Legacy
 legacy_*/
 archive_*/
-tokens/
