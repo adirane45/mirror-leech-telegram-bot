@@ -52,6 +52,10 @@ class TaskConfigPathResolvers:
             and is_gdrive_id(path)
         ):
             token_path = TaskConfigPathResolvers.get_token_path(task_config, path)
+            if token_path == "token.pickle" and not await aiopath.exists(token_path):
+                user_token_path = f"tokens/{task_config.user_id}.pickle"
+                if await aiopath.exists(user_token_path):
+                    token_path = user_token_path
             if token_path.startswith("tokens/") and status == "up":
                 task_config.private_link = True
             if not await aiopath.exists(token_path):
@@ -60,9 +64,14 @@ class TaskConfigPathResolvers:
     @staticmethod
     async def ensure_workdir(task_config):
         """Ensure download directory exists with proper permissions"""
-        await makedirs(task_config.dir, exist_ok=True)
-        # Set permissions to 777 so qBittorrent (UID 1000) can write
-        chmod(task_config.dir, 0o777)
+        try:
+            await makedirs(task_config.dir, exist_ok=True)
+            # Set permissions to 777 so qBittorrent (UID 1000) can write
+            chmod(task_config.dir, 0o777)
+        except Exception as e:
+            from bot import LOGGER
+            LOGGER.error(f"Failed to ensure workdir {task_config.dir}: {e}")
+            raise
 
 
 def is_gdrive_id(path):

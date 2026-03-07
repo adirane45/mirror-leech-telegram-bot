@@ -62,7 +62,15 @@ async def _list_drive(key, message, item_type, is_recursive, user_token, user_id
 async def select_type(_, query):
     user_id = query.from_user.id
     message = query.message
-    key = message.reply_to_message.text.split(maxsplit=1)[1].strip()
+    if not message or not getattr(message, "reply_to_message", None):
+        await query.answer(text="Search context expired. Run /list again.", show_alert=True)
+        return
+    reply_text = getattr(message.reply_to_message, "text", "") or ""
+    parts = reply_text.split(maxsplit=1)
+    if len(parts) < 2:
+        await query.answer(text="Invalid search context. Run /list again.", show_alert=True)
+        return
+    key = parts[1].strip()
     data = query.data.split()
     if user_id != int(data[1]):
         return await query.answer(text="Not Yours!", show_alert=True)

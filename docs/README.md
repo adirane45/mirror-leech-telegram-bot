@@ -30,7 +30,7 @@
 ### 👨‍💻 Developers
 1. [API Reference](api/API_REFERENCE.md) - Complete API documentation
 2. [Development Guide](development/README.md) - Setup dev environment
-3. [Contributing Guide](../CONTRIBUTING.md) - How to contribute code
+3. [Contributing Guide](CONTRIBUTING.md) - How to contribute code
 
 ---
 
@@ -81,10 +81,10 @@ docs/
 
 ## 🔗 External Resources
 
-- **[Project Status](../PROJECT_STATUS.md)** - Current development status
-- **[Changelog](../CHANGELOG.md)** - Version history and updates
-- **[Security Policy](../SECURITY.md)** - Security guidelines
-- **[Contributing](../CONTRIBUTING.md)** - Contribution guidelines
+- **[Project Status](project/PROJECT_STATUS.md)** - Current development status
+- **[Changelog](project/CHANGELOG.md)** - Version history and updates
+- **[Security Policy](SECURITY.md)** - Security guidelines
+- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines
 
 ---
 

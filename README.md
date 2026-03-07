@@ -250,19 +250,35 @@ Python tooling settings are defined in `pyproject.toml` (`black`, `isort`, `mypy
 
 ## Security
 
-- Security policy: [SECURITY.md](SECURITY.md)
-- Secrets guidance: [SECRETS_MANAGEMENT.md](SECRETS_MANAGEMENT.md)
+- Security policy: [docs/SECURITY.md](docs/SECURITY.md)
+- Secrets guidance: [docs/project/SECRETS_MANAGEMENT.md](docs/project/SECRETS_MANAGEMENT.md)
 - Security hardening scripts: `scripts/security_hardening.sh`, `scripts/security_setup.py`
 
-For vulnerability reports, follow the private reporting flow in `SECURITY.md`.
+For vulnerability reports, follow the private reporting flow in `docs/SECURITY.md`.
 
 ---
 
 ## Contributing
 
-- Contribution guidelines: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- Change history: [CHANGELOG.md](CHANGELOG.md)
+- Contribution guidelines: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+- Code of conduct: [docs/CODE_OF_CONDUCT.md](docs/CODE_OF_CONDUCT.md)
+- Change history: [docs/project/CHANGELOG.md](docs/project/CHANGELOG.md)
+
+---
+
+## Project Structure
+
+This project follows a professional structure with clear separation of concerns:
+
+- **`/src/`** - Application source code (bot, web, api)
+- **`/tests/`** - Organized test suites (unit, integration, performance, tools)
+- **`/docs/`** - Comprehensive documentation (guides, operations, development, runbooks)
+- **`/deployment/`** - Docker and deployment configurations
+- **`/scripts/`** - Automation and utility scripts
+- **`/config/`** - Configuration files
+- **`/integrations/`** - Third-party service integrations
+
+See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed directory layout.
 
 ---
 

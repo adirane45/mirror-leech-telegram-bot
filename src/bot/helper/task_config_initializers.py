@@ -3,7 +3,8 @@ Task Configuration Initializers
 Handles all initialization logic for TaskConfig settings
 """
 
-from bot import Config, TgClient
+from bot.core.config_manager import Config
+from bot.core.telegram_manager import TgClient
 from bot.helper.ext_utils.bot_utils import get_size_bytes
 
 
@@ -30,10 +31,7 @@ class TaskConfigInitializers:
     @staticmethod
     def init_extension_filters(task_config):
         """Initialize file extension filters"""
-        from bot.helper.mirror_leech_utils.download_utils.aria2_download import (
-            excluded_extensions,
-            included_extensions,
-        )
+        from bot import excluded_extensions, included_extensions
 
         task_config.excluded_extensions = task_config.user_dict.get(
             "EXCLUDED_EXTENSIONS"
@@ -63,7 +61,8 @@ class TaskConfigInitializers:
     @staticmethod
     def init_user_transmission(task_config):
         """Initialize user transmission settings"""
-        task_config.user_transmission = TgClient.IS_PREMIUM_USER and (
+        is_premium = TgClient and hasattr(TgClient, 'IS_PREMIUM_USER') and TgClient.IS_PREMIUM_USER
+        task_config.user_transmission = is_premium and (
             task_config.user_dict.get("USER_TRANSMISSION")
             or Config.USER_TRANSMISSION
             and "USER_TRANSMISSION" not in task_config.user_dict

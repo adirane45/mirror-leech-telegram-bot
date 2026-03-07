@@ -3,7 +3,7 @@ from base64 import b64encode
 from os import path as ospath
 from re import match as re_match
 
-from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
+from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR, user_data
 from ..helper.ext_utils.bot_utils import (
     get_content_type,
     sync_to_async,
@@ -70,13 +70,13 @@ class Mirror(TaskListener):
             same_dir = {}
         if bulk is None:
             bulk = []
+        super().__init__()
         self.message = message
         self.client = client
         self.multi_tag = multi_tag
         self.options = options
         self.same_dir = same_dir
         self.bulk = bulk
-        super().__init__()
         self.is_qbit = is_qbit
         self.is_leech = is_leech
         self.is_jd = is_jd
@@ -102,7 +102,28 @@ class Mirror(TaskListener):
             LOGGER.debug(f"URL bypass failed for {self.link}: {e}")
 
     async def new_event(self):
-        text = self.message.text.split("\n")
+        try:
+            # Debug: Check if message is valid
+            if not self.message:
+                LOGGER.error("❌ new_event: self.message is None!")
+                return
+            
+            if not self.message.text:
+                LOGGER.error("❌ new_event: self.message.text is None!")
+                return
+            
+            self.mid = self.message.id
+            self.user = self.message.from_user or self.message.sender_chat
+            self.user_id = self.user.id if self.user else None
+            self.user_dict = user_data.get(self.user_id, {}) if self.user_id else {}
+            text = self.message.text.split("\n")
+        except AttributeError as e:
+            LOGGER.error(f"❌ new_event AttributeError: {e} | message={self.message}")
+            return
+        except Exception as e:
+            LOGGER.error(f"❌ new_event Error: {e}")
+            return
+        
         input_list = text[0].split(" ")
 
         args = {
@@ -241,7 +262,7 @@ class Mirror(TaskListener):
 
         await self.get_tag(text)
 
-        path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}/"
+        path = f"{self.dir}{self.folder_name}/"
 
         if not self.link and (reply_to := self.message.reply_to_message):
             if reply_to.text:
@@ -477,8 +498,18 @@ class Mirror(TaskListener):
 
 
 async def mirror(client, message):
-    LOGGER.info(f"🔄 /mirror command received from {message.from_user.id if message.from_user else 'unknown'}")
-    bot_loop.create_task(Mirror(client, message).new_event())
+    try:
+        user_id = message.from_user.id if message.from_user else (message.sender_chat.id if message.sender_chat else 'unknown')
+        LOGGER.info(f"🔄 /mirror command received from {user_id}")
+        
+        if not message or not message.text:
+            LOGGER.error("❌ /mirror: Invalid message object")
+            return
+        
+        # Execute the mirror task directly - await instead of create_task
+        await Mirror(client, message).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /mirror handler error: {e}", exc_info=True)
 
 
 async def qb_mirror(client, message):
@@ -488,33 +519,57 @@ async def qb_mirror(client, message):
         /qm magnet:?xt=urn:btih:...
         /qm https://example.com/file.torrent
     """
-    bot_loop.create_task(Mirror(client, message, is_qbit=True).new_event())
+    try:
+        await Mirror(client, message, is_qbit=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /qbmirror handler error: {e}", exc_info=True)
 
 
 async def jd_mirror(client, message):
-    bot_loop.create_task(Mirror(client, message, is_jd=True).new_event())
+    try:
+        await Mirror(client, message, is_jd=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /jdmirror handler error: {e}", exc_info=True)
 
 
 async def nzb_mirror(client, message):
-    bot_loop.create_task(Mirror(client, message, is_nzb=True).new_event())
+    try:
+        await Mirror(client, message, is_nzb=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /nzbmirror handler error: {e}", exc_info=True)
 
 
 async def leech(client, message):
-    LOGGER.info(f"📥 /leech command received from {message.from_user.id if message.from_user else 'unknown'}")
-    bot_loop.create_task(Mirror(client, message, is_leech=True).new_event())
+    try:
+        user_id = message.from_user.id if message.from_user else (message.sender_chat.id if message.sender_chat else 'unknown')
+        LOGGER.info(f"📥 /leech command received from {user_id}")
+        
+        if not message or not message.text:
+            LOGGER.error("❌ /leech: Invalid message object")
+            return
+        
+        # Execute the leech task directly - await instead of create_task
+        await Mirror(client, message, is_leech=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /leech handler error: {e}", exc_info=True)
 
 
 async def qb_leech(client, message):
-    bot_loop.create_task(
-        Mirror(client, message, is_qbit=True, is_leech=True).new_event()
-    )
+    try:
+        await Mirror(client, message, is_qbit=True, is_leech=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /qbleech handler error: {e}", exc_info=True)
 
 
 async def jd_leech(client, message):
-    bot_loop.create_task(Mirror(client, message, is_leech=True, is_jd=True).new_event())
+    try:
+        await Mirror(client, message, is_leech=True, is_jd=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /jdleech handler error: {e}", exc_info=True)
 
 
 async def nzb_leech(client, message):
-    bot_loop.create_task(
-        Mirror(client, message, is_leech=True, is_nzb=True).new_event()
-    )
+    try:
+        await Mirror(client, message, is_leech=True, is_nzb=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /nzbleech handler error: {e}", exc_info=True)

@@ -29,12 +29,41 @@ from ..helper.telegram_helper.filters import CustomFilters
 from .telegram_manager import TgClient
 
 
+async def _command_audit(_, message):
+    try:
+        text = getattr(message, "text", "") or ""
+        if text.startswith("/"):
+            from .. import LOGGER
+            from .command_health_monitor import command_health_monitor, CommandStatus
+            
+            user_id = message.from_user.id if message.from_user else "unknown"
+            LOGGER.info(f"🧪 CMD_AUDIT user={user_id} text={text}")
+            
+            # Extract command name and record as started
+            parts = text.split()
+            command_name = parts[0].lstrip("/") if parts else ""
+            
+            if command_name and command_health_monitor._enabled:
+                # Record as pending execution (success will be recorded by handler)
+                # For now, log at minimal level to track invocation
+                pass
+    except Exception:
+        pass
+
+
 def add_handlers():
     try:
         from .. import LOGGER
         LOGGER.info('???? Registering bot command handlers...')
         
         if TgClient.bot:
+            TgClient.bot.add_handler(
+                MessageHandler(
+                    _command_audit,
+                    filters=regex(r"^/")
+                ),
+                group=-100,
+            )
             TgClient.bot.add_handler(
                 MessageHandler(
                     authorize,
@@ -245,7 +274,7 @@ def add_handlers():
             )
             TgClient.bot.add_handler(
                 MessageHandler(
-                    start, filters=command(BotCommands.StartCommand, case_sensitive=True)
+                    start, filters=command(BotCommands.StartCommandList, case_sensitive=True)
                 )
             )
             TgClient.bot.add_handler(
@@ -305,7 +334,7 @@ def add_handlers():
             TgClient.bot.add_handler(
                 MessageHandler(
                     bot_help,
-                    filters=command(BotCommands.HelpCommand, case_sensitive=True)
+                    filters=command(BotCommands.HelpCommandList, case_sensitive=True)
                     & CustomFilters.authorized,
                 )
             )
@@ -438,7 +467,7 @@ def add_handlers():
             TgClient.bot.add_handler(
                 MessageHandler(
                     task_status,
-                    filters=command(BotCommands.StatusCommand, case_sensitive=True)
+                    filters=command(BotCommands.StatusCommandList, case_sensitive=True)
                     & CustomFilters.authorized,
                 )
             )
@@ -496,7 +525,7 @@ def add_handlers():
             TgClient.bot.add_handler(
                 MessageHandler(
                     show_queue,
-                    filters=command(BotCommands.QueueCommand, case_sensitive=True)
+                    filters=command(BotCommands.QueueCommandList, case_sensitive=True)
                     & CustomFilters.authorized,
                 )
             )
@@ -544,6 +573,13 @@ def add_handlers():
             )
             TgClient.bot.add_handler(
                 MessageHandler(
+                    dashboard,
+                    filters=command(BotCommands.WebDashboardCommand, case_sensitive=True)
+                    & CustomFilters.authorized,
+                )
+            )
+            TgClient.bot.add_handler(
+                MessageHandler(
                     task_details,
                     filters=command(BotCommands.TaskDetailsCommand, case_sensitive=True)
                     & CustomFilters.authorized,
@@ -573,7 +609,7 @@ def add_handlers():
             TgClient.bot.add_handler(
                 MessageHandler(
                     settings_panel,
-                    filters=command(BotCommands.SettingsUICommand, case_sensitive=True)
+                    filters=command(BotCommands.SettingsUICommandList, case_sensitive=True)
                     & CustomFilters.authorized,
                 )
             )
@@ -696,6 +732,41 @@ def add_handlers():
                     & CustomFilters.authorized,
                 )
             )
+            
+            # Command Health Monitoring Handlers
+            try:
+                from ..modules.command_health import (
+                    health_report_handler,
+                    command_stats_handler,
+                    reset_command_stats_handler
+                )
+                
+                TgClient.bot.add_handler(
+                    MessageHandler(
+                        health_report_handler,
+                        filters=command(["cmdhealth", "commandhealth"], case_sensitive=True)
+                        & CustomFilters.authorized
+                    )
+                )
+                TgClient.bot.add_handler(
+                    MessageHandler(
+                        command_stats_handler,
+                        filters=command(["cmdstats", "commandstats"], case_sensitive=True)
+                        & CustomFilters.authorized
+                    )
+                )
+                TgClient.bot.add_handler(
+                    MessageHandler(
+                        reset_command_stats_handler,
+                        filters=command(["resetstats", "resetcmdstats"], case_sensitive=True)
+                        & CustomFilters.sudo
+                    )
+                )
+                
+                LOGGER.info('✅ Command health monitoring handlers registered')
+            except Exception as e:
+                LOGGER.warning(f'⚠️  Command health handlers skipped: {e}')
+            
                 # Category B: Advanced Features Handlers
         try:
             from ..modules.category_b_commands import (

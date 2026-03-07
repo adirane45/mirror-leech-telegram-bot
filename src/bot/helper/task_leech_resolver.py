@@ -6,7 +6,9 @@ Extracts cc=28 validation logic with max nesting depth of 5
 
 from pyrogram.enums import ChatAction
 
-from bot import Config, LOGGER, TgClient
+from bot import LOGGER
+from bot.core.config_manager import Config
+from bot.core.telegram_manager import TgClient
 from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.links_utils import is_telegram_link
 from bot.helper.ext_utils.media_utils import create_thumb
@@ -26,7 +28,8 @@ class LeechDestinationResolver:
     @staticmethod
     def apply_leech_flags(task_config):
         """Apply hybrid leech and transmission flags"""
-        task_config.hybrid_leech = TgClient.IS_PREMIUM_USER and (
+        is_premium_user = bool(getattr(TgClient, "IS_PREMIUM_USER", False))
+        task_config.hybrid_leech = is_premium_user and (
             task_config.user_dict.get("HYBRID_LEECH")
             or Config.HYBRID_LEECH
             and "HYBRID_LEECH" not in task_config.user_dict
@@ -35,7 +38,7 @@ class LeechDestinationResolver:
             task_config.user_transmission = False
             task_config.hybrid_leech = False
         if task_config.user_trans:
-            task_config.user_transmission = TgClient.IS_PREMIUM_USER
+            task_config.user_transmission = is_premium_user
 
     @staticmethod
     def parse_leech_destination(task_config):
@@ -50,10 +53,14 @@ class LeechDestinationResolver:
                 task_config.hybrid_leech = False
             elif task_config.up_dest.startswith("u:"):
                 task_config.up_dest = task_config.up_dest.replace("u:", "", 1)
-                task_config.user_transmission = TgClient.IS_PREMIUM_USER
+                task_config.user_transmission = bool(
+                    getattr(TgClient, "IS_PREMIUM_USER", False)
+                )
             elif task_config.up_dest.startswith("h:"):
                 task_config.up_dest = task_config.up_dest.replace("h:", "", 1)
-                task_config.user_transmission = TgClient.IS_PREMIUM_USER
+                task_config.user_transmission = bool(
+                    getattr(TgClient, "IS_PREMIUM_USER", False)
+                )
                 task_config.hybrid_leech = task_config.user_transmission
 
             # Parse chat ID and thread ID

@@ -1,4 +1,4 @@
-from aiofiles.os import path as aiopath, listdir, remove
+from aiofiles.os import path as aiopath, listdir, remove, makedirs
 from os import path as ospath
 from asyncio import sleep, gather
 from html import escape
@@ -153,6 +153,11 @@ class TaskListener(TaskConfig):
 
         if not await aiopath.exists(f"{self.dir}/{self.name}"):
             try:
+                # Ensure directory exists before trying to list it - fixes race condition with ensure_workdir
+                if not await aiopath.exists(self.dir):
+                    LOGGER.warning(f"Task directory missing: {self.dir}, creating it now")
+                    await makedirs(self.dir, exist_ok=True)
+                
                 files = await listdir(self.dir)
                 if not files:
                     try:

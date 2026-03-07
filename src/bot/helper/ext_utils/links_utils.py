@@ -1,5 +1,8 @@
 from re import match as re_match
 
+# Google Drive ID regex pattern
+GDRIVE_ID_REGEX = r"^(tp:|sa:|mtp:)?(?:[a-zA-Z0-9-_]{33}|[a-zA-Z0-9_-]{19})$|^gdl$|^(tp:|mtp:)?root$"
+
 
 def is_magnet(url: str):
     return bool(re_match(r"^magnet:\?.*xt=urn:(btih|btmh):([a-zA-Z0-9]{32,40}|[a-z2-7]{32}).*", url))
@@ -41,9 +44,4 @@ def is_rclone_path(path: str):
 
 
 def is_gdrive_id(id_: str):
-    return bool(
-        re_match(
-            r"^(tp:|sa:|mtp:)?(?:[a-zA-Z0-9-_]{33}|[a-zA-Z0-9_-]{19})$|^gdl$|^(tp:|mtp:)?root$",
-            id_,
-        )
-    )
+    return bool(re_match(GDRIVE_ID_REGEX, id_))

@@ -241,7 +241,7 @@ async def load_settings():
 
 
 async def save_settings():
-    if database.db is None:
+    if database.db is None or not TgClient or not hasattr(TgClient, 'ID'):
         return
     config_dict = Config.get_all()
     await database.db.settings.config.replace_one(
@@ -262,18 +262,21 @@ async def save_settings():
 
 
 async def update_variables():
-    if (
-        Config.LEECH_SPLIT_SIZE > TgClient.MAX_SPLIT_SIZE
-        or Config.LEECH_SPLIT_SIZE == 2097152000
-        or not Config.LEECH_SPLIT_SIZE
-    ):
-        Config.LEECH_SPLIT_SIZE = TgClient.MAX_SPLIT_SIZE
+    if TgClient and hasattr(TgClient, 'MAX_SPLIT_SIZE'):
+        if (
+            Config.LEECH_SPLIT_SIZE > TgClient.MAX_SPLIT_SIZE
+            or Config.LEECH_SPLIT_SIZE == 2097152000
+            or not Config.LEECH_SPLIT_SIZE
+        ):
+            Config.LEECH_SPLIT_SIZE = TgClient.MAX_SPLIT_SIZE
 
-    Config.HYBRID_LEECH = bool(Config.HYBRID_LEECH and TgClient.IS_PREMIUM_USER)
+    is_premium = TgClient and hasattr(TgClient, 'IS_PREMIUM_USER') and TgClient.IS_PREMIUM_USER
+    Config.HYBRID_LEECH = bool(Config.HYBRID_LEECH and is_premium)
     Config.USER_TRANSMISSION = bool(
-        Config.USER_TRANSMISSION and TgClient.IS_PREMIUM_USER
+        Config.USER_TRANSMISSION and is_premium
     )
 
+    LOGGER.info(f"🔍 Populating auth_chats from AUTHORIZED_CHATS: {Config.AUTHORIZED_CHATS}")
     if Config.AUTHORIZED_CHATS:
         aid = Config.AUTHORIZED_CHATS.replace(",", " ").split()
         for id_ in aid:
@@ -284,11 +287,18 @@ async def update_variables():
                 auth_chats[chat_id] = thread_ids
             else:
                 auth_chats[chat_id] = []
+        LOGGER.info(f"✅ auth_chats populated: {dict(auth_chats)}")
+    else:
+        LOGGER.warning("⚠️  AUTHORIZED_CHATS is empty or not set")
 
+    LOGGER.info(f"🔍 Populating sudo_users from SUDO_USERS: {Config.SUDO_USERS}")
     if Config.SUDO_USERS:
         aid = Config.SUDO_USERS.replace(",", " ").split()
         for id_ in aid:
             sudo_users.append(int(id_.strip()))
+        LOGGER.info(f"✅ sudo_users populated: {sudo_users}")
+    else:
+        LOGGER.warning("⚠️  SUDO_USERS is empty or not set")
 
     if Config.EXCLUDED_EXTENSIONS:
         fx = Config.EXCLUDED_EXTENSIONS.split()

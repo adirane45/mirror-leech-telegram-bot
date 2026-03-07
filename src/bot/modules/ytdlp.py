@@ -6,7 +6,7 @@ from pyrogram.handlers import CallbackQueryHandler
 from time import time
 from yt_dlp import YoutubeDL
 
-from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
+from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR, user_data
 from ..core.config_manager import Config
 from ..helper.ext_utils.bot_utils import (
     new_task,
@@ -274,17 +274,22 @@ class YtDlp(TaskListener):
             same_dir = {}
         if bulk is None:
             bulk = []
+        super().__init__()
         self.message = message
         self.client = client
         self.multi_tag = multi_tag
         self.options = options
         self.same_dir = same_dir
         self.bulk = bulk
-        super().__init__()
         self.is_ytdlp = True
         self.is_leech = is_leech
 
     async def new_event(self):
+        self.mid = self.message.id
+        self.user = self.message.from_user or self.message.sender_chat
+        self.user_id = self.user.id if self.user else None
+        self.user_dict = user_data.get(self.user_id, {}) if self.user_id else {}
+
         text = self.message.text.split("\n")
         input_list = text[0].split(" ")
         qual = ""
@@ -405,7 +410,7 @@ class YtDlp(TaskListener):
         if len(self.bulk) != 0:
             del self.bulk[0]
 
-        path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
+        path = f"{self.dir}{self.folder_name}"
 
         await self.get_tag(text)
 
@@ -466,8 +471,16 @@ class YtDlp(TaskListener):
 
 
 async def ytdl(client, message):
-    bot_loop.create_task(YtDlp(client, message).new_event())
+    try:
+        LOGGER.info(f"▶️ /ytdl command received from {message.from_user.id if message.from_user else 'unknown'}")
+        await YtDlp(client, message).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /ytdl handler error: {e}", exc_info=True)
 
 
 async def ytdl_leech(client, message):
-    bot_loop.create_task(YtDlp(client, message, is_leech=True).new_event())
+    try:
+        LOGGER.info(f"▶️ /ytdlleech command received from {message.from_user.id if message.from_user else 'unknown'}")
+        await YtDlp(client, message, is_leech=True).new_event()
+    except Exception as e:
+        LOGGER.error(f"❌ /ytdlleech handler error: {e}", exc_info=True)

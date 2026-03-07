@@ -41,7 +41,7 @@ class JDownloader(MyJdApi):
             LOGGER.warning(f"⚠️  JDownloader Credentials missing - JD_EMAIL={bool(jd_email)}, JD_PASS={bool(jd_pass)}")
             return
         self.error = "Connecting... Try again after couple of seconds"
-        device_name = getattr(Config, "JD_DEVICE_NAME", "") or TgClient.NAME or "mltb"
+        device_name = getattr(Config, "JD_DEVICE_NAME", "") or (TgClient.NAME if TgClient and hasattr(TgClient, 'NAME') else None) or "mltb"
         self._device_name = device_name
         LOGGER.info(f"MyJDownloader device name: {self._device_name}")
         if await path.exists("/JDownloader/logs"):

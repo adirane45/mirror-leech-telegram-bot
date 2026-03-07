@@ -165,3 +165,4 @@ virtualenv/
 # Archived/Legacy
 legacy_*/
 archive_*/
+tokens/

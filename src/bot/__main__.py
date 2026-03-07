@@ -1,4 +1,4 @@
-from . import LOGGER, bot_loop
+from . import LOGGER, bot_loop, auth_chats, sudo_users
 from .core.telegram_manager import TgClient
 from .core.config_manager import Config, validate_required_config
 
@@ -166,6 +166,32 @@ async def main():
     LOGGER.info("Loading configurations...")
     await gather(load_configurations(), update_variables())
     LOGGER.info("✅ Configurations loaded")
+    
+    # DEBUG: Verify auth data was populated
+    LOGGER.info(f"🔍 DEBUG - auth_chats: {dict(auth_chats) if auth_chats else 'EMPTY - WILL FIX'}")
+    LOGGER.info(f"🔍 DEBUG - sudo_users: {list(sudo_users) if sudo_users else 'EMPTY - WILL FIX'}")
+    
+    # Workaround: Forcefully repopulate auth_chats and sudo_users if they're empty
+    # This fixes an issue where update_variables() doesn't properly populate the module-level globals
+    if not auth_chats and Config.AUTHORIZED_CHATS:
+        LOGGER.warning("⚠️  auth_chats is empty! Applying workaround...")
+        aid = Config.AUTHORIZED_CHATS.replace(",", " ").split()
+        for id_ in aid:
+            chat_id, *thread_ids = id_.split("|")
+            chat_id = int(chat_id.strip())
+            if thread_ids:
+                thread_ids = list(map(lambda x: int(x.strip()), thread_ids))
+                auth_chats[chat_id] = thread_ids
+            else:
+                auth_chats[chat_id] = []
+        LOGGER.info(f"✅ Fixed auth_chats: {dict(auth_chats)}")
+    
+    if not sudo_users and Config.SUDO_USERS:
+        LOGGER.warning("⚠️  sudo_users is empty! Applying workaround...")
+        aid = Config.SUDO_USERS.replace(",", " ").split()
+        for id_ in aid:
+            sudo_users.append(int(id_.strip()))
+        LOGGER.info(f"✅ Fixed sudo_users: {list(sudo_users)}")
 
     from .core.torrent_manager import TorrentManager
 
@@ -270,6 +296,30 @@ bot_loop.run_until_complete(main())
 LOGGER.info("✅ main() completed successfully")
 LOGGER.info("📝 Proceeding to handler registration and start bot listener loop...")
 
+# Initialize Command Health Monitoring System
+try:
+    from .core.command_health_monitor import command_health_monitor
+    from .core.command_alert_system import command_alert_system
+    
+    LOGGER.info("📊 Initializing command health monitoring...")
+    command_health_monitor.enable()
+    command_health_monitor.set_failure_threshold(3)  # Alert after 3 consecutive failures
+    
+    # Configure alerts
+    owner_id = getattr(Config, 'OWNER_ID', None)
+    if owner_id:
+        command_alert_system.configure(
+            owner_id=owner_id,
+            alert_chat_id=getattr(Config, 'ALERT_CHAT_ID', owner_id),
+            enabled=getattr(Config, 'COMMAND_ALERT_ENABLED', True)
+        )
+        LOGGER.info(f"✅ Command health monitoring enabled (Owner: {owner_id})")
+    else:
+        LOGGER.warning("⚠️  OWNER_ID not configured, monitoring enabled but alerts disabled")
+        command_health_monitor.enable()  # Enable monitoring anyway
+except Exception as e:
+    LOGGER.error(f"❌ Command monitoring initialization failed: {e}", exc_info=True)
+
 # Register Phase 5 shutdown handler (consolidated from all phases)
 import atexit
 
@@ -294,6 +344,28 @@ LOGGER.info("📝 Creating help buttons...")
 create_help_buttons()
 LOGGER.info("📝 Calling add_handlers()...")
 add_handlers()
+
+# Register command failure alerts
+try:
+    from .core.command_alert_system import command_alert_system
+    from .core.telegram_manager import TgClient
+    
+    critical_commands = [
+        "start", "leech", "mirror", "list", 
+        "stats", "help", "status", "queue", "dashboard"
+    ]
+    
+    async def setup_alerts():
+        await command_alert_system.register_alerts_for_all_commands(
+            commands=critical_commands,
+            tg_client=TgClient.bot
+        )
+    
+    bot_loop.run_until_complete(setup_alerts())
+    LOGGER.info("✅ Command failure alerts registered")
+except Exception as e:
+    LOGGER.warning(f"⚠️  Failed to register command alerts: {e}")
+
 LOGGER.info("📝 Initializing UI monitor...")
 init_ui_monitor()
 
