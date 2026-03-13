@@ -5,7 +5,7 @@ Each formatter handles one specific setting category
 
 from abc import ABC, abstractmethod
 from html import escape
-from typing import Dict, Tuple
+from typing import Tuple
 
 from ..helper.telegram_helper.button_build import ButtonMaker
 from .user_settings_core import SettingsRetriever

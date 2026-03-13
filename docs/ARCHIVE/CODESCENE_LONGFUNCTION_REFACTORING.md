@@ -37,7 +37,7 @@ async def handle_download(url):
     # Low-level: HTTP client operations
     response = await client.get(url)
     data = await response.json()
-    
+
     # High-level: business logic
     save_download(data)
     notify_user()
@@ -82,13 +82,13 @@ async def process_user_request(user_id, request_data):
     # Validate preconditions first
     if user_id in cache:
         raise UserCacheError(f"User {user_id} not in cache")
-    
+
     if not request_data:
         raise EmptyRequestError("Request data required")
-    
+
     if not validate(request_data):
         raise InvalidDataError("Request validation failed")
-    
+
     # Now the actual business logic is clear
     return await execute_user_request(request_data)
 
@@ -115,7 +115,7 @@ Long functions with multiple branches:
 async def edit_bot_settings(self, message):
     # Parse which setting to change (80 lines)
     setting_type = extract_setting_type(message)
-    
+
     # Handle 10+ different setting types (200+ lines)
     if setting_type == "bandwidth":
         # 25 lines of bandwidth logic
@@ -131,21 +131,21 @@ async def edit_bot_settings(self, message):
 class SettingStrategy(ABC):
     @abstractmethod
     async def validate(self, value): pass
-    
+
     @abstractmethod
     async def apply(self, user_id, value): pass
 
 class BandwidthLimitStrategy(SettingStrategy):
     async def validate(self, value):
         return 0 < value <= 100  # percentage
-    
+
     async def apply(self, user_id, value):
         await config.set_user_bandwidth(user_id, value)
 
 class DownloadDirectoryStrategy(SettingStrategy):
     async def validate(self, value):
         return os.path.isdir(value)
-    
+
     async def apply(self, user_id, value):
         await config.set_user_download_dir(user_id, value)
 
@@ -161,12 +161,12 @@ SETTING_STRATEGIES = {
 async def edit_bot_settings(self, message):
     setting_type = await self._parse_setting_type(message)
     new_value = await self._extract_setting_value(message)
-    
+
     strategy = SETTING_STRATEGIES[setting_type]
-    
+
     if not await strategy.validate(new_value):
         return await self._send_error(message, "Invalid setting value")
-    
+
     await strategy.apply(message.from_user.id, new_value)
     return await self._send_success(message, setting_type)
 ```
@@ -213,7 +213,7 @@ async def create_download(self, request: DownloadRequest):
     # Much cleaner signature
     if not self._validate_request(request):
         raise InvalidDownloadRequest()
-    
+
     await self._prepare_download(request)
     return await downloader.start(request)
 ```
@@ -232,10 +232,10 @@ async def create_download(self, request: DownloadRequest):
 ```python
 # Complex boolean logic buried in function
 async def should_process_file(file):
-    if (file.size > 1024*1024 and 
+    if (file.size > 1024*1024 and
         (file.extension in SUPPORTED_FORMATS or file.is_archive) and
         not any(blocked in file.name for blocked in BLOCKED_KEYWORDS) and
-        (file.created_date > datetime.now() - timedelta(days=30) or 
+        (file.created_date > datetime.now() - timedelta(days=30) or
          file.owner_id in TRUSTED_USERS)):
         return True
     return False
@@ -294,7 +294,7 @@ def process_downloads(downloads):
     return results
 ```
 
-### Solution: Functional Approach  
+### Solution: Functional Approach
 ```python
 def process_downloads(downloads):
     return (
@@ -342,18 +342,18 @@ async def dashboard(self, message):
     stats = await get_user_stats(user.id)
     downloads = await get_user_downloads(user.id)
     uploads = await get_user_uploads(user.id)
-    
+
     # Format data (80 lines)
     total_size = sum(d.size for d in downloads)
     completion = (sum(d.progress for d in downloads) / len(downloads)) * 100
     # ... more formatting
-    
+
     # Generate HTML (60 lines)
     html = "<html>..."
     for download in downloads:
         html += f"<tr>{download.name}...</tr>"
     # ... more HTML generation
-    
+
     return html
 ```
 
@@ -364,12 +364,12 @@ class DashboardRenderer:
         self.user_id = user_id
         self.data = None
         self.formatted = None
-    
+
     async def render(self) -> str:
         await self._fetch_data()
         self._format_data()
         return self._generate_html()
-    
+
     async def _fetch_data(self):
         self.data = {
             "user": await db.get_user(self.user_id),
@@ -377,14 +377,14 @@ class DashboardRenderer:
             "downloads": await get_user_downloads(self.user_id),
             "uploads": await get_user_uploads(self.user_id)
         }
-    
+
     def _format_data(self):
         self.formatted = {
             "total_size": sum(d.size for d in self.data["downloads"]),
             "completion": self._calculate_completion(),
             # ... more formatting
         }
-    
+
     def _generate_html(self) -> str:
         builder = HtmlBuilder()
         builder.add_header("User Dashboard")
@@ -403,11 +403,11 @@ async def dashboard(self, message):
 ## Refactoring Checklist for Each Long Function
 
 - [ ] **Understand**: Map function logic and identify sections
-- [ ] **Test**: Write tests for current behavior  
+- [ ] **Test**: Write tests for current behavior
 - [ ] **Identify Extractions**: Find logical sections to extract
 - [ ] **Extract 1**: Extract first method, test
 - [ ] **Extract 2**: Extract second method, test
-- [ ] **Repeat**: Continue until function is reasonable length  
+- [ ] **Repeat**: Continue until function is reasonable length
 - [ ] **Integrate**: Update callers to use new functions
 - [ ] **Verify**: Re-run full test suite
 - [ ] **Document**: Update function/class docstrings

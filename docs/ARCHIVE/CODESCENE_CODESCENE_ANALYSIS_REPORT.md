@@ -1,8 +1,8 @@
 # CodeScene Analysis Report - Mirror Leech Telegram Bot
 
-**Report Date**: February 6, 2026  
-**Analysis Type**: Full CodeScene-style analysis  
-**Python Version**: 3.13.11  
+**Report Date**: February 6, 2026
+**Analysis Type**: Full CodeScene-style analysis
+**Python Version**: 3.13.11
 **Total Files Analyzed**: 176 Python files
 
 ---
@@ -137,11 +137,11 @@ The codebase contains **33 functions that exceed recommended complexity threshol
 # Before (298-line monolith)
 async def edit_bot_settings(self, message):
     # 298 lines of mixed concerns
-    
+
 # After (extracted helpers)
 async def edit_bot_settings(self, message):
     user_id = message.from_user.id
-    
+
     # Delegated operations
     settings = await self._get_current_settings(user_id)
     updated = await self._apply_user_changes(settings, message)
@@ -218,11 +218,11 @@ These TODOs suggest upgrading type hints for Python 3.10+ and 3.11+ syntax:
 1. **Create Repository Interface**
    ```python
    from abc import ABC, abstractmethod
-   
+
    class Repository(ABC):
        @abstractmethod
        async def get(self, key): pass
-       
+
        @abstractmethod
        async def set(self, key, value): pass
    ```
@@ -248,8 +248,8 @@ These TODOs suggest upgrading type hints for Python 3.10+ and 3.11+ syntax:
    ```python
    # Before
    async def process(self, id, name, email, phone, address): pass
-   
-   # After  
+
+   # After
    async def process(self, user_data: UserData): pass
    ```
 
@@ -290,6 +290,6 @@ Track these metrics after refactoring:
 
 ---
 
-**Report Generated**: February 6, 2026  
-**Analyzed Tools**: CodeScene-style analyzers (complexity, hotspots, code health, tech debt)  
+**Report Generated**: February 6, 2026
+**Analyzed Tools**: CodeScene-style analyzers (complexity, hotspots, code health, tech debt)
 **Improvement Target**: 50% reduction in technical debt within 2 months

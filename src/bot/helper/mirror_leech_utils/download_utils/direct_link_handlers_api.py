@@ -7,17 +7,14 @@ Handles direct link generation for services using APIs:
 - OSDN
 """
 
+from re import findall, search
+from urllib.parse import parse_qs, urlparse
+from uuid import uuid4
+
 from cloudscraper import create_scraper
 from lxml.etree import HTML
-from re import findall, search, match
-from requests import Session, get, post
-from requests.adapters import HTTPAdapter
-from urllib.parse import parse_qs, urlparse
-from urllib3.util.retry import Retry
-from uuid import uuid4
-from base64 import b64encode
+from requests import Session, get
 
-from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 
@@ -60,7 +57,7 @@ def github(url):
             raise DirectDownloadLinkException("Not a GitHub link") from e
         # Try to handle as direct archive link
         match_result = url
-    
+
     with create_scraper() as session:
         _res = session.get(match_result, stream=True, allow_redirects=True)
         # For archive URLs, get the final URL after redirect
@@ -117,7 +114,7 @@ def pixeldrain(url):
         code = url.split("/")[-1].split("?", 1)[0]
         response = get("https://pd.cybar.xyz/", allow_redirects=True)
         return response.url + code
-    except Exception as e:
+    except Exception:
         raise DirectDownloadLinkException("ERROR: Direct link not found")
 
 

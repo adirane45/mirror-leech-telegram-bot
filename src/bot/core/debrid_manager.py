@@ -4,12 +4,12 @@ Phase 10: Debrid Service Integrations
 Mock integration layer for debrid services.
 """
 
-from dataclasses import dataclass
-from enum import Enum
-from typing import Dict, List, Optional
 import asyncio
 import hashlib
 import logging
+from dataclasses import dataclass
+from enum import Enum
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

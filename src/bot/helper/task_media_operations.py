@@ -3,10 +3,12 @@ Media Operations Processor
 Handles media conversion, screenshot generation, and sample video creation
 """
 
-from aiofiles.os import path as aiopath, makedirs, remove
 from asyncio import gather
-from os import path as ospath, walk
+from os import path as ospath
+from os import walk
 from shutil import move
+
+from aiofiles.os import makedirs, remove
 
 from bot import LOGGER, cpu_eater_lock
 from bot.helper.ext_utils.bot_utils import sync_to_async
@@ -107,15 +109,9 @@ class MediaOperationsProcessor:
         return dl_path
 
     @staticmethod
-    async def convert_media(task_config, dl_path, gid, task_dict, task_dict_lock):
-        """Convert media files to specified formats"""
-        vext, vstatus, fvext = MediaOperationsProcessor.parse_convert_setting(
-            task_config.convert_video
-        )
-        aext, astatus, faext = MediaOperationsProcessor.parse_convert_setting(
-            task_config.convert_audio
-        )
-
+    @staticmethod
+    async def _identify_files_to_convert(task_config, dl_path, vext, vstatus, fvext, aext, astatus, faext):
+        """Identify all files that need conversion"""
         task_config.files_to_proceed = {}
         all_files = await MediaOperationsProcessor.collect_media_files(
             task_config, dl_path
@@ -131,38 +127,72 @@ class MediaOperationsProcessor:
                 f_path, aext, astatus, faext
             ):
                 task_config.files_to_proceed[f_path] = "audio"
+    
+    @staticmethod
+    async def _convert_single_file(task_config, ffmpeg, f_path, f_type, vext, aext):
+        """Convert a single media file"""
+        task_config.proceed_count += 1
+        LOGGER.info(f"Converting: {f_path}")
+        if task_config.is_file:
+            task_config.subsize = task_config.size
+        else:
+            task_config.subsize = await get_path_size(f_path)
+            task_config.subname = ospath.basename(f_path)
+
+        if f_type == "video":
+            res = await ffmpeg.convert_video(f_path, vext)
+        else:
+            res = await ffmpeg.convert_audio(f_path, aext)
+
+        if res:
+            try:
+                await remove(f_path)
+            except:
+                task_config.is_cancelled = True
+                return None
+        return res if task_config.is_file else f_path
+    
+    @staticmethod
+    async def _execute_conversions(task_config, ffmpeg, vext, aext, gid, task_dict, task_dict_lock):
+        """Execute all media conversions"""
+        async with task_dict_lock:
+            task_dict[task_config.mid] = FFmpegStatus(
+                task_config, ffmpeg, gid, "Convert"
+            )
+        task_config.progress = False
+        async with cpu_eater_lock:
+            task_config.progress = True
+            for f_path, f_type in task_config.files_to_proceed.items():
+                result = await MediaOperationsProcessor._convert_single_file(
+                    task_config, ffmpeg, f_path, f_type, vext, aext
+                )
+                if result is None:
+                    return False
+                if task_config.is_file and result != f_path:
+                    return result
+        return None
+    
+    @staticmethod
+    async def convert_media(task_config, dl_path, gid, task_dict, task_dict_lock):
+        """Convert media files to specified formats"""
+        vext, vstatus, fvext = MediaOperationsProcessor.parse_convert_setting(
+            task_config.convert_video
+        )
+        aext, astatus, faext = MediaOperationsProcessor.parse_convert_setting(
+            task_config.convert_audio
+        )
+
+        await MediaOperationsProcessor._identify_files_to_convert(
+            task_config, dl_path, vext, vstatus, fvext, aext, astatus, faext
+        )
 
         if task_config.files_to_proceed:
             ffmpeg = FFMpeg(task_config)
-            async with task_dict_lock:
-                task_dict[task_config.mid] = FFmpegStatus(
-                    task_config, ffmpeg, gid, "Convert"
-                )
-            task_config.progress = False
-            async with cpu_eater_lock:
-                task_config.progress = True
-                for f_path, f_type in task_config.files_to_proceed.items():
-                    task_config.proceed_count += 1
-                    LOGGER.info(f"Converting: {f_path}")
-                    if task_config.is_file:
-                        task_config.subsize = task_config.size
-                    else:
-                        task_config.subsize = await get_path_size(f_path)
-                        task_config.subname = ospath.basename(f_path)
-
-                    if f_type == "video":
-                        res = await ffmpeg.convert_video(f_path, vext)
-                    else:
-                        res = await ffmpeg.convert_audio(f_path, aext)
-
-                    if res:
-                        try:
-                            await remove(f_path)
-                        except:
-                            task_config.is_cancelled = True
-                            return False
-                    if task_config.is_file:
-                        return res
+            result = await MediaOperationsProcessor._execute_conversions(
+                task_config, ffmpeg, vext, aext, gid, task_dict, task_dict_lock
+            )
+            if result is not None:
+                return result if result else False
         return dl_path
 
     @staticmethod

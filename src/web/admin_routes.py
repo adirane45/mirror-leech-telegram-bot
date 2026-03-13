@@ -1,22 +1,20 @@
 """Admin dashboard routes and API endpoints"""
 import os
-import psutil
-import asyncio
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Depends, status, WebSocket
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-from pathlib import Path
-import json
 from logging import getLogger
+from typing import Any, Dict, List, Optional
 
+import psutil
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
+
+from bot.core.config_manager import Config
 from web.admin_auth import AdminAuth, get_admin_credentials
-from web.torrent_file_browser import TorrentFileBrowser
 from web.download_history import DownloadHistory
 from web.scheduled_downloads import ScheduledDownloads
-from bot.core.config_manager import Config
+from web.torrent_file_browser import TorrentFileBrowser
 
 LOGGER = getLogger(__name__)
 
@@ -116,27 +114,27 @@ async def login(request: LoginRequest):
     """Admin login endpoint"""
     # Get admin credentials
     admin_credentials = get_admin_credentials()
-    
+
     # Check if user exists in admin credentials
     if request.username not in admin_credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
-    
+
     # Verify password
     if not AdminAuth.verify_password(request.password, admin_credentials[request.username]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
-    
+
     # Create token
     token = AdminAuth.create_access_token(
         data={"sub": request.username},
         expires_delta=timedelta(hours=24)
     )
-    
+
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -170,7 +168,7 @@ async def health_check(admin: Dict[str, Any] = Depends(verify_admin_token)):
         "aria2": "unknown",
         "jdownloader": "unknown"
     }
-    
+
     return health_status
 
 
@@ -181,7 +179,7 @@ async def get_system_stats(admin: Dict[str, Any] = Depends(verify_admin_token)):
     memory_info = psutil.virtual_memory()
     disk_info = psutil.disk_usage('/')
     uptime_seconds = os.popen('uptime -p').read().strip() if os.name != 'nt' else "N/A"
-    
+
     return SystemStats(
         cpu_percent=cpu_percent,
         memory_percent=memory_info.percent,
@@ -198,8 +196,8 @@ async def get_system_stats(admin: Dict[str, Any] = Depends(verify_admin_token)):
 async def get_downloads(admin: Dict[str, Any] = Depends(verify_admin_token)):
     """Get list of admin-initiated downloads"""
     try:
-        from web.admin_download_handler import _pending_downloads, _download_lock
-        
+        from web.admin_download_handler import _download_lock, _pending_downloads
+
         # Get all downloads from in-memory storage
         async with _download_lock:
             downloads = []
@@ -214,7 +212,7 @@ async def get_downloads(admin: Dict[str, Any] = Depends(verify_admin_token)):
                     "error": data.get("error", ""),
                     "message": data.get("message", "")
                 })
-        
+
         return {"downloads": downloads}
     except Exception as e:
         LOGGER.error(f"Error getting downloads: {e}")
@@ -225,22 +223,23 @@ async def get_downloads(admin: Dict[str, Any] = Depends(verify_admin_token)):
 async def start_download(request: DownloadRequest, admin: Dict[str, Any] = Depends(verify_admin_token)):
     """Start a new download operation"""
     try:
-        from web.admin_download_handler import _pending_downloads, _download_lock
         import uuid
-        
+
+        from web.admin_download_handler import _download_lock, _pending_downloads
+
         # Validate input
         if not request.url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="URL is required"
             )
-        
+
         if request.operation not in ["mirror", "leech", "qm", "jm", "qb_mirror"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid operation: {request.operation}"
             )
-        
+
         # Store download request in in-memory queue
         download_id = str(uuid.uuid4())
         download_data = {
@@ -253,16 +252,16 @@ async def start_download(request: DownloadRequest, admin: Dict[str, Any] = Depen
             "progress": 0,
             "speed": 0
         }
-        
+
         if request.options:
             download_data.update(request.options)
-        
+
         # Add to pending downloads
         async with _download_lock:
             _pending_downloads[download_id] = download_data
-        
+
         LOGGER.info(f"Admin download queued: {download_id} - {request.operation} - {request.url}")
-        
+
         return {
             "status": "success",
             "download_id": download_id,
@@ -280,8 +279,8 @@ async def start_download(request: DownloadRequest, admin: Dict[str, Any] = Depen
 async def cancel_download(download_id: str, admin: Dict[str, Any] = Depends(verify_admin_token)):
     """Cancel an active download"""
     try:
-        from web.admin_download_handler import _pending_downloads, _download_lock
-        
+        from web.admin_download_handler import _download_lock, _pending_downloads
+
         async with _download_lock:
             if download_id in _pending_downloads:
                 _pending_downloads[download_id]["status"] = "cancelled"
@@ -290,7 +289,7 @@ async def cancel_download(download_id: str, admin: Dict[str, Any] = Depends(veri
                     "status": "success",
                     "message": f"Download {download_id} cancelled"
                 }
-        
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Download {download_id} not found"
@@ -308,8 +307,8 @@ async def cancel_download(download_id: str, admin: Dict[str, Any] = Depends(veri
 async def pause_download(download_id: str, admin: Dict[str, Any] = Depends(verify_admin_token)):
     """Pause an active download"""
     try:
-        from web.admin_download_handler import _pending_downloads, _download_lock
-        
+        from web.admin_download_handler import _download_lock, _pending_downloads
+
         async with _download_lock:
             if download_id in _pending_downloads:
                 _pending_downloads[download_id]["status"] = "paused"
@@ -318,7 +317,7 @@ async def pause_download(download_id: str, admin: Dict[str, Any] = Depends(verif
                     "status": "success",
                     "message": f"Download {download_id} paused"
                 }
-        
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Download {download_id} not found"
@@ -359,10 +358,10 @@ async def get_torrent_files(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         browser = TorrentFileBrowser()
-        
+
         # Try to get from qBittorrent first
         try:
             qb_data = await get_qb_torrent_files(torrent_hash)
@@ -375,7 +374,7 @@ async def get_torrent_files(
                 })
         except Exception as qb_err:
             LOGGER.debug(f"qBittorrent lookup failed: {qb_err}")
-        
+
         # Try Aria2 as fallback
         try:
             aria2_data = await get_aria2_torrent_files(torrent_hash)
@@ -388,7 +387,7 @@ async def get_torrent_files(
                 })
         except Exception as aria2_err:
             LOGGER.debug(f"Aria2 lookup failed: {aria2_err}")
-        
+
         raise HTTPException(status_code=404, detail="Torrent not found")
     except HTTPException:
         raise
@@ -407,11 +406,11 @@ async def select_torrent_files(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         # Try qBittorrent first
         try:
-            result = await select_qb_files(torrent_hash, file_indices)
+            await select_qb_files(torrent_hash, file_indices)
             return JSONResponse({
                 "success": True,
                 "source": "qbittorrent",
@@ -419,10 +418,10 @@ async def select_torrent_files(
             })
         except Exception as qb_err:
             LOGGER.debug(f"qBittorrent select failed: {qb_err}")
-        
+
         # Try Aria2
         try:
-            result = await select_aria2_files(torrent_hash, file_indices)
+            await select_aria2_files(torrent_hash, file_indices)
             return JSONResponse({
                 "success": True,
                 "source": "aria2",
@@ -430,7 +429,7 @@ async def select_torrent_files(
             })
         except Exception as aria2_err:
             LOGGER.debug(f"Aria2 select failed: {aria2_err}")
-        
+
         raise HTTPException(status_code=404, detail="Could not select files in any client")
     except HTTPException:
         raise
@@ -450,37 +449,39 @@ async def select_files_by_pattern(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
+    async def _find_torrent_files(hash_value: str):
+        try:
+            return await get_qb_torrent_files(hash_value), "qbittorrent"
+        except:
+            pass
+        try:
+            return await get_aria2_torrent_files(hash_value), "aria2"
+        except:
+            return None, None
+
+    async def _apply_pattern_selection(hash_value: str, source_name: str, file_indices: List[int]):
+        if source_name == "qbittorrent":
+            await select_qb_files(hash_value, file_indices)
+            return
+        await select_aria2_files(hash_value, file_indices)
+
     try:
         browser = TorrentFileBrowser()
-        
+
         # Get torrent files
-        torrent_data = None
-        source = None
-        try:
-            torrent_data = await get_qb_torrent_files(torrent_hash)
-            source = "qbittorrent"
-        except:
-            try:
-                torrent_data = await get_aria2_torrent_files(torrent_hash)
-                source = "aria2"
-            except:
-                pass
-        
+        torrent_data, source = await _find_torrent_files(torrent_hash)
+
         if not torrent_data:
             raise HTTPException(status_code=404, detail="Torrent not found")
-        
-        metadata = browser.parse_torrent_metadata(torrent_data)
+
+        browser.parse_torrent_metadata(torrent_data)
         selected = browser.select_files_by_pattern(pattern, pattern_type)
-        
+
         # Apply selection to appropriate client
         file_indices = [f['index'] for f in selected if 'index' in f]
-        
-        if source == "qbittorrent":
-            await select_qb_files(torrent_hash, file_indices)
-        else:
-            await select_aria2_files(torrent_hash, file_indices)
-        
+        await _apply_pattern_selection(torrent_hash, source, file_indices)
+
         return JSONResponse({
             "success": True,
             "source": source,
@@ -508,7 +509,7 @@ async def get_download_history_api(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         history = history_db.get_download_history(limit=limit, operation=operation)
         return JSONResponse({
@@ -530,7 +531,7 @@ async def get_history_statistics(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         stats = history_db.get_statistics(days=days)
         return JSONResponse({
@@ -552,7 +553,7 @@ async def get_success_rates(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         rates = history_db.get_success_rate(days=days)
         return JSONResponse({
@@ -574,7 +575,7 @@ async def get_top_downloads_api(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         top = history_db.get_top_downloads(limit=limit)
         return JSONResponse({
@@ -642,7 +643,7 @@ async def add_scheduled_download(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         scheduled_db.add_scheduled_download(
             download_id=request.download_id,
@@ -672,7 +673,7 @@ async def get_scheduled_downloads(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         downloads = scheduled_db.get_scheduled_downloads(status=status)
         return JSONResponse({
@@ -695,11 +696,11 @@ async def update_scheduled_download(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         if status:
             scheduled_db.update_scheduled_status(download_id, status)
-        
+
         return JSONResponse({
             "success": True,
             "download_id": download_id,
@@ -720,7 +721,7 @@ async def create_template(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         scheduled_db.add_template(
             template_id=request.template_id,
@@ -749,7 +750,7 @@ async def get_templates(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         templates = scheduled_db.get_templates()
         return JSONResponse({
@@ -771,7 +772,7 @@ async def delete_template(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         scheduled_db.delete_template(template_id)
         return JSONResponse({
@@ -794,14 +795,14 @@ async def batch_download(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         if not request.urls or len(request.urls) == 0:
             raise HTTPException(status_code=400, detail="No URLs provided")
-        
+
         download_ids = []
-        dest = request.destination or "/app/downloads"
-        
+        request.destination or "/app/downloads"
+
         for idx, url in enumerate(request.urls):
             if url.strip():
                 download_id = f"batch_{int(datetime.now().timestamp())}_{idx}"
@@ -812,7 +813,7 @@ async def batch_download(
                     operation=request.operation
                 )
                 download_ids.append(download_id)
-        
+
         return JSONResponse({
             "success": True,
             "count": len(download_ids),
@@ -835,17 +836,17 @@ async def pause_download(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         scheduled_db.pause_download(download_id, reason=reason or "User paused")
-        
+
         # Broadcast pause event
         try:
             from web.websocket_handler import broadcast_notification
             broadcast_notification("Download Paused", f"Download {download_id} paused", "warning")
         except:
             pass
-        
+
         return JSONResponse({
             "success": True,
             "download_id": download_id,
@@ -866,17 +867,17 @@ async def resume_download(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         scheduled_db.resume_download(download_id)
-        
+
         # Broadcast resume event
         try:
             from web.websocket_handler import broadcast_notification
             broadcast_notification("Download Resumed", f"Download {download_id} resumed", "success")
         except:
             pass
-        
+
         return JSONResponse({
             "success": True,
             "download_id": download_id,
@@ -898,11 +899,11 @@ async def set_download_priority(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         if priority < 1 or priority > 10:
             raise HTTPException(status_code=400, detail="Priority must be between 1 and 10")
-        
+
         scheduled_db.change_priority(download_id, priority)
         return JSONResponse({
             "success": True,
@@ -925,7 +926,7 @@ async def get_queue_status(
     auth = AdminAuth()
     if not auth.verify_token(credentials.credentials):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     try:
         status = scheduled_db.get_queue_status()
         return JSONResponse({
@@ -952,19 +953,19 @@ def get_dashboard_html() -> str:
                 padding: 0;
                 box-sizing: border-box;
             }
-            
+
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 min-height: 100vh;
                 padding: 20px;
             }
-            
+
             .container {
                 max-width: 1400px;
                 margin: 0 auto;
             }
-            
+
             .header {
                 background: rgba(255, 255, 255, 0.95);
                 padding: 20px;
@@ -975,12 +976,12 @@ def get_dashboard_html() -> str:
                 justify-content: space-between;
                 align-items: center;
             }
-            
+
             .header h1 {
                 color: #667eea;
                 font-size: 28px;
             }
-            
+
             .connection-status {
                 display: inline-block;
                 padding: 6px 12px;
@@ -989,17 +990,17 @@ def get_dashboard_html() -> str:
                 font-weight: 500;
                 margin-right: 15px;
             }
-            
+
             .connection-status.connected {
                 background: #d4edda;
                 color: #155724;
             }
-            
+
             .connection-status.disconnected {
                 background: #f8d7da;
                 color: #721c24;
             }
-            
+
             .logout-btn {
                 background: #e74c3c;
                 color: white;
@@ -1009,25 +1010,25 @@ def get_dashboard_html() -> str:
                 cursor: pointer;
                 font-size: 14px;
             }
-            
+
             .logout-btn:hover {
                 background: #c0392b;
             }
-            
+
             .grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 20px;
                 margin-bottom: 20px;
             }
-            
+
             .card {
                 background: rgba(255, 255, 255, 0.95);
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
-            
+
             .card h2 {
                 color: #667eea;
                 font-size: 18px;
@@ -1035,50 +1036,50 @@ def get_dashboard_html() -> str:
                 border-bottom: 2px solid #667eea;
                 padding-bottom: 10px;
             }
-            
+
             .stat-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 10px;
             }
-            
+
             .stat {
                 background: #f8f9fa;
                 padding: 10px;
                 border-radius: 5px;
                 border-left: 4px solid #667eea;
             }
-            
+
             .stat-label {
                 font-size: 12px;
                 color: #7f8c8d;
                 text-transform: uppercase;
             }
-            
+
             .stat-value {
                 font-size: 20px;
                 font-weight: bold;
                 color: #2c3e50;
                 margin-top: 5px;
             }
-            
+
             .download-form {
                 display: grid;
                 gap: 10px;
             }
-            
+
             .form-group {
                 display: flex;
                 flex-direction: column;
             }
-            
+
             .form-group label {
                 font-size: 14px;
                 font-weight: 500;
                 color: #2c3e50;
                 margin-bottom: 5px;
             }
-            
+
             .form-group input,
             .form-group select {
                 padding: 10px;
@@ -1086,14 +1087,14 @@ def get_dashboard_html() -> str:
                 border-radius: 5px;
                 font-size: 14px;
             }
-            
+
             .form-group input:focus,
             .form-group select:focus {
                 outline: none;
                 border-color: #667eea;
                 box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             }
-            
+
             .btn {
                 background: #667eea;
                 color: white;
@@ -1105,24 +1106,24 @@ def get_dashboard_html() -> str:
                 font-weight: 500;
                 transition: background 0.3s ease;
             }
-            
+
             .btn:hover {
                 background: #5568d3;
             }
-            
+
             .btn-danger {
                 background: #e74c3c;
             }
-            
+
             .btn-danger:hover {
                 background: #c0392b;
             }
-            
+
             .download-list {
                 max-height: 400px;
                 overflow-y: auto;
             }
-            
+
             .download-item {
                 background: #f8f9fa;
                 padding: 12px;
@@ -1131,22 +1132,22 @@ def get_dashboard_html() -> str:
                 border-left: 4px solid #3498db;
                 transition: all 0.3s ease;
             }
-            
+
             .download-item.error {
                 border-left-color: #e74c3c;
             }
-            
+
             .download-item.completed {
                 border-left-color: #27ae60;
             }
-            
+
             .download-item-name {
                 font-weight: 500;
                 color: #2c3e50;
                 margin-bottom: 5px;
                 word-break: break-all;
             }
-            
+
             .progress-bar {
                 background: #ecf0f1;
                 height: 8px;
@@ -1154,13 +1155,13 @@ def get_dashboard_html() -> str:
                 overflow: hidden;
                 margin: 8px 0;
             }
-            
+
             .progress-fill {
                 background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
                 height: 100%;
                 transition: width 0.3s ease;
             }
-            
+
             .download-meta {
                 display: flex;
                 justify-content: space-between;
@@ -1168,12 +1169,12 @@ def get_dashboard_html() -> str:
                 color: #7f8c8d;
                 margin-bottom: 8px;
             }
-            
+
             .download-actions {
                 display: flex;
                 gap: 5px;
             }
-            
+
             .download-actions button {
                 padding: 5px 10px;
                 font-size: 12px;
@@ -1181,7 +1182,7 @@ def get_dashboard_html() -> str:
                 border-radius: 3px;
                 cursor: pointer;
             }
-            
+
             .status-badge {
                 display: inline-block;
                 padding: 4px 8px;
@@ -1189,37 +1190,37 @@ def get_dashboard_html() -> str:
                 font-size: 12px;
                 font-weight: 500;
             }
-            
+
             .status-pending {
                 background: #fff3cd;
                 color: #856404;
             }
-            
+
             .status-downloading {
                 background: #cce5ff;
                 color: #004085;
             }
-            
+
             .status-downloaded {
                 background: #d1ecf1;
                 color: #0c5460;
             }
-            
+
             .status-uploading {
                 background: #d4edda;
                 color: #155724;
             }
-            
+
             .status-upload_completed {
                 background: #c3e6cb;
                 color: #155724;
             }
-            
+
             .status-error {
                 background: #f8d7da;
                 color: #721c24;
             }
-            
+
             .notifications {
                 position: fixed;
                 top: 20px;
@@ -1227,7 +1228,7 @@ def get_dashboard_html() -> str:
                 z-index: 1000;
                 max-width: 350px;
             }
-            
+
             .notification {
                 background: white;
                 padding: 15px;
@@ -1236,34 +1237,34 @@ def get_dashboard_html() -> str:
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 animation: slideIn 0.3s ease;
             }
-            
+
             .notification.info {
                 border-left: 4px solid #3498db;
             }
-            
+
             .notification.success {
                 border-left: 4px solid #27ae60;
             }
-            
+
             .notification.warning {
                 border-left: 4px solid #f39c12;
             }
-            
+
             .notification.error {
                 border-left: 4px solid #e74c3c;
             }
-            
+
             .notification-title {
                 font-weight: 600;
                 margin-bottom: 5px;
                 color: #2c3e50;
             }
-            
+
             .notification-message {
                 font-size: 13px;
                 color: #7f8c8d;
             }
-            
+
             @keyframes slideIn {
                 from {
                     transform: translateX(400px);
@@ -1274,36 +1275,36 @@ def get_dashboard_html() -> str:
                     opacity: 1;
                 }
             }
-            
+
             .alert {
                 padding: 12px;
                 margin-bottom: 10px;
                 border-radius: 5px;
                 display: none;
             }
-            
+
             .alert-success {
                 background: #d4edda;
                 color: #155724;
                 border: 1px solid #c3e6cb;
             }
-            
+
             .alert-error {
                 background: #f8d7da;
                 color: #721c24;
                 border: 1px solid #f5c6cb;
             }
-            
+
             @media (max-width: 768px) {
                 .grid {
                     grid-template-columns: 1fr;
                 }
-                
+
                 .header {
                     flex-direction: column;
                     gap: 10px;
                 }
-                
+
                 .notifications {
                     left: 20px;
                     right: 20px;
@@ -1323,7 +1324,7 @@ def get_dashboard_html() -> str:
                     <button class="logout-btn" onclick="logout()">Logout</button>
                 </div>
             </div>
-            
+
             <div class="grid">
                 <!-- System Stats -->
                 <div class="card">
@@ -1347,7 +1348,7 @@ def get_dashboard_html() -> str:
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Download Form -->
                 <div class="card">
                     <h2>⬇️ New Download</h2>
@@ -1371,7 +1372,7 @@ def get_dashboard_html() -> str:
                     </form>
                 </div>
             </div>
-            
+
             <!-- Active Downloads -->
             <div class="card">
                 <h2>📥 Active Downloads</h2>
@@ -1379,7 +1380,7 @@ def get_dashboard_html() -> str:
                     <p style="color: #7f8c8d; text-align: center; padding: 20px;">No active downloads</p>
                 </div>
             </div>
-            
+
             <!-- Phase 4: Download History -->
             <div class="card" style="margin-top: 20px;">
                 <h2>📝 Download History</h2>
@@ -1409,7 +1410,7 @@ def get_dashboard_html() -> str:
                     </table>
                 </div>
             </div>
-            
+
             <!-- Phase 4: Analytics -->
             <div class="grid" style="margin-top: 20px;">
                 <div class="card">
@@ -1433,14 +1434,14 @@ def get_dashboard_html() -> str:
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <h2>✅ Success Rates by Operation</h2>
                     <div id="success-rates" style="font-size: 13px; line-height: 1.8;">
                         <p style="color: #7f8c8d; text-align: center; padding: 20px;">Loading...</p>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <h2>🔝 Top Downloads (by size)</h2>
                     <div id="top-downloads" style="font-size: 12px; line-height: 1.6;">
@@ -1448,11 +1449,11 @@ def get_dashboard_html() -> str:
                     </div>
                 </div>
             </div>
-            
+
             <!-- Phase 5: Advanced Download Management -->
             <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 10px; border: 2px solid #667eea;">
                 <h2 style="color: #667eea; margin-bottom: 20px;">🚀 Phase 5: Advanced Download Management</h2>
-                
+
                 <div class="grid">
                     <!-- Batch Upload -->
                     <div class="card">
@@ -1471,7 +1472,7 @@ def get_dashboard_html() -> str:
                         </div>
                         <button class="btn" onclick="batchUpload()" style="width: 100%;">Upload All</button>
                     </div>
-                    
+
                     <!-- Templates -->
                     <div class="card">
                         <h2>📋 Download Templates</h2>
@@ -1483,7 +1484,7 @@ def get_dashboard_html() -> str:
                             <p style="color: #7f8c8d; text-align: center;">Loading templates...</p>
                         </div>
                     </div>
-                    
+
                     <!-- Queue Status -->
                     <div class="card">
                         <h2>📊 Queue Status</h2>
@@ -1507,7 +1508,7 @@ def get_dashboard_html() -> str:
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Scheduled Downloads -->
                 <div class="card" style="margin-top: 20px;">
                     <h2>⏰ Scheduled Downloads</h2>
@@ -1540,84 +1541,84 @@ def get_dashboard_html() -> str:
                 </div>
             </div>
         </div>
-        
+
         <!-- Notifications -->
         <div class="notifications" id="notifications-container"></div>
-        
+
         <script>
             let authToken = localStorage.getItem('auth_token');
             let ws = null;
             let reconnectAttempt = 0;
             const downloadsMap = new Map();
-            
+
             if (!authToken) {
                 window.location.href = '/admin/login';
             }
-            
+
             const API_BASE = '/admin/api';
-            
+
             // Initialize WebSocket connection
             function connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = `${protocol}//${window.location.host}/admin/ws`;
-                
+
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = () => {
                     console.log('WebSocket connected');
                     reconnectAttempt = 0;
                     document.getElementById('ws-status').className = 'connection-status connected';
                     document.getElementById('ws-status').textContent = '🟢 Connected';
                 };
-                
+
                 ws.onmessage = (event) => {
                     const message = JSON.parse(event.data);
                     handleWebSocketMessage(message);
                 };
-                
+
                 ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
                 };
-                
+
                 ws.onclose = () => {
                     console.log('WebSocket disconnected');
                     document.getElementById('ws-status').className = 'connection-status disconnected';
                     document.getElementById('ws-status').textContent = '⚫ Reconnecting...';
-                    
+
                     // Attempt reconnect with exponential backoff
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000);
                     reconnectAttempt++;
                     setTimeout(connectWebSocket, delay);
                 };
             }
-            
+
             function handleWebSocketMessage(message) {
                 console.log('WebSocket message:', message);
-                
+
                 switch (message.type) {
                     case 'connected':
                         console.log('WebSocket handshake complete');
                         break;
-                    
+
                     case 'download_update':
                         updateDownload(message.download_id, message.data);
                         break;
-                    
+
                     case 'system_stats':
                         updateSystemStats(message.data);
                         break;
-                    
+
                     case 'notification':
                         showNotification(message.title, message.message, message.level);
                         break;
-                    
+
                     case 'keepalive':
                         // Send pong
                         ws.send(JSON.stringify({type: 'ping'}));
                         break;
                 }
             }
-            
+
             function updateDownload(downloadId, data) {
                 downloadsMap.set(downloadId, {
                     ...downloadsMap.get(downloadId),
@@ -1625,7 +1626,7 @@ def get_dashboard_html() -> str:
                 });
                 renderDownloads();
             }
-            
+
             function updateSystemStats(stats) {
                 if (stats.cpu !== undefined) {
                     document.getElementById('cpu-usage').textContent = stats.cpu.toFixed(1) + '%';
@@ -1637,7 +1638,7 @@ def get_dashboard_html() -> str:
                     document.getElementById('disk-usage').textContent = stats.disk.toFixed(1) + '%';
                 }
             }
-            
+
             function showNotification(title, message, level = 'info') {
                 const container = document.getElementById('notifications-container');
                 const notification = document.createElement('div');
@@ -1647,7 +1648,7 @@ def get_dashboard_html() -> str:
                     <div class="notification-message">${message}</div>
                 `;
                 container.appendChild(notification);
-                
+
                 // Auto-remove after 5 seconds
                 setTimeout(() => {
                     notification.style.opacity = '0';
@@ -1655,17 +1656,17 @@ def get_dashboard_html() -> str:
                     setTimeout(() => notification.remove(), 300);
                 }, 5000);
             }
-            
+
             // Initialize
             connectWebSocket();
             loadStats();
             loadDownloads();
-            
+
             // Fallback polling for stats (every 10 seconds)
             setInterval(loadStats, 10000);
             // Refresh download list every 5 seconds (WebSocket updates in real-time)
             setInterval(loadDownloads, 5000);
-            
+
             async function loadStats() {
                 try {
                     const response = await fetch(`${API_BASE}/stats`, {
@@ -1673,19 +1674,19 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.status === 401) {
                         localStorage.removeItem('auth_token');
                         window.location.href = '/admin/login';
                         return;
                     }
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         document.getElementById('cpu-usage').textContent = data.cpu_percent.toFixed(1) + '%';
-                        document.getElementById('memory-usage').textContent = 
+                        document.getElementById('memory-usage').textContent =
                             (data.memory_used_gb.toFixed(1)) + ' / ' + (data.memory_total_gb.toFixed(1)) + ' GB';
-                        document.getElementById('disk-usage').textContent = 
+                        document.getElementById('disk-usage').textContent =
                             (data.disk_used_gb.toFixed(0)) + ' / ' + (data.disk_total_gb.toFixed(0)) + ' GB';
                         document.getElementById('bot-status').textContent = '✅ Online';
                     }
@@ -1693,7 +1694,7 @@ def get_dashboard_html() -> str:
                     console.error('Error loading stats:', error);
                 }
             }
-            
+
             async function loadDownloads() {
                 try {
                     const response = await fetch(`${API_BASE}/downloads`, {
@@ -1701,44 +1702,44 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.status === 401) {
                         localStorage.removeItem('auth_token');
                         window.location.href = '/admin/login';
                         return;
                     }
-                    
+
                     if (response.ok) {
                         const data = await response.json();
-                        
+
                         // Update downloads map
                         data.downloads.forEach(download => {
                             downloadsMap.set(download.id, download);
                         });
-                        
+
                         renderDownloads();
                     }
                 } catch (error) {
                     console.error('Error loading downloads:', error);
                 }
             }
-            
+
             function renderDownloads() {
                 const list = document.getElementById('downloads-list');
                 const downloads = Array.from(downloadsMap.values());
-                
+
                 if (downloads.length === 0) {
                     list.innerHTML = '<p style=\"color: #7f8c8d; text-align: center; padding: 20px;\">No active downloads</p>';
                     return;
                 }
-                
+
                 list.innerHTML = downloads.map(download => {
                     const progress = download.progress || 0;
                     const speed = download.speed || 0;
                     const status = download.status || 'pending';
                     const url = download.url || '';
                     const name = url.split('/').pop() || 'Download';
-                    
+
                     return `
                         <div class="download-item ${status}">
                             <div class="download-item-name">${name}</div>
@@ -1758,14 +1759,14 @@ def get_dashboard_html() -> str:
                     `;
                 }).join('');
             }
-            
+
             async function startDownload(event) {
                 event.preventDefault();
-                
+
                 const url = document.getElementById('url').value;
                 const operation = document.getElementById('operation').value;
                 const alertContainer = document.getElementById('alert-container');
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/download/start`, {
                         method: 'POST',
@@ -1778,7 +1779,7 @@ def get_dashboard_html() -> str:
                             operation: operation
                         })
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         showAlert('Download queued! ID: ' + data.download_id, 'success', alertContainer);
@@ -1793,10 +1794,10 @@ def get_dashboard_html() -> str:
                     showAlert('Error: ' + error.message, 'error', alertContainer);
                 }
             }
-            
+
             async function cancelDownload(downloadId) {
                 if (!confirm('Are you sure you want to cancel this download?')) return;
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/download/${downloadId}/cancel`, {
                         method: 'POST',
@@ -1804,7 +1805,7 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         downloadsMap.delete(downloadId);
                         renderDownloads();
@@ -1813,7 +1814,7 @@ def get_dashboard_html() -> str:
                     console.error('Error cancelling download:', error);
                 }
             }
-            
+
             function showAlert(message, type, container) {
                 const alert = document.createElement('div');
                 alert.className = `alert alert-${type}`;
@@ -1821,38 +1822,38 @@ def get_dashboard_html() -> str:
                 alert.style.display = 'block';
                 container.innerHTML = '';
                 container.appendChild(alert);
-                
+
                 setTimeout(() => {
                     alert.style.display = 'none';
                 }, 5000);
             }
-            
+
             function logout() {
                 localStorage.removeItem('auth_token');
                 window.location.href = '/admin/login';
             }
-            
+
             // Phase 4: Load and display download history
             async function loadHistory() {
                 try {
                     const operation = document.getElementById('history-operation').value;
                     const url = operation ? `${API_BASE}/history?operation=${operation}` : `${API_BASE}/history`;
-                    
+
                     const response = await fetch(url, {
                         headers: {
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         const tbody = document.getElementById('history-table');
-                        
+
                         if (!data.downloads || data.downloads.length === 0) {
                             tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #7f8c8d;">No downloads yet</td></tr>';
                             return;
                         }
-                        
+
                         tbody.innerHTML = data.downloads.map(d => {
                             const url_text = d.url ? d.url.substring(0, 40) + (d.url.length > 40 ? '...' : '') : 'N/A';
                             const size_mb = d.total_size ? (d.total_size / 1024 / 1024).toFixed(1) : '--';
@@ -1870,7 +1871,7 @@ def get_dashboard_html() -> str:
                     console.error('Error loading history:', error);
                 }
             }
-            
+
             // Phase 4: Load analytics data
             async function loadAnalytics() {
                 try {
@@ -1880,30 +1881,30 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (statsResponse.ok) {
                         const statsData = await statsResponse.json();
                         const stats = statsData.statistics.overall || {};
-                        
+
                         document.getElementById('stats-total').textContent = stats.total || 0;
                         document.getElementById('stats-successful').textContent = stats.successful || 0;
                         document.getElementById('stats-failed').textContent = stats.failed || 0;
-                        
+
                         const total_size_gb = stats.total_size ? (stats.total_size / 1024 / 1024 / 1024).toFixed(2) : 0;
                         document.getElementById('stats-total-size').textContent = total_size_gb + ' GB';
                     }
-                    
+
                     // Load success rates
                     const rateResponse = await fetch(`${API_BASE}/history/success-rate?days=30`, {
                         headers: {
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (rateResponse.ok) {
                         const rateData = await rateResponse.json();
                         const rates = rateData.success_rates.by_operation || [];
-                        
+
                         const ratesHtml = rates.map(r => `
                             <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -1918,21 +1919,21 @@ def get_dashboard_html() -> str:
                                 </div>
                             </div>
                         `).join('');
-                        
+
                         document.getElementById('success-rates').innerHTML = ratesHtml || '<p style="color: #7f8c8d; text-align: center;">No data available</p>';
                     }
-                    
+
                     // Load top downloads
                     const topResponse = await fetch(`${API_BASE}/history/top-downloads?limit=5`, {
                         headers: {
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (topResponse.ok) {
                         const topData = await topResponse.json();
                         const downloads = topData.downloads || [];
-                        
+
                         const topHtml = downloads.map((d, idx) => {
                             const size_gb = (d.total_size / 1024 / 1024 / 1024).toFixed(2);
                             return `
@@ -1947,28 +1948,28 @@ def get_dashboard_html() -> str:
                                 </div>
                             `;
                         }).join('');
-                        
+
                         document.getElementById('top-downloads').innerHTML = topHtml || '<p style="color: #7f8c8d; text-align: center; padding: 20px;">No downloads tracked yet</p>';
                     }
                 } catch (error) {
                     console.error('Error loading analytics:', error);
                 }
             }
-            
+
             // Phase 5: Advanced Download Management Functions
-            
+
             // Batch upload URLs
             async function batchUpload() {
                 const urls = document.getElementById('batch-urls').value
                     .split('\\n')
                     .filter(url => url.trim().length > 0);
                 const operation = document.getElementById('batch-operation').value;
-                
+
                 if (urls.length === 0) {
                     showNotification('Batch Upload', 'Please enter at least one URL', 'warning');
                     return;
                 }
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/batch-download`, {
                         method: 'POST',
@@ -1981,7 +1982,7 @@ def get_dashboard_html() -> str:
                             operation: operation
                         })
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         showNotification('Success', `Added ${data.count} downloads to queue`, 'success');
@@ -1992,14 +1993,14 @@ def get_dashboard_html() -> str:
                     showNotification('Error', error.message, 'error');
                 }
             }
-            
+
             // Create download template
             async function createTemplate() {
                 const name = prompt('Template name:');
                 if (!name) return;
-                
+
                 const operation = document.getElementById('operation').value || 'mirror';
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/templates/add`, {
                         method: 'POST',
@@ -2013,7 +2014,7 @@ def get_dashboard_html() -> str:
                             operation: operation
                         })
                     });
-                    
+
                     if (response.ok) {
                         showNotification('Success', 'Template created', 'success');
                         loadTemplates();
@@ -2022,7 +2023,7 @@ def get_dashboard_html() -> str:
                     showNotification('Error', error.message, 'error');
                 }
             }
-            
+
             // Load templates
             async function loadTemplates() {
                 try {
@@ -2031,16 +2032,16 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         const list = document.getElementById('templates-list');
-                        
+
                         if (!data.templates || data.templates.length === 0) {
                             list.innerHTML = '<p style="color: #7f8c8d; text-align: center;">No templates yet</p>';
                             return;
                         }
-                        
+
                         list.innerHTML = data.templates.map(t => `
                             <div style="padding: 8px; border-bottom: 1px solid #ecf0f1; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
@@ -2055,11 +2056,11 @@ def get_dashboard_html() -> str:
                     console.error('Error loading templates:', error);
                 }
             }
-            
+
             // Delete template
             async function deleteTemplate(templateId) {
                 if (!confirm('Delete this template?')) return;
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/templates/${templateId}`, {
                         method: 'DELETE',
@@ -2067,7 +2068,7 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         loadTemplates();
                     }
@@ -2075,7 +2076,7 @@ def get_dashboard_html() -> str:
                     console.error('Error deleting template:', error);
                 }
             }
-            
+
             // Load queue status
             async function loadQueueStatus() {
                 try {
@@ -2084,11 +2085,11 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         const queue = data.queue || {};
-                        
+
                         document.getElementById('queue-queued').textContent = queue.queued || 0;
                         document.getElementById('queue-progress').textContent = queue.in_progress || 0;
                         document.getElementById('queue-size').textContent = queue.total_size || 0;
@@ -2098,17 +2099,17 @@ def get_dashboard_html() -> str:
                     console.error('Error loading queue status:', error);
                 }
             }
-            
+
             // Schedule download
             async function scheduleDownload() {
                 const url = document.getElementById('schedule-url').value;
                 const scheduleType = document.getElementById('schedule-type').value;
-                
+
                 if (!url) {
                     showNotification('Schedule', 'Please enter a URL', 'warning');
                     return;
                 }
-                
+
                 try {
                     const response = await fetch(`${API_BASE}/schedules/add`, {
                         method: 'POST',
@@ -2123,7 +2124,7 @@ def get_dashboard_html() -> str:
                             schedule_type: scheduleType
                         })
                     });
-                    
+
                     if (response.ok) {
                         showNotification('Success', 'Download scheduled', 'success');
                         document.getElementById('schedule-url').value = '';
@@ -2133,7 +2134,7 @@ def get_dashboard_html() -> str:
                     showNotification('Error', error.message, 'error');
                 }
             }
-            
+
             // Load schedules
             async function loadSchedules() {
                 try {
@@ -2142,16 +2143,16 @@ def get_dashboard_html() -> str:
                             'Authorization': `Bearer ${authToken}`
                         }
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         const tbody = document.getElementById('schedules-table');
-                        
+
                         if (!data.scheduled || data.scheduled.length === 0) {
                             tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #7f8c8d;">No schedules yet</td></tr>';
                             return;
                         }
-                        
+
                         tbody.innerHTML = data.scheduled.map(s => {
                             const url_text = s.url ? s.url.substring(0, 30) + (s.url.length > 30 ? '...' : '') : 'N/A';
                             return `
@@ -2173,7 +2174,7 @@ def get_dashboard_html() -> str:
                     console.error('Error loading schedules:', error);
                 }
             }
-            
+
             // Update schedule status
             async function updateScheduleStatus(downloadId, status) {
                 try {
@@ -2185,13 +2186,13 @@ def get_dashboard_html() -> str:
                         },
                         body: JSON.stringify({ status: status })
                     });
-                    
+
                     loadSchedules();
                 } catch (error) {
                     console.error('Error updating schedule:', error);
                 }
             }
-            
+
             // Load Phase 4 data on page load and refresh periodically
             window.addEventListener('load', () => {
                 loadHistory();
@@ -2200,14 +2201,14 @@ def get_dashboard_html() -> str:
                 loadSchedules();
                 loadQueueStatus();
             });
-            
+
             // Refresh data every 30 seconds
             setInterval(() => {
                 loadHistory();
                 loadAnalytics();
                 loadQueueStatus();
             }, 30000);
-            
+
             // Refresh schedules every 60 seconds
             setInterval(() => {
                 loadSchedules();

@@ -102,9 +102,9 @@ docker compose restart mirror-bot
 /qm <magnet-link-or-url>
 ```
 
-**How it works**: 
+**How it works**:
 - Tor rotates IP every ~10 minutes
-- Each new IP appears as different user to torrent source  
+- Each new IP appears as different user to torrent source
 - 403 error often resets with new IP
 
 See: [TOR_SETUP_GUIDE.md](TOR_SETUP_GUIDE.md) for detailed setup
@@ -225,10 +225,10 @@ curl -x socks5://localhost:9050 https://api.ipify.org  # Tor IP
 
 ## 🚫 What WON'T Fix It
 
-❌ **Using VPN** - Bot must be configured to support it  
-❌ **Adding headers manually** - Not possible in Telegram  
-❌ **Downloading in browser first** - Then uploading will still get 403 if source blocks it  
-❌ **Using /leech instead of /qm** - Same backend, same error  
+❌ **Using VPN** - Bot must be configured to support it
+❌ **Adding headers manually** - Not possible in Telegram
+❌ **Downloading in browser first** - Then uploading will still get 403 if source blocks it
+❌ **Using /leech instead of /qm** - Same backend, same error
 
 ---
 
@@ -268,6 +268,6 @@ curl -x socks5://localhost:9050 https://api.ipify.org  # Tor IP
 
 ---
 
-**Error Fixed By**: Improved error handling in v3.2.1+  
-**Date**: 2026-02-23  
+**Error Fixed By**: Improved error handling in v3.2.1+
+**Date**: 2026-02-23
 **Status**: Enhanced user messaging for 403 errors

@@ -34,11 +34,11 @@ echo "[QB-INIT] Using password: $TEMP_PASS"
 # Try to set password and save config
 if [ -f "$CONF_FILE" ]; then
     echo "[QB-INIT] Setting credentials in config file"
-    
+
     # Use sed to set the password hash (base64 encoded)
     # For now, set it to empty to allow unauthenticated access from local network
     sed -i 's/^WebUI\\Password_PBKDF2=.*/WebUI\\Password_PBKDF2=/g' "$CONF_FILE"
-    
+
     # Verify it was set
     if grep -q "^WebUI\\\\Password_PBKDF2=$" "$CONF_FILE"; then
         echo "[QB-INIT] ✅ Password cleared successfully"

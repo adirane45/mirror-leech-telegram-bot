@@ -1,16 +1,11 @@
 import os
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from ..helper.ext_utils.bot_utils import new_task
-from ..helper.ext_utils.help_messages import (
-    HELP_CATEGORIES,
-    HELP_CATEGORY_ORDER,
-    format_command,
-    format_shortcuts,
-)
-from ..helper.telegram_helper.message_utils import send_message, send_file
+from ..helper.ext_utils.help_messages import HELP_CATEGORIES, HELP_CATEGORY_ORDER, format_command, format_shortcuts
 from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.message_utils import send_file, send_message
 
 
 def _primary_command(cmd) -> str:

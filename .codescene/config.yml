@@ -13,7 +13,7 @@ analysis:
     - "tests/**/*.py"
     - "scripts/**/*.py"
     - "integrations/**/*.py"
-  
+
   # Directories to exclude
   exclude:
     - "**/node_modules/**"
@@ -30,14 +30,14 @@ analysis:
 thresholds:
   # Code health score (0-10)
   code_health_minimum: 7.0
-  
+
   # Complexity thresholds
   cognitive_complexity_warning: 15
   cognitive_complexity_error: 25
-  
+
   # File size
   max_file_lines: 500
-  
+
   # Function size
   max_function_lines: 50
   max_function_parameters: 5
@@ -53,7 +53,7 @@ hotspots:
 technical_debt:
   # Calculate technical debt
   enabled: true
-  
+
   # Priority areas
   focus_areas:
     - "bot/core/*.py"
@@ -87,7 +87,7 @@ integration:
   repository:
     type: "git"
     branch: "main"
-  
+
   # Analysis frequency
   schedule:
     enabled: false  # Manual for now

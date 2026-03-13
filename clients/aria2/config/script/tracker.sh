@@ -45,7 +45,7 @@ DATE_TIME() {
 }
 
 GET_TRACKERS() {
-    
+
     if [[ -z "${CUSTOM_TRACKER_URL}" ]]; then
         echo && echo -e "$(DATE_TIME) ${INFO} Get BT trackers..."
         TRACKER=$(

@@ -11,40 +11,39 @@ Implements multi-master replication with:
 
 import asyncio
 import uuid
-from datetime import datetime, UTC
-from typing import Dict, List, Optional, Any, Callable
-
-from .replication_models import (
-    ConflictResolutionStrategy,
-    ReplicationState,
-    ReplicationLog,
-    ConflictEvent,
-    VectorClock,
-    SyncCheckpoint,
-    ReplicationMetrics,
-    ReplicationEventListener,
-    ReplicationLag,
-)
+from datetime import UTC, datetime
+from typing import Any, Callable, Dict, List, Optional
 
 from .replication_conflict_resolver import ReplicationConflictResolver
+from .replication_models import (
+    ConflictEvent,
+    ConflictResolutionStrategy,
+    ReplicationEventListener,
+    ReplicationLag,
+    ReplicationLog,
+    ReplicationMetrics,
+    ReplicationState,
+    SyncCheckpoint,
+    VectorClock,
+)
 from .replication_sync_engine import ReplicationSyncEngine
 
 
 class ReplicationManager:
     """
     Multi-master replication manager (main orchestrator)
-    
+
     Responsibilities:
     - Coordinate change tracking and publishing
     - Integrate conflict resolver and sync engine
     - Manage local state and vector clocks
     - Expose unified public API
     """
-    
+
     _instance: Optional['ReplicationManager'] = None
     _lock = asyncio.Lock()
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.enabled = False
         self.node_id = ""
         self.peer_nodes: Dict[str, Dict[str, Any]] = {}
@@ -56,8 +55,8 @@ class ReplicationManager:
         self.vector_clock = VectorClock("")
         self.listeners: List[ReplicationEventListener] = []
         self.conflicts: Dict[str, ConflictEvent] = {}
-        self._replication_task: Optional[asyncio.Task] = None
-        
+        self._replication_task: Optional[asyncio.Task[None]] = None
+
         # Initialize specialized components
         self.conflict_resolver = ReplicationConflictResolver(
             replication_log=self.replication_log,
@@ -65,7 +64,7 @@ class ReplicationManager:
             metrics=self._metrics,
             listeners=self.listeners
         )
-        
+
         self.sync_engine = ReplicationSyncEngine(
             replication_log=self.replication_log,
             local_state=self.local_state,
@@ -89,38 +88,38 @@ class ReplicationManager:
         self._metrics = value
         self.conflict_resolver.metrics = value
         self.sync_engine.metrics = value
-    
+
     @classmethod
     def get_instance(cls) -> 'ReplicationManager':
         """Get singleton instance"""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
-    
+
     async def start(self, node_id: str = "") -> bool:
         """Start replication manager"""
         if self.enabled:
             return True
-        
+
         try:
             self.node_id = node_id or f"node_{uuid.uuid4().hex[:8]}"
             self.vector_clock.node_id = self.node_id
             self.enabled = True
-            
+
             # Start sync engine
             await self.sync_engine.start()
             self._replication_task = self.sync_engine._replication_task
-            
+
             return True
         except Exception:
             self.enabled = False
             return False
-    
+
     async def stop(self) -> bool:
         """Stop replication manager"""
         if not self.enabled:
             return True
-        
+
         try:
             self.enabled = False
             await self.sync_engine.stop()
@@ -128,15 +127,15 @@ class ReplicationManager:
             return True
         except Exception:
             return False
-    
+
     async def is_enabled(self) -> bool:
         """Check if replication is enabled"""
         return self.enabled
-    
+
     # ========================================================================
     # CHANGE TRACKING AND PUBLISHING
     # ========================================================================
-    
+
     async def publish_change(
         self,
         operation_type: str,
@@ -146,23 +145,23 @@ class ReplicationManager:
     ) -> bool:
         """
         Publish a local change to replicate to other nodes
-        
+
         Args:
             operation_type: CREATE, UPDATE, DELETE
             key: Key for the changed data
             value: New value
             old_value: Old value (for UPDATE/DELETE)
-        
+
         Returns:
             True if change was published
         """
         if not self.enabled:
             return False
-        
+
         try:
             # Increment local clock
             self.vector_clock.increment()
-            
+
             # Create log entry
             log_entry = ReplicationLog(
                 source_node=self.node_id,
@@ -174,27 +173,27 @@ class ReplicationManager:
                 vector_clock=VectorClock(self.node_id, dict(self.vector_clock.clocks)),
                 sequence_number=len(self.replication_log)
             )
-            
+
             # Add to local log
             self.replication_log.append(log_entry)
-            
+
             # Update local state
             if operation_type == "DELETE":
                 self.local_state.pop(key, None)
             else:
                 self.local_state[key] = value
-            
+
             # Queue for replication to all peers
             await self.sync_engine.queue_change_for_replication(log_entry)
-            
+
             # Notify listeners
             for listener in self.listeners:
                 await listener.on_change_published(log_entry)
-            
+
             return True
         except Exception:
             return False
-    
+
     async def handle_remote_change(
         self,
         log_entry: ReplicationLog,
@@ -202,7 +201,7 @@ class ReplicationManager:
     ) -> bool:
         """
         Handle a change received from a remote node
-        
+
         Checks for conflicts and applies if no conflict or after resolution
         """
         if not self.enabled:
@@ -252,19 +251,19 @@ class ReplicationManager:
     async def resolve_conflict(self, conflict: ConflictEvent) -> bool:
         """Compatibility wrapper for conflict resolution"""
         return await self.conflict_resolver.resolve_conflict(conflict)
-    
+
     # ========================================================================
     # SYNCHRONIZATION
     # ========================================================================
-    
+
     async def sync_with_node(self, node_id: str) -> bool:
         """Perform full synchronization with a specific node"""
         return await self.sync_engine.sync_with_node(node_id)
-    
+
     async def incremental_sync(self, node_id: str) -> bool:
         """Perform incremental sync with a specific node"""
         return await self.sync_engine.incremental_sync(node_id)
-    
+
     async def force_sync_all_nodes(self) -> bool:
         """Force synchronization with all peer nodes"""
         return await self.sync_engine.force_sync_all_nodes()
@@ -272,11 +271,11 @@ class ReplicationManager:
     def _classify_lag(self, lag_ms: int) -> str:
         """Compatibility wrapper for lag classification"""
         return self.sync_engine._classify_lag(lag_ms)
-    
+
     # ========================================================================
     # MONITORING AND MANAGEMENT
     # ========================================================================
-    
+
     async def get_replication_status(self) -> Dict[str, Any]:
         """Get overall replication status"""
         return {
@@ -289,7 +288,7 @@ class ReplicationManager:
             'lag_ms': self.metrics.replication_lag_ms,
             'peers': list(self.peer_nodes.keys())
         }
-    
+
     async def get_replication_lag(self) -> Dict[str, Any]:
         """Get replication lag metrics"""
         return {
@@ -299,11 +298,11 @@ class ReplicationManager:
             'lag_level': self.sync_engine._classify_lag(self.metrics.replication_lag_ms),
             'last_updated': self.metrics.last_updated.isoformat()
         }
-    
+
     async def get_metrics(self) -> ReplicationMetrics:
         """Get replication metrics"""
         return self.metrics
-    
+
     async def register_peer_node(self, node_id: str, address: str) -> bool:
         """Register a peer node for replication"""
         try:
@@ -316,7 +315,7 @@ class ReplicationManager:
             return True
         except Exception:
             return False
-    
+
     async def unregister_peer_node(self, node_id: str) -> bool:
         """Unregister a peer node"""
         try:
@@ -326,11 +325,11 @@ class ReplicationManager:
             return True
         except Exception:
             return False
-    
+
     async def get_conflict_history(self, limit: int = 100) -> List[ConflictEvent]:
         """Get recent conflicts"""
         return await self.conflict_resolver.get_conflict_history(limit)
-    
+
     async def add_listener(self, listener: ReplicationEventListener) -> bool:
         """Register a replication event listener"""
         try:
@@ -339,7 +338,7 @@ class ReplicationManager:
             return True
         except Exception:
             return False
-    
+
     async def remove_listener(self, listener: ReplicationEventListener) -> bool:
         """Unregister a replication event listener"""
         try:
@@ -348,31 +347,31 @@ class ReplicationManager:
             return True
         except Exception:
             return False
-    
+
     async def clear_replication_log(self) -> int:
         """Clear old replication log entries"""
         return await self.sync_engine.clear_replication_log()
-    
+
     # ========================================================================
     # CONFIGURATION
     # ========================================================================
-    
-    def set_custom_conflict_resolver(self, resolver: Callable) -> None:
+
+    def set_custom_conflict_resolver(self, resolver: Callable[..., Any]) -> None:
         """Set custom conflict resolver function"""
         self.conflict_resolver.set_custom_resolver(resolver)
-    
+
     def set_conflict_resolution_strategy(self, strategy: ConflictResolutionStrategy) -> None:
         """Set the conflict resolution strategy"""
         self.conflict_resolver.set_resolution_strategy(strategy)
-    
+
     # ========================================================================
     # UTILITY METHODS
     # ========================================================================
-    
+
     async def get_pending_changes_count(self, node_id: Optional[str] = None) -> int:
         """Get count of pending changes"""
         return await self.sync_engine.get_pending_changes_count(node_id)
-    
+
     async def get_log_size(self) -> int:
         """Get replication log size"""
         return len(self.replication_log)

@@ -267,7 +267,7 @@ RCLONE_TOKEN=$(curl -s https://api.refresh.service/rclone/token)
   "$RCLONE_TOKEN" \
   --strategy rolling
 
-# Result: 
+# Result:
 # - All pods receive new token within 5 minutes
 # - Service never goes down
 # - All nodes synchronized

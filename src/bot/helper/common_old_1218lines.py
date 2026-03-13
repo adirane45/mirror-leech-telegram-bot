@@ -13,18 +13,6 @@ from time import time
 
 from .. import DOWNLOAD_DIR, task_dict, task_dict_lock, user_data
 from ..core.config_manager import Config
-from .task_archive_operations import ArchiveOperationsProcessor
-from .task_config_initializers import TaskConfigInitializers
-from .task_config_mapping import TaskConfigMapping
-from .task_config_normalizers import TaskConfigNormalizers
-from .task_config_path_resolvers import TaskConfigPathResolvers
-from .task_ffmpeg_processor import FFmpegTaskProcessor
-from .task_leech_resolver import LeechDestinationResolver
-from .task_media_operations import MediaOperationsProcessor
-from .task_multi_bulk_operations import BulkTaskOperations, MultiTaskOperations
-from .task_name_substitution import NameSubstitutionProcessor
-from .task_upload_destination_resolver import UploadDestinationResolver
-
 
 
 class TaskConfig:
@@ -119,24 +107,32 @@ class TaskConfig:
             f"rclone/{self.user_id}.conf" if dest.startswith('mrcc:') else "rclone.conf"
         )
 
+    async def _verify_rclone_config(self, path, status):
+        """Verify rclone config exists"""
+        config_path = self.get_config_path(path)
+        if config_path != "rclone.conf" and status == "up":
+            self.private_link = True
+        if not await aiopath.exists(config_path):
+            raise ValueError(f"Rclone Config: {config_path} not Exists!")
+    
+    async def _verify_gdrive_token(self, path, status):
+        """Verify Google Drive token exists"""
+        token_path = self.get_token_path(path)
+        if token_path.startswith("tokens/") and status == "up":
+            self.private_link = True
+        if not await aiopath.exists(token_path):
+            raise ValueError(f"NO TOKEN! {token_path} not Exists!")
+    
     async def is_token_exists(self, path, status):
         if is_rclone_path(path):
-            config_path = self.get_config_path(path)
-            if config_path != "rclone.conf" and status == "up":
-                self.private_link = True
-            if not await aiopath.exists(config_path):
-                raise ValueError(f"Rclone Config: {config_path} not Exists!")
+            await self._verify_rclone_config(path, status)
         elif (
             status == "dl"
             and is_gdrive_link(path)
             or status == "up"
             and is_gdrive_id(path)
         ):
-            token_path = self.get_token_path(path)
-            if token_path.startswith("tokens/") and status == "up":
-                self.private_link = True
-            if not await aiopath.exists(token_path):
-                raise ValueError(f"NO TOKEN! {token_path} not Exists!")
+            await self._verify_gdrive_token(path, status)
 
     async def _ensure_workdir(self):
         # Ensure download directory exists for this task with proper permissions
@@ -224,35 +220,47 @@ class TaskConfig:
             if self.up_dest in Config.UPLOAD_PATHS:
                 self.up_dest = Config.UPLOAD_PATHS[self.up_dest]
 
-    def _apply_ffmpeg_cmds(self):
-        if not self.ffmpeg_cmds:
-            return
+    def _get_ffmpeg_dict(self):
+        """Get the appropriate ffmpeg dictionary"""
         if self.user_dict.get("FFMPEG_CMDS", None):
-            ffmpeg_dict = deepcopy(self.user_dict["FFMPEG_CMDS"])
+            return deepcopy(self.user_dict["FFMPEG_CMDS"])
         elif (
             "FFMPEG_CMDS" not in self.user_dict or not self.user_dict["FFMPEG_CMDS"]
         ) and Config.FFMPEG_CMDS:
-            ffmpeg_dict = deepcopy(Config.FFMPEG_CMDS)
-        else:
-            ffmpeg_dict = None
+            return deepcopy(Config.FFMPEG_CMDS)
+        return None
+    
+    def _process_ffmpeg_key(self, key, ffmpeg_dict):
+        """Process a single ffmpeg key and return commands"""
+        cmds = []
+        if isinstance(key, tuple):
+            cmds.extend(list(key))
+            return cmds
+        
+        if ffmpeg_dict is None or key not in ffmpeg_dict.keys():
+            return cmds
+        
+        for ind, vl in enumerate(ffmpeg_dict[key]):
+            if variables := set(findall(r"\{(.*?)\}", vl)):
+                ff_values = (
+                    self.user_dict.get("FFMPEG_VARIABLES", {})
+                    .get(key, {})
+                    .get(str(ind), {})
+                )
+                if Counter(list(variables)) == Counter(list(ff_values.keys())):
+                    cmds.append(vl.format(**ff_values))
+            else:
+                cmds.append(vl)
+        return cmds
+    
+    def _apply_ffmpeg_cmds(self):
+        if not self.ffmpeg_cmds:
+            return
+        
+        ffmpeg_dict = self._get_ffmpeg_dict()
         cmds = []
         for key in list(self.ffmpeg_cmds):
-            if isinstance(key, tuple):
-                cmds.extend(list(key))
-                continue
-            if ffmpeg_dict is None or key not in ffmpeg_dict.keys():
-                continue
-            for ind, vl in enumerate(ffmpeg_dict[key]):
-                if variables := set(findall(r"\{(.*?)\}", vl)):
-                    ff_values = (
-                        self.user_dict.get("FFMPEG_VARIABLES", {})
-                        .get(key, {})
-                        .get(str(ind), {})
-                    )
-                    if Counter(list(variables)) == Counter(list(ff_values.keys())):
-                        cmds.append(vl.format(**ff_values))
-                else:
-                    cmds.append(vl)
+            cmds.extend(self._process_ffmpeg_key(key, ffmpeg_dict))
         self.ffmpeg_cmds = cmds
 
     async def _normalize_up_dest_tokens(self):
@@ -273,51 +281,68 @@ class TaskConfig:
             raise ValueError("Wrong Upload Destination!")
         await self.is_token_exists(self.up_dest, "up")
 
-    async def _resolve_upload_destination(self):
+    def _set_stop_duplicate_flag(self):
         self.stop_duplicate = (
             self.user_dict.get("STOP_DUPLICATE")
             or "STOP_DUPLICATE" not in self.user_dict
             and Config.STOP_DUPLICATE
         )
+
+    def _apply_default_upload_target(self):
         default_upload = (
             self.user_dict.get("DEFAULT_UPLOAD", "") or Config.DEFAULT_UPLOAD
         )
-        if (not self.up_dest and default_upload == "rc") or self.up_dest == "rc":
+        use_rclone_default = (not self.up_dest and default_upload == "rc") or self.up_dest == "rc"
+        use_gdrive_default = (not self.up_dest and default_upload == "gd") or self.up_dest == "gd"
+        if use_rclone_default:
             self.up_dest = self.user_dict.get("RCLONE_PATH") or Config.RCLONE_PATH
-        elif (not self.up_dest and default_upload == "gd") or self.up_dest == "gd":
+        elif use_gdrive_default:
             self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
+
+    async def _select_rclone_upload_destination(self):
+        config_path = None
+        if self.is_clone:
+            if not is_rclone_path(self.link):
+                raise ValueError("You can't clone from different types of tools")
+            config_path = self.get_config_path(self.link)
+        self.up_dest = await RcloneList(self).get_rclone_path("rcu", config_path)
+        if not is_rclone_path(self.up_dest):
+            raise ValueError(self.up_dest)
+
+    async def _select_gdrive_upload_destination(self):
+        token_path = None
+        if self.is_clone:
+            if not is_gdrive_link(self.link):
+                raise ValueError("You can't clone from different types of tools")
+            token_path = self.get_token_path(self.link)
+        self.up_dest = await GoogleDriveList(self).get_target_id("gdu", token_path)
+        if not is_gdrive_id(self.up_dest):
+            raise ValueError(self.up_dest)
+
+    def _validate_clone_upload_target_compatibility(self):
+        if is_gdrive_link(self.link) and self.get_token_path(self.link) != self.get_token_path(
+            self.up_dest
+        ):
+            raise ValueError("You must use the same token to clone!")
+        if is_rclone_path(self.link) and self.get_config_path(self.link) != self.get_config_path(
+            self.up_dest
+        ):
+            raise ValueError("You must use the same config to clone!")
+
+    async def _resolve_upload_destination(self):
+        self._set_stop_duplicate_flag()
+        self._apply_default_upload_target()
         if not self.up_dest:
             raise ValueError("No Upload Destination!")
 
         await self._normalize_up_dest_tokens()
 
         if self.up_dest == "rcl":
-            config_path = None
-            if self.is_clone:
-                if not is_rclone_path(self.link):
-                    raise ValueError("You can't clone from different types of tools")
-                config_path = self.get_config_path(self.link)
-            self.up_dest = await RcloneList(self).get_rclone_path("rcu", config_path)
-            if not is_rclone_path(self.up_dest):
-                raise ValueError(self.up_dest)
+            await self._select_rclone_upload_destination()
         elif self.up_dest == "gdl":
-            token_path = None
-            if self.is_clone:
-                if not is_gdrive_link(self.link):
-                    raise ValueError("You can't clone from different types of tools")
-                token_path = self.get_token_path(self.link)
-            self.up_dest = await GoogleDriveList(self).get_target_id("gdu", token_path)
-            if not is_gdrive_id(self.up_dest):
-                raise ValueError(self.up_dest)
+            await self._select_gdrive_upload_destination()
         elif self.is_clone:
-            if is_gdrive_link(self.link) and self.get_token_path(
-                self.link
-            ) != self.get_token_path(self.up_dest):
-                raise ValueError("You must use the same token to clone!")
-            if is_rclone_path(self.link) and self.get_config_path(
-                self.link
-            ) != self.get_config_path(self.up_dest):
-                raise ValueError("You must use the same config to clone!")
+            self._validate_clone_upload_target_compatibility()
 
     def _apply_leech_flags(self):
         self.hybrid_leech = TgClient.IS_PREMIUM_USER and (
@@ -360,79 +385,85 @@ class TaskConfig:
 
     async def _validate_transmission_chats(self):
         if self.user_transmission:
-            try:
-                chat = await TgClient.user.get_chat(self.up_dest)
-            except:
-                chat = None
-            if chat is None:
-                LOGGER.warning(
-                    "Account of user session can't find the the destination chat!"
-                )
-                self.user_transmission = False
-                self.hybrid_leech = False
-            else:
-                if chat.type.name not in [
-                    "SUPERGROUP",
-                    "CHANNEL",
-                    "GROUP",
-                    "FORUM",
-                ]:
-                    self.user_transmission = False
-                    self.hybrid_leech = False
-                elif chat.is_admin:
-                    member = await chat.get_member(TgClient.user.me.id)
-                    if (
-                        not member.privileges.can_manage_chat
-                        or not member.privileges.can_delete_messages
-                    ):
-                        self.user_transmission = False
-                        self.hybrid_leech = False
-                        LOGGER.warning(
-                            "Enable manage chat and delete messages to account of the user session from administration settings!"
-                        )
-                else:
-                    LOGGER.warning(
-                        "Promote the account of the user session to admin in the chat to get the benefit of user transmission!"
-                    )
-                    self.user_transmission = False
-                    self.hybrid_leech = False
+            await self._validate_user_transmission_chat()
 
         if not self.user_transmission or self.hybrid_leech:
-            try:
-                chat = await self.client.get_chat(self.up_dest)
-            except:
-                chat = None
-            if chat is None:
-                if self.user_transmission:
-                    self.hybrid_leech = False
-                else:
-                    raise ValueError("Chat not found!")
+            await self._validate_bot_transmission_chat()
+
+    async def _validate_user_transmission_chat(self):
+        try:
+            chat = await TgClient.user.get_chat(self.up_dest)
+        except:
+            chat = None
+        
+        if chat is None:
+            LOGGER.warning(
+                "Account of user session can't find the the destination chat!"
+            )
+            self.user_transmission = False
+            self.hybrid_leech = False
+            return
+        
+        if chat.type.name not in ["SUPERGROUP", "CHANNEL", "GROUP", "FORUM"]:
+            self.user_transmission = False
+            self.hybrid_leech = False
+        elif chat.is_admin:
+            member = await chat.get_member(TgClient.user.me.id)
+            if (
+                not member.privileges.can_manage_chat
+                or not member.privileges.can_delete_messages
+            ):
+                self.user_transmission = False
+                self.hybrid_leech = False
+                LOGGER.warning(
+                    "Enable manage chat and delete messages to account of the user session from administration settings!"
+                )
+        else:
+            LOGGER.warning(
+                "Promote the account of the user session to admin in the chat to get the benefit of user transmission!"
+            )
+            self.user_transmission = False
+            self.hybrid_leech = False
+
+    async def _validate_bot_transmission_chat(self):
+        try:
+            chat = await self.client.get_chat(self.up_dest)
+        except:
+            chat = None
+        
+        if chat is None:
+            if self.user_transmission:
+                self.hybrid_leech = False
             else:
-                if chat.type.name in [
-                    "SUPERGROUP",
-                    "CHANNEL",
-                    "GROUP",
-                    "FORUM",
-                ]:
-                    if not chat.is_admin:
-                        raise ValueError("Bot is not admin in the destination chat!")
-                    member = await chat.get_member(self.client.me.id)
-                    if (
-                        not member.privileges.can_manage_chat
-                        or not member.privileges.can_delete_messages
-                    ):
-                        if not self.user_transmission:
-                            raise ValueError(
-                                "You don't have enough privileges in this chat! Enable manage chat and delete messages for this bot!"
-                            )
-                        self.hybrid_leech = False
-                else:
-                    try:
-                        await self.client.send_chat_action(
-                            self.up_dest, ChatAction.TYPING
-                        )
-                    except:
-                        raise ValueError("Start the bot and try again!")
+                raise ValueError("Chat not found!")
+            return
+        
+        if chat.type.name in ["SUPERGROUP", "CHANNEL", "GROUP", "FORUM"]:
+            await self._validate_bot_admin_permissions(chat)
+        else:
+            await self._validate_bot_private_chat()
+
+    async def _validate_bot_admin_permissions(self, chat):
+        if not chat.is_admin:
+            raise ValueError("Bot is not admin in the destination chat!")
+        member = await chat.get_member(self.client.me.id)
+        if (
+            not member.privileges.can_manage_chat
+            or not member.privileges.can_delete_messages
+        ):
+            if not self.user_transmission:
+                raise ValueError(
+                    "You don't have enough privileges in this chat! Enable manage chat and delete messages for this bot!"
+                )
+            self.hybrid_leech = False
+
+    async def _validate_bot_private_chat(self):
+        try:
+            await self.client.send_chat_action(
+                self.up_dest, ChatAction.TYPING
+            )
+        except:
+            raise ValueError("Start the bot and try again!")
 
     def _init_split_settings(self):
         if self.split_size:
@@ -523,41 +554,47 @@ class TaskConfig:
         else:
             await self._resolve_leech_destination()
 
-    async def get_tag(self, text: list):
-        if len(text) <= 1 or not text[1].startswith("Tag: "):
-            if self.user:
-                if username := self.user.username:
-                    self.tag = f"@{username}"
-                elif hasattr(self.user, "mention"):
-                    self.tag = self.user.mention
-                else:
-                    self.tag = self.user.title
+    def _set_tag_from_current_user(self):
+        if not self.user:
             return
+        if username := self.user.username:
+            self.tag = f"@{username}"
+        elif hasattr(self.user, "mention"):
+            self.tag = self.user.mention
+        else:
+            self.tag = self.user.title
 
-        self.is_rss = True
+    def _parse_rss_tag_info(self, text: list):
         user_info = text[1].split("Tag: ")
         if len(user_info) >= 3:
             id_ = user_info[-1]
             self.tag = " ".join(user_info[:-1])
-        else:
-            self.tag, id_ = text[1].split("Tag: ")[1].split()
-        self.user = self.message.from_user = await self.client.get_users(int(id_))
+            return id_
+        self.tag, id_ = text[1].split("Tag: ")[1].split()
+        return id_
+
+    async def _load_rss_user(self, user_id):
+        self.user = self.message.from_user = await self.client.get_users(int(user_id))
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
         try:
             await self.message.unpin()
         except:
             pass
-        if self.user:
-            if username := self.user.username:
-                self.tag = f"@{username}"
-            elif hasattr(self.user, "mention"):
-                self.tag = self.user.mention
-            else:
-                self.tag = self.user.title
+
+    async def get_tag(self, text: list):
+        if len(text) <= 1 or not text[1].startswith("Tag: "):
+            self._set_tag_from_current_user()
+            return
+
+        self.is_rss = True
+        id_ = self._parse_rss_tag_info(text)
+        await self._load_rss_user(id_)
+        self._set_tag_from_current_user()
 
     @new_task
-    async def run_multi(self, input_list, obj):
+    async def _setup_multi_tag(self):
+        """Setup or validate multi-task tag"""
         await sleep(7)
         if not self.multi_tag and self.multi > 1:
             self.multi_tag = token_urlsafe(3)
@@ -565,7 +602,8 @@ class TaskConfig:
         elif self.multi <= 1:
             if self.multi_tag in multi_tags:
                 multi_tags.discard(self.multi_tag)
-            return
+            return False
+        
         if self.multi_tag and self.multi_tag not in multi_tags:
             await send_message(
                 self.message, f"{self.tag} Multi Task has been cancelled!"
@@ -574,7 +612,11 @@ class TaskConfig:
             async with task_dict_lock:
                 for fd_name in self.same_dir:
                     self.same_dir[fd_name]["total"] -= self.multi
-            return
+            return False
+        return True
+    
+    async def _build_next_multi_message(self, input_list):
+        """Build message for next multi-task iteration"""
         if len(self.bulk) != 0:
             msg = input_list[:1]
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
@@ -594,6 +636,10 @@ class TaskConfig:
             if self.multi > 2:
                 msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
             nextmsg = await send_message(nextmsg, msgts)
+        return nextmsg
+    
+    async def _prepare_next_message_context(self, nextmsg):
+        """Prepare next message with user context"""
         nextmsg = await self.client.get_messages(
             chat_id=self.message.chat.id, message_ids=nextmsg.id
         )
@@ -601,8 +647,18 @@ class TaskConfig:
             nextmsg.from_user = self.user
         else:
             nextmsg.sender_chat = self.user
+        return nextmsg
+    
+    async def run_multi(self, input_list, obj):
+        if not await self._setup_multi_tag():
+            return
+        
+        nextmsg = await self._build_next_multi_message(input_list)
+        nextmsg = await self._prepare_next_message_context(nextmsg)
+        
         if intervals["stopAll"]:
             return
+        
         await obj(
             self.client,
             nextmsg,
@@ -695,32 +751,42 @@ class TaskConfig:
         self.files_to_proceed = await self._collect_archives_to_extract(dl_path)
         if not self.files_to_proceed:
             return dl_path
+        
         t_path = dl_path
         sevenz = SevenZ(self)
         LOGGER.info(f"Extracting: {self.name}")
         async with task_dict_lock:
             task_dict[self.mid] = SevenZStatus(self, sevenz, gid, "Extract")
+        
         for dirpath, _, files in await sync_to_async(
             walk, self.up_dir or self.dir, topdown=False
         ):
-            code = 0
-            for file_ in files:
-                if self.is_cancelled:
-                    return False
-                if self._should_extract_file(file_):
-                    self.proceed_count += 1
-                    f_path = ospath.join(dirpath, file_)
-                    t_path = get_base_name(f_path) if self.is_file else dirpath
-                    if not self.is_file:
-                        self.subname = file_
-                    code = await sevenz.extract(f_path, t_path, pswd)
+            code = await self._process_directory_extraction(dirpath, files, sevenz, pswd)
             if self.is_cancelled:
                 return code
-            if code == 0:
-                await self._cleanup_extracted_archives(dirpath, files)
+        
         if self.proceed_count == 0:
             LOGGER.info("No files able to extract!")
         return t_path if self.is_file and code == 0 else dl_path
+
+    async def _process_directory_extraction(self, dirpath, files, sevenz, pswd):
+        code = 0
+        for file_ in files:
+            if self.is_cancelled:
+                return code
+            if self._should_extract_file(file_):
+                code = await self._extract_single_file(dirpath, file_, sevenz, pswd)
+        if code == 0:
+            await self._cleanup_extracted_archives(dirpath, files)
+        return code
+
+    async def _extract_single_file(self, dirpath, file_, sevenz, pswd):
+        self.proceed_count += 1
+        f_path = ospath.join(dirpath, file_)
+        t_path = get_base_name(f_path) if self.is_file else dirpath
+        if not self.is_file:
+            self.subname = file_
+        return await sevenz.extract(f_path, t_path, pswd)
 
     def _build_ffmpeg_cmds(self):
         return [
@@ -776,6 +842,107 @@ class TaskConfig:
             if "/temp/" in inp and aiopath.exists(inp):
                 await remove(inp)
 
+    @staticmethod
+    def _ffmpeg_target_matches(path, ext, is_video, is_audio):
+        if not is_video and not is_audio:
+            return False
+        if is_video and ext == "audio":
+            return False
+        if is_audio and not is_video and ext == "video":
+            return False
+        if ext in ["all", "audio", "video"]:
+            return True
+        return path.strip().lower().endswith(ext)
+
+    async def _run_ffmpeg_single_file(
+        self,
+        ffmpeg,
+        cmd,
+        input_indexes,
+        ext,
+        dl_path,
+        delete_files,
+        gid,
+        checked,
+        inputs,
+    ):
+        is_video, is_audio, _ = await get_document_type(dl_path)
+        if not self._ffmpeg_target_matches(dl_path, ext, is_video, is_audio):
+            return dl_path, checked, False
+
+        new_folder = ospath.splitext(dl_path)[0]
+        name = ospath.basename(dl_path)
+        await makedirs(new_folder, exist_ok=True)
+        file_path = f"{new_folder}/{name}"
+        await move(dl_path, file_path)
+        if not checked:
+            checked = await self._ensure_ffmpeg_status(ffmpeg, gid, checked)
+        LOGGER.info(f"Running ffmpeg cmd for: {file_path}")
+        var_cmd = await self._prepare_ffmpeg_cmd(cmd, input_indexes, file_path, inputs)
+        self.subsize = self.size
+        res = await ffmpeg.ffmpeg_cmds(var_cmd, file_path)
+        if not res:
+            await move(file_path, dl_path)
+            await rmtree(new_folder)
+            return dl_path, checked, True
+
+        if delete_files:
+            await remove(file_path)
+            if len(await listdir(new_folder)) == 1:
+                folder = new_folder.rsplit("/", 1)[0]
+                self.name = ospath.basename(res[0])
+                if self.name.startswith("ffmpeg"):
+                    self.name = self.name.split(".", 1)[-1]
+                dl_path = ospath.join(folder, self.name)
+                await move(res[0], dl_path)
+                await rmtree(new_folder)
+            else:
+                dl_path = new_folder
+                self.name = new_folder.rsplit("/", 1)[-1]
+            return dl_path, checked, True
+
+        dl_path = new_folder
+        self.name = new_folder.rsplit("/", 1)[-1]
+        return dl_path, checked, True
+
+    async def _run_ffmpeg_directory(
+        self,
+        ffmpeg,
+        cmd,
+        input_indexes,
+        ext,
+        dl_path,
+        delete_files,
+        gid,
+        checked,
+        inputs,
+    ):
+        for dirpath, _, files in await sync_to_async(walk, dl_path, topdown=False):
+            for file_ in files:
+                if self.is_cancelled:
+                    return checked
+                f_path = ospath.join(dirpath, file_)
+                is_video, is_audio, _ = await get_document_type(f_path)
+                if not self._ffmpeg_target_matches(f_path, ext, is_video, is_audio):
+                    continue
+
+                self.proceed_count += 1
+                var_cmd = await self._prepare_ffmpeg_cmd(cmd, input_indexes, f_path, inputs)
+                if not checked:
+                    checked = await self._ensure_ffmpeg_status(ffmpeg, gid, checked)
+                LOGGER.info(f"Running ffmpeg cmd for: {f_path}")
+                self.subsize = await get_path_size(f_path)
+                self.subname = file_
+                res = await ffmpeg.ffmpeg_cmds(var_cmd, f_path)
+                if res and delete_files:
+                    await remove(f_path)
+                    if len(res) == 1:
+                        file_name = ospath.basename(res[0])
+                        if file_name.startswith("ffmpeg"):
+                            newname = file_name.split(".", 1)[-1]
+                            await move(res[0], ospath.join(dirpath, newname))
+        return checked
+
     async def proceed_ffmpeg(self, dl_path, gid):
         checked = False
         inputs = {}
@@ -809,93 +976,31 @@ class TaskConfig:
                     return dl_path
                 ext = self._get_ffmpeg_ext(input_file)
                 if await aiopath.isfile(dl_path):
-                    is_video, is_audio, _ = await get_document_type(dl_path)
-                    if not is_video and not is_audio:
-                        break
-                    elif is_video and ext == "audio":
-                        break
-                    elif is_audio and not is_video and ext == "video":
-                        break
-                    elif ext not in [
-                        "all",
-                        "audio",
-                        "video",
-                    ] and not dl_path.strip().lower().endswith(ext):
-                        break
-                    new_folder = ospath.splitext(dl_path)[0]
-                    name = ospath.basename(dl_path)
-                    await makedirs(new_folder, exist_ok=True)
-                    file_path = f"{new_folder}/{name}"
-                    await move(dl_path, file_path)
-                    if not checked:
-                        checked = await self._ensure_ffmpeg_status(ffmpeg, gid, checked)
-                    LOGGER.info(f"Running ffmpeg cmd for: {file_path}")
-                    var_cmd = await self._prepare_ffmpeg_cmd(
-                        cmd, input_indexes, file_path, inputs
+                    dl_path, checked, processed = await self._run_ffmpeg_single_file(
+                        ffmpeg,
+                        cmd,
+                        input_indexes,
+                        ext,
+                        dl_path,
+                        delete_files,
+                        gid,
+                        checked,
+                        inputs,
                     )
-                    self.subsize = self.size
-                    res = await ffmpeg.ffmpeg_cmds(var_cmd, file_path)
-                    if res:
-                        if delete_files:
-                            await remove(file_path)
-                            if len(await listdir(new_folder)) == 1:
-                                folder = new_folder.rsplit("/", 1)[0]
-                                self.name = ospath.basename(res[0])
-                                if self.name.startswith("ffmpeg"):
-                                    self.name = self.name.split(".", 1)[-1]
-                                dl_path = ospath.join(folder, self.name)
-                                await move(res[0], dl_path)
-                                await rmtree(new_folder)
-                            else:
-                                dl_path = new_folder
-                                self.name = new_folder.rsplit("/", 1)[-1]
-                        else:
-                            dl_path = new_folder
-                            self.name = new_folder.rsplit("/", 1)[-1]
-                    else:
-                        await move(file_path, dl_path)
-                        await rmtree(new_folder)
+                    if not processed:
+                        break
                 else:
-                    for dirpath, _, files in await sync_to_async(
-                        walk, dl_path, topdown=False
-                    ):
-                        for file_ in files:
-                            if self.is_cancelled:
-                                return False
-                            f_path = ospath.join(dirpath, file_)
-                            is_video, is_audio, _ = await get_document_type(f_path)
-                            if not is_video and not is_audio:
-                                continue
-                            elif is_video and ext == "audio":
-                                continue
-                            elif is_audio and not is_video and ext == "video":
-                                continue
-                            elif ext not in [
-                                "all",
-                                "audio",
-                                "video",
-                            ] and not f_path.strip().lower().endswith(ext):
-                                continue
-                            self.proceed_count += 1
-                            var_cmd = await self._prepare_ffmpeg_cmd(
-                                cmd, input_indexes, f_path, inputs
-                            )
-                            if not checked:
-                                checked = await self._ensure_ffmpeg_status(
-                                    ffmpeg, gid, checked
-                                )
-                            LOGGER.info(f"Running ffmpeg cmd for: {f_path}")
-                            self.subsize = await get_path_size(f_path)
-                            self.subname = file_
-                            res = await ffmpeg.ffmpeg_cmds(var_cmd, f_path)
-                            if res and delete_files:
-                                await remove(f_path)
-                                if len(res) == 1:
-                                    file_name = ospath.basename(res[0])
-                                    if file_name.startswith("ffmpeg"):
-                                        newname = file_name.split(".", 1)[-1]
-                                        newres = ospath.join(dirpath, newname)
-                                        await move(res[0], newres)
+                    checked = await self._run_ffmpeg_directory(
+                        ffmpeg,
+                        cmd,
+                        input_indexes,
+                        ext,
+                        dl_path,
+                        delete_files,
+                        gid,
+                        checked,
+                        inputs,
+                    )
                 await self._cleanup_ffmpeg_inputs(inputs)
         finally:
             if checked:
@@ -1026,10 +1131,8 @@ class TaskConfig:
                         await take_ss(f_path, ss_nb)
         return dl_path
 
-    async def convert_media(self, dl_path, gid):
-        vext, vstatus, fvext = self._parse_convert_setting(self.convert_video)
-        aext, astatus, faext = self._parse_convert_setting(self.convert_audio)
-
+    async def _identify_convertible_files(self, dl_path, vext, vstatus, fvext, aext, astatus, faext):
+        """Identify all files that need conversion"""
         self.files_to_proceed = {}
         all_files = await self._collect_media_files(dl_path)
         for f_path in all_files:
@@ -1042,34 +1145,58 @@ class TaskConfig:
                 and self._should_convert_audio(f_path, aext, astatus, faext)
             ):
                 self.files_to_proceed[f_path] = "audio"
+    
+    async def _convert_single_file(self, ffmpeg, f_path, f_type, vext, aext):
+        """Convert a single media file"""
+        self.proceed_count += 1
+        LOGGER.info(f"Converting: {f_path}")
+        if self.is_file:
+            self.subsize = self.size
+        else:
+            self.subsize = await get_path_size(f_path)
+            self.subname = ospath.basename(f_path)
+        
+        if f_type == "video":
+            res = await ffmpeg.convert_video(f_path, vext)
+        else:
+            res = await ffmpeg.convert_audio(f_path, aext)
+        
+        if res:
+            try:
+                await remove(f_path)
+            except:
+                self.is_cancelled = True
+                return None
+            if self.is_file:
+                return res
+        return f_path
+    
+    async def _execute_conversions(self, ffmpeg, vext, aext, gid):
+        """Execute all media conversions"""
+        async with task_dict_lock:
+            task_dict[self.mid] = FFmpegStatus(self, ffmpeg, gid, "Convert")
+        self.progress = False
+        async with cpu_eater_lock:
+            self.progress = True
+            for f_path, f_type in self.files_to_proceed.items():
+                result = await self._convert_single_file(ffmpeg, f_path, f_type, vext, aext)
+                if result is None:
+                    return False
+                if self.is_file and result != f_path:
+                    return result
+        return None
+    
+    async def convert_media(self, dl_path, gid):
+        vext, vstatus, fvext = self._parse_convert_setting(self.convert_video)
+        aext, astatus, faext = self._parse_convert_setting(self.convert_audio)
+
+        await self._identify_convertible_files(dl_path, vext, vstatus, fvext, aext, astatus, faext)
 
         if self.files_to_proceed:
             ffmpeg = FFMpeg(self)
-            async with task_dict_lock:
-                task_dict[self.mid] = FFmpegStatus(self, ffmpeg, gid, "Convert")
-            self.progress = False
-            async with cpu_eater_lock:
-                self.progress = True
-                for f_path, f_type in self.files_to_proceed.items():
-                    self.proceed_count += 1
-                    LOGGER.info(f"Converting: {f_path}")
-                    if self.is_file:
-                        self.subsize = self.size
-                    else:
-                        self.subsize = await get_path_size(f_path)
-                        self.subname = ospath.basename(f_path)
-                    if f_type == "video":
-                        res = await ffmpeg.convert_video(f_path, vext)
-                    else:
-                        res = await ffmpeg.convert_audio(f_path, aext)
-                    if res:
-                        try:
-                            await remove(f_path)
-                        except:
-                            self.is_cancelled = True
-                            return False
-                        if self.is_file:
-                            return res
+            result = await self._execute_conversions(ffmpeg, vext, aext, gid)
+            if result is not None:
+                return result if result else False
         return dl_path
 
     @staticmethod
@@ -1144,6 +1271,22 @@ class TaskConfig:
 
     async def proceed_split(self, dl_path, gid):
         self.files_to_proceed = {}
+        await self._collect_files_for_split(dl_path)
+        
+        if not self.files_to_proceed:
+            return
+        
+        ffmpeg = FFMpeg(self)
+        async with task_dict_lock:
+            task_dict[self.mid] = FFmpegStatus(self, ffmpeg, gid, "Split")
+        LOGGER.info(f"Splitting: {self.name}")
+        
+        for f_path, (f_size, file_) in self.files_to_proceed.items():
+            result = await self._split_single_file(ffmpeg, f_path, f_size, file_)
+            if not result:
+                return False
+
+    async def _collect_files_for_split(self, dl_path):
         if self.is_file:
             f_size = await get_path_size(dl_path)
             if f_size > self.split_size:
@@ -1155,33 +1298,34 @@ class TaskConfig:
                     f_size = await get_path_size(f_path)
                     if f_size > self.split_size:
                         self.files_to_proceed[f_path] = [f_size, file_]
-        if self.files_to_proceed:
-            ffmpeg = FFMpeg(self)
-            async with task_dict_lock:
-                task_dict[self.mid] = FFmpegStatus(self, ffmpeg, gid, "Split")
-            LOGGER.info(f"Splitting: {self.name}")
-            for f_path, (f_size, file_) in self.files_to_proceed.items():
-                self.proceed_count += 1
-                if self.is_file:
-                    self.subsize = self.size
-                else:
-                    self.subsize = f_size
-                    self.subname = file_
-                parts = -(-f_size // self.split_size)
-                if self.equal_splits:
-                    split_size = (f_size // parts) + (f_size % parts)
-                else:
-                    split_size = self.split_size
-                if not self.as_doc and (await get_document_type(f_path))[0]:
-                    self.progress = True
-                    res = await ffmpeg.split(f_path, file_, parts, split_size)
-                else:
-                    self.progress = False
-                    res = await split_file(f_path, split_size, self)
-                if self.is_cancelled:
-                    return False
-                if res or f_size >= self.max_split_size:
-                    try:
-                        await remove(f_path)
-                    except:
-                        self.is_cancelled = True
+
+    async def _split_single_file(self, ffmpeg, f_path, f_size, file_):
+        self.proceed_count += 1
+        if self.is_file:
+            self.subsize = self.size
+        else:
+            self.subsize = f_size
+            self.subname = file_
+        
+        parts = -(-f_size // self.split_size)
+        if self.equal_splits:
+            split_size = (f_size // parts) + (f_size % parts)
+        else:
+            split_size = self.split_size
+        
+        if not self.as_doc and (await get_document_type(f_path))[0]:
+            self.progress = True
+            res = await ffmpeg.split(f_path, file_, parts, split_size)
+        else:
+            self.progress = False
+            res = await split_file(f_path, split_size, self)
+        
+        if self.is_cancelled:
+            return False
+        
+        if res or f_size >= self.max_split_size:
+            try:
+                await remove(f_path)
+            except:
+                self.is_cancelled = True
+        return True

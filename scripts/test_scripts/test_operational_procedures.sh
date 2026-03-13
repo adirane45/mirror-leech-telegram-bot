@@ -39,14 +39,14 @@ test_health_check() {
 # Test 2: Backup and Restore
 test_backup_restore() {
     echo -e "${YELLOW}📁 Test 2: Backup Procedure${NC}"
-    
+
     # Create a test backup
     BACKUP_FILE="$PROJECT_ROOT/data/backups/test_backup_${TIMESTAMP}.tar.gz"
-    
+
     if bash "$PROJECT_ROOT/scripts/backup.sh" > /dev/null 2>&1; then
         echo -e "${GREEN}   ✅ Backup creation works${NC}"
         TESTS_PASSED=$((TESTS_PASSED + 1))
-        
+
         # Check backup file exists
         if [ -f "$PROJECT_ROOT/data/backups/backup_"*.tar.gz ]; then
             echo -e "${GREEN}   ✅ Backup file created successfully${NC}"
@@ -62,7 +62,7 @@ test_backup_restore() {
 # Test 3: Services Status
 test_services_status() {
     echo -e "${YELLOW}🐳 Test 3: Docker Services Status${NC}"
-    
+
     RUNNING=$(docker ps --format "{{.Names}}" | wc -l)
     if [ "$RUNNING" -gt 0 ]; then
         echo -e "${GREEN}   ✅ Docker services running ($RUNNING containers)${NC}"
@@ -77,12 +77,12 @@ test_services_status() {
 # Test 4: API Endpoints
 test_api_endpoints() {
     echo -e "${YELLOW}⚡ Test 4: API Endpoint Availability${NC}"
-    
+
     ENDPOINTS=(
         "http://localhost:8060/health"
         "http://localhost:9090/-/healthy"
     )
-    
+
     for endpoint in "${ENDPOINTS[@]}"; do
         if curl -s -m 2 "$endpoint" > /dev/null 2>&1; then
             echo -e "${GREEN}   ✅ $endpoint responding${NC}"
@@ -97,12 +97,12 @@ test_api_endpoints() {
 # Test 5: Phase 4 Tests
 test_phase4() {
     echo -e "${YELLOW}🧪 Test 5: Phase 4 Integration Tests${NC}"
-    
-    if cd "$PROJECT_ROOT" && ./venv/bin/python -m pytest tests/test_phase4_integration.py -q > /dev/null 2>&1; then
-        echo -e "${GREEN}   ✅ All Phase 4 tests passing${NC}"
+
+    if cd "$PROJECT_ROOT" && ./venv/bin/python -m pytest tests/integration/test_optimization_scaling.py -q > /dev/null 2>&1; then
+        echo -e "${GREEN}   ✅ Optimization/scaling tests passing${NC}"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        echo -e "${RED}   ❌ Phase 4 tests failing${NC}"
+        echo -e "${RED}   ❌ Optimization/scaling tests failing${NC}"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
     echo ""
@@ -111,13 +111,13 @@ test_phase4() {
 # Test 6: Configuration Files
 test_configurations() {
     echo -e "${YELLOW}⚙️  Test 6: Configuration Files${NC}"
-    
+
     REQUIRED_FILES=(
         ".metrics/prometheus.yml"
         ".metrics/alert_rules.yml"
-        "docker-compose.yml"
+        "deployment/compose/docker-compose.yml"
     )
-    
+
     for file in "${REQUIRED_FILES[@]}"; do
         if [ -f "$PROJECT_ROOT/$file" ]; then
             echo -e "${GREEN}   ✅ $file exists${NC}"

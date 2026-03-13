@@ -10,12 +10,10 @@ Implements:
 """
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
-from enum import Enum
 from dataclasses import dataclass, field
-
-from .. import LOGGER
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 
 class HealthStatus(str, Enum):
@@ -31,8 +29,8 @@ class HealthCheckResult:
     status: HealthStatus
     timestamp: datetime
     checks: Dict[str, Any] = field(default_factory=dict)
-    issues: list = field(default_factory=list)
-    
+    issues: list[str] = field(default_factory=list)
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dict"""
         return {
@@ -45,16 +43,16 @@ class HealthCheckResult:
 
 class SystemHealthMonitor:
     """Monitor overall system health"""
-    
-    def __init__(self):
-        self.health_checks = {}
+
+    def __init__(self) -> None:
+        self.health_checks: Dict[str, Dict[str, Any]] = {}
         self.last_check_time: Optional[datetime] = None
         self.check_interval = 30  # Seconds
-    
+
     async def register_check(
         self,
         name: str,
-        check_func: callable,
+        check_func: Callable[[], Any | Awaitable[Any]],
         critical: bool = False
     ) -> None:
         """Register a health check"""
@@ -64,42 +62,42 @@ class SystemHealthMonitor:
             "last_result": None,
             "last_check": None,
         }
-    
+
     async def run_all_checks(self) -> HealthCheckResult:
         """Run all health checks"""
         checks = {}
         issues = []
         critical_failed = False
-        
+
         for name, check_info in self.health_checks.items():
             try:
                 if asyncio.iscoroutinefunction(check_info["func"]):
                     result = await check_info["func"]()
                 else:
                     result = check_info["func"]()
-                
+
                 checks[name] = {
                     "status": "ok" if result else "failed",
                     "result": result,
                 }
-                
+
                 check_info["last_result"] = result
                 check_info["last_check"] = datetime.now(timezone.utc)
-                
+
                 if not result and check_info["critical"]:
                     critical_failed = True
                     issues.append(f"Critical check failed: {name}")
-            
+
             except Exception as e:
                 checks[name] = {
                     "status": "error",
                     "error": str(e),
                 }
                 issues.append(f"Check error: {name} - {e}")
-                
+
                 if check_info["critical"]:
                     critical_failed = True
-        
+
         # Determine overall status
         if critical_failed:
             status = HealthStatus.UNHEALTHY
@@ -107,16 +105,16 @@ class SystemHealthMonitor:
             status = HealthStatus.DEGRADED
         else:
             status = HealthStatus.HEALTHY
-        
+
         self.last_check_time = datetime.now(timezone.utc)
-        
+
         return HealthCheckResult(
             status=status,
             timestamp=self.last_check_time,
             checks=checks,
             issues=issues
         )
-    
+
     async def get_status(self) -> Dict[str, Any]:
         """Get current health status"""
         result = await self.run_all_checks()
@@ -125,11 +123,11 @@ class SystemHealthMonitor:
 
 class SLAMonitor:
     """Monitor Service Level Agreements"""
-    
-    def __init__(self):
-        self.slas = {}
-        self.violations = []
-    
+
+    def __init__(self) -> None:
+        self.slas: Dict[str, Dict[str, float]] = {}
+        self.violations: list[Dict[str, Any]] = []
+
     def register_sla(
         self,
         name: str,
@@ -146,7 +144,7 @@ class SLAMonitor:
             "avg_response_time": 0,
             "error_rate": 0,
         }
-    
+
     def record_request(
         self,
         sla_name: str,
@@ -156,12 +154,12 @@ class SLAMonitor:
         """Record request metrics"""
         if sla_name not in self.slas:
             return False
-        
+
         sla = self.slas[sla_name]
-        
+
         # Check violations
         violation = False
-        
+
         if response_time_ms > sla["max_response_time_ms"]:
             violation = True
             self.violations.append({
@@ -171,13 +169,13 @@ class SLAMonitor:
                 "actual": response_time_ms,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             })
-        
+
         return not violation
-    
+
     def get_sla_status(self) -> Dict[str, Any]:
         """Get SLA status"""
         status = {}
-        
+
         for sla_name, sla in self.slas.items():
             status[sla_name] = {
                 "target_uptime": sla["target_uptime"],
@@ -187,22 +185,22 @@ class SLAMonitor:
                     if v["sla"] == sla_name
                 ])
             }
-        
+
         return status
 
 
 class DistributedTracer:
     """Support distributed tracing"""
-    
-    def __init__(self):
-        self.traces = {}
+
+    def __init__(self) -> None:
+        self.traces: Dict[str, Dict[str, Any]] = {}
         self.trace_id_counter = 0
-    
-    def start_trace(self, operation: str, metadata: Dict[str, Any] = None) -> str:
+
+    def start_trace(self, operation: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """Start a trace"""
         self.trace_id_counter += 1
         trace_id = f"trace-{self.trace_id_counter}"
-        
+
         self.traces[trace_id] = {
             "operation": operation,
             "start_time": datetime.now(timezone.utc),
@@ -210,9 +208,9 @@ class DistributedTracer:
             "metadata": metadata or {},
             "status": "running"
         }
-        
+
         return trace_id
-    
+
     def add_span(
         self,
         trace_id: str,
@@ -223,29 +221,29 @@ class DistributedTracer:
         """Add span to trace"""
         if trace_id not in self.traces:
             return
-        
+
         self.traces[trace_id]["spans"].append({
             "name": span_name,
             "duration_ms": duration_ms,
             "status": status,
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
-    
+
     def end_trace(self, trace_id: str) -> Optional[Dict[str, Any]]:
         """End a trace"""
         if trace_id not in self.traces:
             return None
-        
+
         trace = self.traces[trace_id]
         trace["end_time"] = datetime.now(timezone.utc)
         trace["status"] = "completed"
-        
+
         total_duration = (
             trace["end_time"] - trace["start_time"]
         ).total_seconds() * 1000
-        
+
         trace["total_duration_ms"] = total_duration
-        
+
         return trace
 
 

@@ -3,8 +3,9 @@ Name Substitution Processor
 Handles file and directory name substitution with regex patterns
 """
 
-from os import path as ospath, walk
-from re import sub, I
+from os import path as ospath
+from os import walk
+from re import I, sub
 from shutil import move
 
 from bot import LOGGER

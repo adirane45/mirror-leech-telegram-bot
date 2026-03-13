@@ -1,6 +1,7 @@
 from time import time
+
 from ... import download_history
-from .status_utils import get_readable_time, get_readable_file_size
+from .status_utils import get_readable_file_size, get_readable_time
 
 
 def add_history(

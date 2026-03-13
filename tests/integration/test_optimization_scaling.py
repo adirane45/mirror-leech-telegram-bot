@@ -1,5 +1,5 @@
 """
-Tests for Phase 11: Optimization & Scaling
+Tests for optimization and scaling
 
 Currently covers:
 - Zero-Copy Transfers (os.sendfile)

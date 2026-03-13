@@ -120,9 +120,9 @@ echo "Creating Kubernetes secrets from .env files..."
 create_secret() {
     local secret_name=$1
     local patterns=$2
-    
+
     echo "Creating secret: $secret_name"
-    
+
     # Extract matching lines, convert to key=value format for kubectl
     local args=""
     while IFS='=' read -r key value; do
@@ -130,7 +130,7 @@ create_secret() {
             args="$args --from-literal=$key=$value"
         fi
     done < <(grep -E "$patterns" config/.env.production)
-    
+
     kubectl create secret generic "$secret_name" \
         $args \
         -n "$NAMESPACE" \

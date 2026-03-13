@@ -18,7 +18,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 import json
 
 logger = logging.getLogger(__name__)
@@ -167,7 +167,9 @@ class MetadataStripper:
             if result:
                 data = json.loads(result)
                 if data and len(data) > 0:
-                    return data[0]
+                    first_item = data[0]
+                    if isinstance(first_item, dict):
+                        return first_item
             
             return {}
             
@@ -175,7 +177,7 @@ class MetadataStripper:
             logger.error(f"Failed to read metadata: {e}")
             return {}
     
-    async def _strip_metadata(self, file_path: str):
+    async def _strip_metadata(self, file_path: str) -> None:
         """Strip all metadata using exiftool"""
         # Mock implementation
         # In production: exiftool -all= -overwrite_original file_path
@@ -216,14 +218,14 @@ class MetadataStripper:
         
         successful = sum(
             1 for r in results
-            if not isinstance(r, Exception) and r.success
+            if not isinstance(r, BaseException) and r.success
         )
         
         logger.info(
             f"Batch strip: {successful}/{len(file_paths)} successful"
         )
         
-        return [r for r in results if not isinstance(r, Exception)]
+        return [r for r in results if not isinstance(r, BaseException)]
     
     async def verify_clean(self, file_path: str) -> bool:
         """
@@ -285,9 +287,9 @@ class PrivacyAnalyzer:
         'SerialNumber', 'InternalSerialNumber'
     ]
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize privacy analyzer"""
-        self.findings: List[Dict] = []
+        self.findings: List[Dict[str, Any]] = []
         logger.info("PrivacyAnalyzer initialized")
     
     async def analyze_file(self, file_path: str) -> Dict[str, Any]:
@@ -347,7 +349,7 @@ class PrivacyAnalyzer:
         tasks = [self.analyze_file(path) for path in file_paths]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        return [r for r in results if not isinstance(r, Exception)]
+        return [r for r in results if not isinstance(r, BaseException)]
     
     def get_findings_report(self) -> Dict[str, Any]:
         """Get comprehensive findings report"""
@@ -439,7 +441,7 @@ class MetadataBackup:
             return False
 
     @staticmethod
-    def _save_json_sync(file_path: Path, data: Dict[str, Any]):
+    def _save_json_sync(file_path: Path, data: Dict[str, Any]) -> None:
         """Save JSON data to disk (blocking)."""
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
@@ -448,7 +450,7 @@ class MetadataBackup:
     def _load_json_sync(file_path: str) -> Dict[str, Any]:
         """Load JSON data from disk (blocking)."""
         with open(file_path, 'r') as f:
-            return json.load(f)
+            return cast(Dict[str, Any], json.load(f))
 
 
 # Convenience functions

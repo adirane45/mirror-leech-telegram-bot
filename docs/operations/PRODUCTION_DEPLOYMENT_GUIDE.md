@@ -234,7 +234,7 @@ df -h / | tail -1 | awk '{print $5}' | sed 's/%//' | awk '{if ($1 > 80) print "â
 **Fix**: Only stream files < 20MB or implement User API (future feature)
 
 ### Issue: Bot not responding to commands
-**Root Cause**: 
+**Root Cause**:
 - Stale pending updates
 - BOT_TOKEN invalid
 - Webhook conflicts
@@ -343,4 +343,3 @@ Before deploying to production, verify:
 
 **Last Updated**: 2026-02-21
 **Status**: Ready for first VPS deployment after addressing checklist
-

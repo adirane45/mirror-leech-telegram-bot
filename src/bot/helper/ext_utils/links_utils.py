@@ -4,11 +4,11 @@ from re import match as re_match
 GDRIVE_ID_REGEX = r"^(tp:|sa:|mtp:)?(?:[a-zA-Z0-9-_]{33}|[a-zA-Z0-9_-]{19})$|^gdl$|^(tp:|mtp:)?root$"
 
 
-def is_magnet(url: str):
+def is_magnet(url: str) -> bool:
     return bool(re_match(r"^magnet:\?.*xt=urn:(btih|btmh):([a-zA-Z0-9]{32,40}|[a-z2-7]{32}).*", url))
 
 
-def is_url(url: str):
+def is_url(url: str) -> bool:
     return bool(
         re_match(
             r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$",
@@ -17,15 +17,15 @@ def is_url(url: str):
     )
 
 
-def is_gdrive_link(url: str):
+def is_gdrive_link(url: str) -> bool:
     return "drive.google.com" in url or "drive.usercontent.google.com" in url
 
 
-def is_telegram_link(url: str):
+def is_telegram_link(url: str) -> bool:
     return url.startswith(("https://t.me/", "tg://openmessage?user_id="))
 
 
-def is_share_link(url: str):
+def is_share_link(url: str) -> bool:
     return bool(
         re_match(
             r"https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive|gdflix)\.\S+",
@@ -34,7 +34,7 @@ def is_share_link(url: str):
     )
 
 
-def is_rclone_path(path: str):
+def is_rclone_path(path: str) -> bool:
     return bool(
         re_match(
             r"^(mrcc:)?(?!(magnet:|mtp:|sa:|tp:))(?![- ])[a-zA-Z0-9_\. -]+(?<! ):(?!.*\/\/).*$|^rcl$",
@@ -43,5 +43,5 @@ def is_rclone_path(path: str):
     )
 
 
-def is_gdrive_id(id_: str):
+def is_gdrive_id(id_: str) -> bool:
     return bool(re_match(GDRIVE_ID_REGEX, id_))

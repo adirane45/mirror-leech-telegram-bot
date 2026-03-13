@@ -3,12 +3,12 @@
 ## ✅ Issues Resolved
 
 Fixed **7 non-working commands/buttons** reported by user:
-1. ✅ `/quick` - Quick actions menu  
-2. ✅ `/track` - Track TV series  
-3. ✅ `/myshows` - View tracked series  
-4. ✅ `/mobile` - Mobile-friendly layouts  
-5. ✅ `/assistant` - Smart download helper  
-6. ✅ **Get Started Button** in `/start` command  
+1. ✅ `/quick` - Quick actions menu
+2. ✅ `/track` - Track TV series
+3. ✅ `/myshows` - View tracked series
+4. ✅ `/mobile` - Mobile-friendly layouts
+5. ✅ `/assistant` - Smart download helper
+6. ✅ **Get Started Button** in `/start` command
 7. ✅ **Help Menu Button** in `/start` command
 
 All **Close Menu** and navigation buttons now work via registered callback handlers.

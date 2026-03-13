@@ -20,7 +20,7 @@ This directory contains multiple optimized Dockerfile variants to suit different
 DOCKER_BUILDKIT=1 docker build -f deployment/Dockerfile.optimized -t mltb-app:optimized .
 
 # Deploy with optimized compose
-docker-compose -f docker-compose.optimized.yml up -d
+docker-compose -f deployment/compose/docker-compose.optimized.yml up -d
 ```
 
 ### Alternative: Alpine (Smallest)
@@ -30,7 +30,7 @@ docker-compose -f docker-compose.optimized.yml up -d
 DOCKER_BUILDKIT=1 docker build -f deployment/Dockerfile.alpine -t mltb-app:alpine .
 
 # Deploy
-docker-compose up -d
+docker-compose -f deployment/compose/docker-compose.yml up -d
 ```
 
 ## 📊 Image Comparison
@@ -125,8 +125,11 @@ deployment/
 ├── Dockerfile.optimized          # Recommended (400MB)
 ├── Dockerfile.alpine             # Smallest (300MB)
 ├── Dockerfile.no-jdownloader     # No JD (350MB)
-├── docker-compose.yml            # Original compose
-├── docker-compose.optimized.yml  # Optimized compose
+├── compose/
+│   ├── docker-compose.yml            # Default compose
+│   ├── docker-compose.optimized.yml  # Optimized compose
+│   ├── docker-compose.secure.yml     # Hardened compose
+│   └── docker-compose.bluegreen.yml  # Blue/green compose
 └── README.md                     # This file
 ```
 

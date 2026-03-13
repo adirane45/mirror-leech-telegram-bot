@@ -11,10 +11,10 @@ Implements:
 
 import asyncio
 import time
-from typing import Dict, Any, Optional, List, Callable
-from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 from .. import LOGGER
 
@@ -44,12 +44,12 @@ class TestResult:
 class TestRunner:
     """Run tests"""
     __test__ = False
-    
+
     def __init__(self):
         self.tests: Dict[str, Callable] = {}
         self.results: List[TestResult] = []
         self.total_duration = 0.0
-    
+
     def register_test(
         self,
         name: str,
@@ -61,7 +61,7 @@ class TestRunner:
             "func": test_func,
             "type": test_type
         }
-    
+
     async def run_test(self, test_name: str) -> TestResult:
         """Run single test"""
         if test_name not in self.tests:
@@ -72,20 +72,20 @@ class TestRunner:
                 duration_ms=0,
                 error_message="Test not found"
             )
-        
+
         test_info = self.tests[test_name]
         start_time = time.time()
-        
+
         try:
             test_func = test_info["func"]
-            
+
             if asyncio.iscoroutinefunction(test_func):
                 await test_func()
             else:
                 test_func()
-            
+
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = TestResult(
                 test_name=test_name,
                 test_type=test_info["type"],
@@ -93,10 +93,10 @@ class TestRunner:
                 duration_ms=duration_ms,
                 assertions=1
             )
-        
+
         except AssertionError as e:
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = TestResult(
                 test_name=test_name,
                 test_type=test_info["type"],
@@ -104,10 +104,10 @@ class TestRunner:
                 duration_ms=duration_ms,
                 error_message=str(e)
             )
-        
+
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            
+
             result = TestResult(
                 test_name=test_name,
                 test_type=test_info["type"],
@@ -115,27 +115,27 @@ class TestRunner:
                 duration_ms=duration_ms,
                 error_message=str(e)
             )
-        
+
         self.results.append(result)
         return result
-    
+
     async def run_all_tests(self) -> Dict[str, Any]:
         """Run all tests"""
         start_time = time.time()
-        
+
         for test_name in self.tests:
             await self.run_test(test_name)
-        
+
         self.total_duration = (time.time() - start_time) * 1000
-        
+
         return self.get_summary()
-    
+
     def get_summary(self) -> Dict[str, Any]:
         """Get test summary"""
         passed = len([r for r in self.results if r.status == "passed"])
         failed = len([r for r in self.results if r.status == "failed"])
         errors = len([r for r in self.results if r.status == "error"])
-        
+
         return {
             "total": len(self.results),
             "passed": passed,
@@ -148,34 +148,34 @@ class TestRunner:
 
 class CoverageAnalyzer:
     """Analyze test coverage"""
-    
+
     def __init__(self):
         self.coverage_data: Dict[str, float] = {}
         self.required_coverage = 0.80  # 80% minimum
-    
+
     def add_coverage(self, module: str, coverage_percent: float) -> None:
         """Add coverage data"""
         self.coverage_data[module] = coverage_percent
-    
+
     def get_total_coverage(self) -> float:
         """Get total coverage percentage"""
         if not self.coverage_data:
             return 0.0
-        
+
         return sum(self.coverage_data.values()) / len(self.coverage_data)
-    
+
     def get_uncovered_modules(self) -> List[str]:
         """Get modules below required coverage"""
         return [
             module for module, coverage in self.coverage_data.items()
             if coverage < self.required_coverage
         ]
-    
+
     def generate_report(self) -> Dict[str, Any]:
         """Generate coverage report"""
         total = self.get_total_coverage()
         uncovered = self.get_uncovered_modules()
-        
+
         return {
             "total_coverage": total,
             "required_coverage": self.required_coverage,
@@ -199,11 +199,11 @@ class PerformanceBenchmark:
 
 class PerformanceBenchmarker:
     """Run performance benchmarks"""
-    
+
     def __init__(self):
         self.benchmarks: List[PerformanceBenchmark] = []
         self.baseline: Dict[str, float] = {}
-    
+
     async def benchmark(
         self,
         operation_name: str,
@@ -212,20 +212,20 @@ class PerformanceBenchmarker:
     ) -> PerformanceBenchmark:
         """Run benchmark"""
         times = []
-        
+
         for _ in range(iterations):
             start = time.time()
-            
+
             if asyncio.iscoroutinefunction(operation_func):
                 await operation_func()
             else:
                 operation_func()
-            
+
             elapsed = (time.time() - start) * 1000
             times.append(elapsed)
-        
+
         times.sort()
-        
+
         benchmark = PerformanceBenchmark(
             operation=operation_name,
             iterations=iterations,
@@ -234,14 +234,14 @@ class PerformanceBenchmarker:
             max_time_ms=times[-1],
             p99_time_ms=times[int(len(times) * 0.99)]
         )
-        
+
         self.benchmarks.append(benchmark)
         return benchmark
-    
+
     def set_baseline(self, operation: str, time_ms: float) -> None:
         """Set baseline time"""
         self.baseline[operation] = time_ms
-    
+
     def check_degradation(
         self,
         operation: str,
@@ -250,30 +250,30 @@ class PerformanceBenchmarker:
         """Check for performance degradation"""
         if operation not in self.baseline:
             return False
-        
+
         benchmark = next(
             (b for b in self.benchmarks if b.operation == operation),
             None
         )
-        
+
         if not benchmark:
             return False
-        
+
         baseline = self.baseline[operation]
         degradation = (benchmark.avg_time_ms - baseline) / baseline * 100
-        
+
         return degradation > threshold_percent
 
 
 class LoadSimulator:
     """Simulate load for stress testing"""
-    
+
     def __init__(self):
         self.active_requests = 0
         self.total_requests = 0
         self.errors = 0
         self.response_times: List[float] = []
-    
+
     async def simulate_load(
         self,
         request_func: Callable,
@@ -283,46 +283,46 @@ class LoadSimulator:
         """Simulate load"""
         start_time = time.time()
         tasks = []
-        
+
         async def worker():
             while time.time() - start_time < duration_seconds:
                 self.active_requests += 1
                 self.total_requests += 1
-                
+
                 try:
                     start = time.time()
-                    
+
                     if asyncio.iscoroutinefunction(request_func):
                         await request_func()
                     else:
                         request_func()
-                    
+
                     elapsed = (time.time() - start) * 1000
                     self.response_times.append(elapsed)
-                
+
                 except Exception as e:
                     self.errors += 1
                     LOGGER.error(f"Load simulation error: {e}")
-                
+
                 finally:
                     self.active_requests -= 1
-                
+
                 await asyncio.sleep(0.01)
-        
+
         # Start workers
         tasks = [asyncio.create_task(worker()) for _ in range(concurrent_requests)]
-        
+
         try:
             await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         except Exception as e:
             LOGGER.error(f"Load simulation failed: {e}")
             for task in tasks:
                 task.cancel()
-        
+
         # Calculate stats
         self.response_times.sort()
-        
+
         return {
             "total_requests": self.total_requests,
             "errors": self.errors,
@@ -341,10 +341,10 @@ class LoadSimulator:
 
 class ContractTester:
     """Contract testing for API compatibility"""
-    
+
     def __init__(self):
         self.contracts: Dict[str, Dict[str, Any]] = {}
-    
+
     def define_contract(
         self,
         name: str,
@@ -358,7 +358,7 @@ class ContractTester:
             "request_schema": request_schema,
             "response_schema": response_schema
         }
-    
+
     async def verify_contract(
         self,
         contract_name: str,
@@ -368,25 +368,25 @@ class ContractTester:
         """Verify contract"""
         if contract_name not in self.contracts:
             return False, "Contract not found"
-        
+
         contract = self.contracts[contract_name]
-        
+
         # Verify request matches schema
         for key, expected_type in contract["request_schema"].items():
             if key not in request_data:
                 return False, f"Missing request field: {key}"
-            
+
             if not isinstance(request_data[key], expected_type):
                 return False, f"Invalid type for {key}"
-        
+
         # Verify response matches schema
         for key, expected_type in contract["response_schema"].items():
             if key not in response_data:
                 return False, f"Missing response field: {key}"
-            
+
             if not isinstance(response_data[key], expected_type):
                 return False, f"Invalid response type for {key}"
-        
+
         return True, None
 
 

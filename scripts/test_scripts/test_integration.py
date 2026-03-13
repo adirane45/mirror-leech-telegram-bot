@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Phase 3 Integration Test Script
+Integration Test Script
 Tests all integrated security features in the application
 
 Usage:
-    python3 scripts/test_scripts/test_phase3_integration.py
+    python3 scripts/test_scripts/test_integration.py
 """
 
 import sys
@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 print("=" * 60)
-print("Phase 3: Security Integration Test")
+print("Security Integration Test")
 print("=" * 60)
 print()
 

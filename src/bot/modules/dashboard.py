@@ -1,23 +1,29 @@
 from asyncio import gather
 from time import time
-from psutil import cpu_percent, virtual_memory, disk_usage
 
-from .. import task_dict, task_dict_lock, download_history, DOWNLOAD_DIR, bot_start_time
+from psutil import cpu_percent, disk_usage, virtual_memory
+
+from .. import DOWNLOAD_DIR, bot_start_time, download_history, task_dict, task_dict_lock
 from ..helper.ext_utils.bot_utils import new_task
-from ..helper.ext_utils.status_utils import (
-    MirrorStatus,
-    get_readable_file_size,
-    get_readable_time,
-)
 from ..helper.ext_utils.history_utils import format_history
+from ..helper.ext_utils.status_utils import MirrorStatus, get_readable_file_size, get_readable_time
 from ..helper.telegram_helper.interactive_keyboards import InteractiveKeyboards
 from ..helper.telegram_helper.message_utils import send_message
 
 
 async def _collect_status_counts():
     from inspect import iscoroutinefunction
-    
-    tasks = list(task_dict.values())
+
+    def _bucket_for_status(status):
+        status_map = {
+            MirrorStatus.STATUS_DOWNLOAD: "download",
+            MirrorStatus.STATUS_UPLOAD: "upload",
+            MirrorStatus.STATUS_PAUSED: "paused",
+        }
+        if status in {MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP}:
+            return "queued"
+        return status_map.get(status, "other")
+
     counts = {
         "download": 0,
         "upload": 0,
@@ -25,30 +31,13 @@ async def _collect_status_counts():
         "queued": 0,
         "other": 0,
     }
-    if not tasks:
-        return counts
 
-    # Separate async and sync status methods
-    coro_tasks = [tk for tk in tasks if iscoroutinefunction(tk.status)]
-    sync_tasks = [tk for tk in tasks if not iscoroutinefunction(tk.status)]
-    
-    # Get async statuses
-    coro_statuses = await gather(*[tk.status() for tk in coro_tasks]) if coro_tasks else []
-    
-    # Process all statuses
-    all_statuses = list(coro_statuses) + [tk.status() for tk in sync_tasks]
-    
-    for st in all_statuses:
-        if st == MirrorStatus.STATUS_DOWNLOAD:
-            counts["download"] += 1
-        elif st == MirrorStatus.STATUS_UPLOAD:
-            counts["upload"] += 1
-        elif st == MirrorStatus.STATUS_PAUSED:
-            counts["paused"] += 1
-        elif st in [MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
-            counts["queued"] += 1
-        else:
-            counts["other"] += 1
+    for task in list(task_dict.values()):
+        status = (
+            await task.status() if iscoroutinefunction(task.status) else task.status()
+        )
+        counts[_bucket_for_status(status)] += 1
+
     return counts
 
 

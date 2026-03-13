@@ -29,7 +29,7 @@ Current: 3-5 chunks per file
 MAX_CHUNKS = 8
 CHUNK_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Medium connection (10-100 Mbps)  
+# Medium connection (10-100 Mbps)
 MAX_CHUNKS = 5  # Current
 CHUNK_SIZE = 5 * 1024 * 1024   # 5MB
 
@@ -157,7 +157,7 @@ services:
 # For CPU-intensive tasks
 MAX_WORKERS = 4  # Adjust based on CPU cores
 
-# For I/O-intensive tasks  
+# For I/O-intensive tasks
 MAX_CONCURRENT_DOWNLOADS = 5
 ```
 
@@ -234,7 +234,7 @@ PYEOF
 ### Redis Cache TTL
 ```python
 # Cache duration seconds
-CACHE_TTL = 3600  # 1 hour  
+CACHE_TTL = 3600  # 1 hour
 USER_CACHE_TTL = 86400  # 24 hours
 ```
 

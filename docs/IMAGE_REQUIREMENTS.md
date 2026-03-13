@@ -7,10 +7,10 @@ The new professional README.md uses placeholder images that should be replaced w
 ---
 
 ## 1. Banner Image
-**Location:** Top of README.md  
-**Current:** `https://via.placeholder.com/800x200/1a1a1a/00d4ff?text=Mirror+Leech+Telegram+Bot`  
-**Dimensions:** 800x200 pixels  
-**Content:** Project banner with logo and tagline  
+**Location:** Top of README.md
+**Current:** `https://via.placeholder.com/800x200/1a1a1a/00d4ff?text=Mirror+Leech+Telegram+Bot`
+**Dimensions:** 800x200 pixels
+**Content:** Project banner with logo and tagline
 
 **Suggestions:**
 - Dark background (#1a1a1a or similar)
@@ -22,9 +22,9 @@ The new professional README.md uses placeholder images that should be replaced w
 ---
 
 ## 2. Bot Command Interface
-**Location:** Screenshots section  
-**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Bot+Command+Interface`  
-**Dimensions:** 800x400 pixels  
+**Location:** Screenshots section
+**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Bot+Command+Interface`
+**Dimensions:** 800x400 pixels
 **Content:** Telegram bot conversation showing commands in action
 
 **What to capture:**
@@ -42,9 +42,9 @@ The new professional README.md uses placeholder images that should be replaced w
 ---
 
 ## 3. Web Dashboard
-**Location:** Screenshots section  
-**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Web+Dashboard`  
-**Dimensions:** 800x400 pixels  
+**Location:** Screenshots section
+**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Web+Dashboard`
+**Dimensions:** 800x400 pixels
 **Content:** Web interface dashboard (if available)
 
 **What to capture:**
@@ -62,9 +62,9 @@ The new professional README.md uses placeholder images that should be replaced w
 ---
 
 ## 4. Download Progress
-**Location:** Screenshots section  
-**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Download+Progress+Tracking`  
-**Dimensions:** 800x400 pixels  
+**Location:** Screenshots section
+**Current:** `https://via.placeholder.com/800x400/1a1a1a/00d4ff?text=Download+Progress+Tracking`
+**Dimensions:** 800x400 pixels
 **Content:** Active download with progress tracking
 
 **What to capture:**
@@ -127,7 +127,7 @@ from PIL import Image, ImageDraw, ImageFont
 img = Image.new('RGB', (800, 200), color='#1a1a1a')
 draw = ImageDraw.Draw(img)
 font = ImageFont.truetype('arial.ttf', 48)
-draw.text((400, 100), "Mirror Leech Bot", 
+draw.text((400, 100), "Mirror Leech Bot",
           fill='#00d4ff', font=font, anchor='mm')
 img.save('banner.png')
 ```

@@ -4,8 +4,8 @@ Data structures for feedback, notifications, and progress tracking
 """
 
 from enum import Enum
-from typing import Dict, Optional
 from time import time
+from typing import Any, Dict, Optional
 
 
 class FeedbackLevel(Enum):
@@ -41,7 +41,7 @@ class Notification:
         notif_type: NotificationType = NotificationType.CUSTOM,
         level: FeedbackLevel = FeedbackLevel.INFO,
         timestamp: Optional[float] = None,
-        data: Optional[Dict] = None,
+        data: Optional[Dict[str, Any]] = None,
     ):
         self.title = title
         self.message = message
@@ -60,7 +60,7 @@ class Notification:
             f"{self.message}"
         )
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert notification to dictionary"""
         return {
             "title": self.title,

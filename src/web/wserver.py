@@ -6,32 +6,33 @@ try:
         uvloop.install()
 except Exception:
     pass
+import asyncio
+from asyncio import sleep
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException
+from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
+from os import environ
+from pathlib import Path
+from time import perf_counter, time
+from uuid import uuid4
+
+import psutil
+from aioaria2 import Aria2HttpClient
+from aiohttp.client_exceptions import ClientError
+from aioqbt.client import create_client
+from aioqbt.exc import AQError
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, WARNING
-from asyncio import sleep, create_task
-from time import time, perf_counter
-from os import environ
-import psutil
-import asyncio
-from uuid import uuid4
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
-from integrations.sabnzbdapi import SabnzbdClient
-from aioaria2 import Aria2HttpClient
-from aioqbt.client import create_client
-from aiohttp.client_exceptions import ClientError
-from aioqbt.exc import AQError
 
-from web.nodes import extract_file_ids, make_tree
-from web.stream_handler import add_stream_routes
-from web.admin_routes import router as admin_router
-from web.admin_login import get_login_html
 from bot.core.config_manager import Config
 from bot.core.redis_manager import redis_client
+from integrations.sabnzbdapi import SabnzbdClient
+from web.admin_login import get_login_html
+from web.admin_routes import router as admin_router
+from web.nodes import extract_file_ids, make_tree
+from web.stream_handler import add_stream_routes
 
 try:
     from bot.core.api_endpoints import add_enhanced_endpoints
@@ -64,10 +65,10 @@ except Exception as e:
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     OTEL_AVAILABLE = True
 except Exception as e:
     OTEL_AVAILABLE = False
@@ -86,60 +87,76 @@ sabnzbd_client = SabnzbdClient(
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global aria2, qbittorrent
-    aria2_host = environ.get("ARIA2_HOST", "localhost")
-    aria2_port = environ.get("ARIA2_PORT", "6800")
-    aria2_secret = environ.get("ARIA2_SECRET", "")
-    qb_host = environ.get("QB_HOST", "localhost")
-    qb_port = environ.get("QB_PORT", "8090")
-    qb_username = environ.get("QB_USERNAME") or environ.get("WEBUI_USERNAME", "admin")
-    qb_password = environ.get("QB_PASSWORD") or environ.get("WEBUI_PASSWORD", "mltbmltb")
-    redis_host = environ.get("REDIS_HOST", getattr(Config, "REDIS_HOST", "redis"))
-    redis_port = int(environ.get("REDIS_PORT", getattr(Config, "REDIS_PORT", 6379)))
-    redis_db = int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0)))
-    
+def _load_service_connection_config():
+    return {
+        "aria2_host": environ.get("ARIA2_HOST", "localhost"),
+        "aria2_port": environ.get("ARIA2_PORT", "6800"),
+        "qb_host": environ.get("QB_HOST", "localhost"),
+        "qb_port": environ.get("QB_PORT", "8090"),
+        "qb_username": environ.get("QB_USERNAME") or environ.get("WEBUI_USERNAME", "admin"),
+        "qb_password": environ.get("QB_PASSWORD") or environ.get("WEBUI_PASSWORD", "mltbmltb"),
+        "redis_host": environ.get("REDIS_HOST", getattr(Config, "REDIS_HOST", "redis")),
+        "redis_port": int(environ.get("REDIS_PORT", getattr(Config, "REDIS_PORT", 6379))),
+        "redis_db": int(environ.get("REDIS_DB", getattr(Config, "REDIS_DB", 0))),
+    }
+
+
+async def _initialize_aria2_client(config):
+    global aria2
     try:
-        aria2 = Aria2HttpClient(f"http://{aria2_host}:{aria2_port}/jsonrpc")
+        aria2 = Aria2HttpClient(f"http://{config['aria2_host']}:{config['aria2_port']}/jsonrpc")
     except Exception as e:
         aria2 = None
         LOGGER.warning(f"Aria2 not available: {e}")
 
+
+async def _initialize_qbittorrent_client(config):
+    global qbittorrent
     try:
         qbittorrent = await create_client(
-            f"http://{qb_host}:{qb_port}/api/v2/",
-            username=qb_username,
-            password=qb_password,
+            f"http://{config['qb_host']}:{config['qb_port']}/api/v2/",
+            username=config["qb_username"],
+            password=config["qb_password"],
         )
     except Exception as e:
         qbittorrent = None
         LOGGER.warning(f"qBittorrent not available: {e}")
 
+
+async def _initialize_redis_client(config):
     try:
-        await redis_client.initialize(host=redis_host, port=redis_port, db=redis_db)
+        await redis_client.initialize(
+            host=config["redis_host"],
+            port=config["redis_port"],
+            db=config["redis_db"],
+        )
     except Exception as e:
         LOGGER.warning(f"Redis not available for stream links: {e}")
 
+
+async def _initialize_torrent_manager():
     try:
         from bot.core.torrent_manager import TorrentManager
+
         await TorrentManager.initiate()
         LOGGER.info("✅ Torrent manager initialized in web server")
     except Exception as e:
         LOGGER.warning(f"Torrent manager init failed in web server: {e}")
 
-    # Start admin download processor
+
+async def _start_admin_download_processor_task():
     try:
         from web.admin_download_handler import start_admin_download_processor
+
         processor_task = asyncio.create_task(start_admin_download_processor())
         LOGGER.info("✅ Admin download processor started in web server")
+        return processor_task
     except Exception as e:
         LOGGER.warning(f"⚠️  Admin download processor failed to start: {e}")
-        processor_task = None
+        return None
 
-    yield
 
-    # Cleanup
+async def _cleanup_lifespan_resources(processor_task):
     if processor_task and not processor_task.done():
         processor_task.cancel()
         try:
@@ -152,6 +169,47 @@ async def lifespan(app: FastAPI):
     if qbittorrent is not None:
         await qbittorrent.close()
     await redis_client.close()
+
+
+def _is_reverify_consistent(res, paused, resumed):
+    for i in res:
+        if i.index in paused and i.priority != 0:
+            return False
+        if i.index in resumed and i.priority == 0:
+            return False
+    return True
+
+
+async def _apply_reverify_corrections(paused, resumed, hash_id):
+    if paused:
+        try:
+            await qbittorrent.torrents.file_prio(
+                hash=hash_id, id=paused, priority=0
+            )
+        except (ClientError, TimeoutError, Exception, AQError) as e:
+            LOGGER.error(f"{e} Errored in reverification paused!")
+    if resumed:
+        try:
+            await qbittorrent.torrents.file_prio(
+                hash=hash_id, id=resumed, priority=1
+            )
+        except (ClientError, TimeoutError, Exception, AQError) as e:
+            LOGGER.error(f"{e} Errored in reverification resumed!")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global aria2, qbittorrent
+    config = _load_service_connection_config()
+    await _initialize_aria2_client(config)
+    await _initialize_qbittorrent_client(config)
+    await _initialize_redis_client(config)
+    await _initialize_torrent_manager()
+    processor_task = await _start_admin_download_processor_task()
+
+    yield
+
+    await _cleanup_lifespan_resources(processor_task)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -175,7 +233,7 @@ if SECURITY_FEATURES_AVAILABLE:
     enable_csrf = environ.get("ENABLE_CSRF_PROTECTION", "true").lower() == "true"
     enable_https = environ.get("ENABLE_HTTPS_REDIRECT", "false").lower() == "true"
     enable_audit = environ.get("ENABLE_SECURITY_AUDIT", "true").lower() == "true"
-    
+
     # Integrate all Phase 3 security features
     app = integrate_security_features(
         app,
@@ -317,37 +375,16 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 async def re_verify(paused, resumed, hash_id):
-    k = 0
+    attempts = 0
     while True:
         res = await _call_with_retry("qbittorrent.torrents.files", qbittorrent.torrents.files, hash_id)
-        verify = True
-        for i in res:
-            if i.index in paused and i.priority != 0:
-                verify = False
-                break
-            if i.index in resumed and i.priority == 0:
-                verify = False
-                break
-        if verify:
+        if _is_reverify_consistent(res, paused, resumed):
             break
         LOGGER.info("Reverification Failed! Correcting stuff...")
         await sleep(0.5)
-        if paused:
-            try:
-                await qbittorrent.torrents.file_prio(
-                    hash=hash_id, id=paused, priority=0
-                )
-            except (ClientError, TimeoutError, Exception, AQError) as e:
-                LOGGER.error(f"{e} Errored in reverification paused!")
-        if resumed:
-            try:
-                await qbittorrent.torrents.file_prio(
-                    hash=hash_id, id=resumed, priority=1
-                )
-            except (ClientError, TimeoutError, Exception, AQError) as e:
-                LOGGER.error(f"{e} Errored in reverification resumed!")
-        k += 1
-        if k > 5:
+        await _apply_reverify_corrections(paused, resumed, hash_id)
+        attempts += 1
+        if attempts > 5:
             return False
     LOGGER.info(f"Verified! Hash: {hash_id}")
     return True
@@ -506,6 +543,61 @@ async def dashboard_stats():
 @app.api_route(
     "/app/files/torrent", methods=["GET", "POST"]
 )
+def _validate_pin(gid, pin):
+    """Validate PIN against GID"""
+    extracted_code = "".join([nbr for nbr in gid if nbr.isdigit()][:4])
+    if extracted_code and extracted_code != pin:
+        return False
+    return True
+
+async def _handle_torrent_post(gid, mode, data):
+    """Handle POST requests for torrent file selection/rename"""
+    if mode == "rename":
+        if len(gid) > 20:
+            await handle_rename(gid, data)
+            return {
+                "files": [],
+                "engine": "",
+                "error": "",
+                "message": "Rename successfully.",
+            }
+        else:
+            return {
+                "files": [],
+                "engine": "",
+                "error": "Rename failed.",
+                "message": "Cannot rename aria2c torrent file",
+            }
+    else:
+        selected_files, unselected_files = extract_file_ids(data)
+        if gid.startswith("SABnzbd_nzo"):
+            await set_sabnzbd(gid, unselected_files)
+        elif len(gid) > 20:
+            await set_qbittorrent(gid, selected_files, unselected_files)
+        else:
+            selected_files = ",".join(selected_files)
+            await set_aria2(gid, selected_files)
+        return {
+            "files": [],
+            "engine": "",
+            "error": "",
+            "message": "Your selection has been submitted successfully.",
+        }
+
+async def _handle_torrent_get(gid):
+    """Handle GET requests to retrieve torrent files"""
+    if gid.startswith("SABnzbd_nzo"):
+        res = await sabnzbd_client.get_files(gid)
+        return make_tree(res, "sabnzbd")
+    elif len(gid) > 20:
+        res = await _call_with_retry("qbittorrent.torrents.files", qbittorrent.torrents.files, gid)
+        return make_tree(res, "qbittorrent")
+    else:
+        res = await _call_with_retry("aria2.getFiles", aria2.getFiles, gid)
+        op = await _call_with_retry("aria2.getOption", aria2.getOption, gid)
+        fpath = f"{op['dir']}/"
+        return make_tree(res, "aria2", fpath)
+
 async def handle_torrent(request: Request):
     params = request.query_params
 
@@ -531,12 +623,7 @@ async def handle_torrent(request: Request):
             status_code=400
         )
 
-    # Extract first 4 digits from GID for PIN validation
-    # The PIN should be based on digits extracted from the original ID
-    extracted_code = "".join([nbr for nbr in gid if nbr.isdigit()][:4])
-    # If GID has no digits (e.g., qBittorrent hash), accept the PIN as-is
-    # This allows flexibility for different download engine types
-    if extracted_code and extracted_code != pin:
+    if not _validate_pin(gid, pin):
         return JSONResponse(
             {
                 "files": [],
@@ -559,50 +646,10 @@ async def handle_torrent(request: Request):
                 status_code=400
             )
         data = await request.json()
-        if mode == "rename":
-            if len(gid) > 20:
-                await handle_rename(gid, data)
-                content = {
-                    "files": [],
-                    "engine": "",
-                    "error": "",
-                    "message": "Rename successfully.",
-                }
-            else:
-                content = {
-                    "files": [],
-                    "engine": "",
-                    "error": "Rename failed.",
-                    "message": "Cannot rename aria2c torrent file",
-                }
-        else:
-            selected_files, unselected_files = extract_file_ids(data)
-            if gid.startswith("SABnzbd_nzo"):
-                await set_sabnzbd(gid, unselected_files)
-            elif len(gid) > 20:
-                await set_qbittorrent(gid, selected_files, unselected_files)
-            else:
-                selected_files = ",".join(selected_files)
-                await set_aria2(gid, selected_files)
-            content = {
-                "files": [],
-                "engine": "",
-                "error": "",
-                "message": "Your selection has been submitted successfully.",
-            }
+        content = await _handle_torrent_post(gid, mode, data)
     else:
         try:
-            if gid.startswith("SABnzbd_nzo"):
-                res = await sabnzbd_client.get_files(gid)
-                content = make_tree(res, "sabnzbd")
-            elif len(gid) > 20:
-                res = await _call_with_retry("qbittorrent.torrents.files", qbittorrent.torrents.files, gid)
-                content = make_tree(res, "qbittorrent")
-            else:
-                res = await _call_with_retry("aria2.getFiles", aria2.getFiles, gid)
-                op = await _call_with_retry("aria2.getOption", aria2.getOption, gid)
-                fpath = f"{op['dir']}/"
-                content = make_tree(res, "aria2", fpath)
+            content = await _handle_torrent_get(gid)
         except (ClientError, TimeoutError, Exception, AQError) as e:
             error_text = str(e)
             LOGGER.error(error_text)
@@ -625,7 +672,7 @@ async def handle_torrent(request: Request):
                 },
                 status_code=500
             )
-    
+
     return JSONResponse(content)
 
 
@@ -703,20 +750,20 @@ async def graphql_endpoint(request: Request):
     """GraphQL API endpoint (Phase 3)"""
     if not GRAPHQL_AVAILABLE:
         return JSONResponse({"error": "GraphQL API not available"}, status_code=503)
-    
+
     if request.method == "POST":
         data = await request.json()
         query = data.get("query")
         variables = data.get("variables", {})
-        
+
         result = graphql_schema.execute(query, variable_values=variables)
-        
+
         response = {
             "data": result.data,
         }
         if result.errors:
             response["errors"] = [str(err) for err in result.errors]
-        
+
         return JSONResponse(response)
     else:
         # GraphQL Playground HTML for GET requests

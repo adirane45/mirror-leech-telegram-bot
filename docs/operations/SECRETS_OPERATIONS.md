@@ -97,10 +97,10 @@ Enables:
 
 ### Telegram Bot Configuration
 
-**Secret Name**: `mltb-telegram-secrets`  
-**Rotation**: Daily (optional, recommended if token expires)  
-**Impact**: High - Affects all user interactions  
-**Recovery**: Switch to backup bot token  
+**Secret Name**: `mltb-telegram-secrets`
+**Rotation**: Daily (optional, recommended if token expires)
+**Impact**: High - Affects all user interactions
+**Recovery**: Switch to backup bot token
 
 Keys:
 - `BOT_TOKEN` - Telegram bot token from @BotFather
@@ -111,10 +111,10 @@ Keys:
 
 ### Database Credentials
 
-**Secret Name**: `mltb-database-secrets`  
-**Rotation**: Quarterly (90-day intervals)  
-**Impact**: Critical - All data access blocked if wrong  
-**Recovery**: Use read-only replica, update from backup  
+**Secret Name**: `mltb-database-secrets`
+**Rotation**: Quarterly (90-day intervals)
+**Impact**: Critical - All data access blocked if wrong
+**Recovery**: Use read-only replica, update from backup
 
 Keys:
 - `DATABASE_URL` - Connection string (mongodb://user:pass@host:port/db)
@@ -123,10 +123,10 @@ Keys:
 
 ### Redis Cache
 
-**Secret Name**: `mltb-redis-secrets`  
-**Rotation**: Quarterly (90-day intervals)  
-**Impact**: Medium - Cache misses but no data loss  
-**Recovery**: Clear cache, restart pods  
+**Secret Name**: `mltb-redis-secrets`
+**Rotation**: Quarterly (90-day intervals)
+**Impact**: Medium - Cache misses but no data loss
+**Recovery**: Clear cache, restart pods
 
 Keys:
 - `REDIS_URL` - Connection string (redis://:password@host:port/0)
@@ -134,10 +134,10 @@ Keys:
 
 ### Rclone Cloud Storage
 
-**Secret Name**: `mltb-rclone-secrets`  
-**Rotation**: Daily (tokens expire regularly)  
-**Impact**: High - Cloud uploads fail without valid token  
-**Recovery**: Use alternative cloud provider or offline storage  
+**Secret Name**: `mltb-rclone-secrets`
+**Rotation**: Daily (tokens expire regularly)
+**Impact**: High - Cloud uploads fail without valid token
+**Recovery**: Use alternative cloud provider or offline storage
 
 Keys:
 - `RCLONE_CONFIG_PATH` - Path to rclone.conf
@@ -145,10 +145,10 @@ Keys:
 
 ### API Keys
 
-**Secret Name**: `mltb-api-secrets`  
-**Rotation**: Quarterly or on security incident  
-**Impact**: Medium - External integrations fail  
-**Recovery**: Generate new key, update clients  
+**Secret Name**: `mltb-api-secrets`
+**Rotation**: Quarterly or on security incident
+**Impact**: Medium - External integrations fail
+**Recovery**: Generate new key, update clients
 
 Keys:
 - `API_SECRET_KEY` - HMAC signing key for API tokens
@@ -156,10 +156,10 @@ Keys:
 
 ### SSL/TLS Certificates
 
-**Secret Name**: `mltb-ssl-secrets`  
-**Rotation**: Before expiry (yearly or per cert validity)  
-**Impact**: High - HTTPS connections fail  
-**Recovery**: Use self-signed cert temporarily, get real cert ASAP  
+**Secret Name**: `mltb-ssl-secrets`
+**Rotation**: Before expiry (yearly or per cert validity)
+**Impact**: High - HTTPS connections fail
+**Recovery**: Use self-signed cert temporarily, get real cert ASAP
 
 Keys:
 - `tls.crt` - Certificate file
@@ -503,9 +503,9 @@ kubectl apply -f sealedsecret-*.yaml
 
 ### Runbook 1: Regular Secret Rotation
 
-**Objective**: Rotate secrets on schedule  
-**Frequency**: Automated via CronJobs  
-**Manual Trigger**: When needed  
+**Objective**: Rotate secrets on schedule
+**Frequency**: Automated via CronJobs
+**Manual Trigger**: When needed
 
 Steps:
 1. CronJob runs daily at 2 AM UTC
@@ -521,9 +521,9 @@ Manual execution:
 
 ### Runbook 2: Emergency Secret Rotation
 
-**Objective**: Rotate compromised secret with maximum safety  
-**Trigger**: Security incident, suspected compromise  
-**Duration**: 5-10 minutes  
+**Objective**: Rotate compromised secret with maximum safety
+**Trigger**: Security incident, suspected compromise
+**Duration**: 5-10 minutes
 
 Steps:
 1. Immediately disable affected service (if critical)
@@ -540,8 +540,8 @@ Steps:
 
 ### Runbook 3: Restore from Backup
 
-**Objective**: Recover from accidental secret deletion  
-**Trigger**: Deletion error, data corruption  
+**Objective**: Recover from accidental secret deletion
+**Trigger**: Deletion error, data corruption
 
 Steps:
 1. Identify affected secret (check rotation history)
@@ -603,10 +603,10 @@ readinessProbe:
 
 ## Support & Escalation
 
-**Tier 1 - Monitoring Alerts**: Automatically sent to Slack/PagerDuty  
-**Tier 2 - Operational Issues**: Check troubleshooting section above  
-**Tier 3 - Secrets Compromise**: Execute Emergency Secret Rotation runbook  
-**Tier 4 - Infrastructure Issues**: Contact platform/SRE team  
+**Tier 1 - Monitoring Alerts**: Automatically sent to Slack/PagerDuty
+**Tier 2 - Operational Issues**: Check troubleshooting section above
+**Tier 3 - Secrets Compromise**: Execute Emergency Secret Rotation runbook
+**Tier 4 - Infrastructure Issues**: Contact platform/SRE team
 
 ---
 

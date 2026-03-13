@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import secrets
 from typing import Any, Dict, Optional
 
-from .. import LOGGER
 from .config_manager import Config
 from .redis_manager import redis_client
 

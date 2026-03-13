@@ -221,7 +221,7 @@ SUMMARY
 Status Summary:
 • 86/86 command definitions mapped
 • 5 alias routing gaps fixed
-• 1 callback crash fixed  
+• 1 callback crash fixed
 • 1 new command endpoint wired
 • 104 handlers registered successfully
 • Bot healthy and listening

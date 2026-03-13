@@ -172,7 +172,7 @@ ENABLE_QUOTA_BYPASS=true
 #### Validation Script
 ```bash
 # Run Phase 9 integration tests:
-python -m pytest tests/test_phase9_enterprise_features.py -v -o addopts=""
+python -m pytest tests/integration/test_enterprise_features.py -v -o addopts=""
 
 # Expected: All tests pass ✅
 ```
@@ -221,7 +221,7 @@ PREMIUMIZE_API_KEY=your_key_here
 Run the Phase 10 integration test suite:
 
 ```bash
-python -m pytest tests/test_phase10_ecosystem_integrations.py -v -o addopts=""
+python -m pytest tests/integration/test_ecosystem_integrations.py -v -o addopts=""
 
 # Expected output:
 # test_index_generation PASSED              [16.67%]
@@ -230,7 +230,7 @@ python -m pytest tests/test_phase10_ecosystem_integrations.py -v -o addopts=""
 # test_debrid_integration PASSED            [66.67%]
 # test_error_handling PASSED                [83.33%]
 # test_edge_cases PASSED                    [100%]
-# 
+#
 # ======================== 6 passed in 2.45s ========================
 ```
 
@@ -282,7 +282,7 @@ See [Phase 10 Troubleshooting](#phase-10-troubleshooting) below.
 Run the Phase 11 optimization test suite:
 
 ```bash
-python -m pytest tests/test_phase11_optimization_scaling.py -v -o addopts=""
+python -m pytest tests/integration/test_optimization_scaling.py -v -o addopts=""
 
 # Expected output:
 # test_zero_copy_transfer PASSED            [16.67%]
@@ -960,19 +960,19 @@ python -m pytest tests/test_health_monitor.py tests/test_metrics.py -v
 python -m pytest tests/test_enhanced_startup_phase5.py -v
 
 # Phase 9
-python -m pytest tests/test_phase9_enterprise_features.py -v
+python -m pytest tests/integration/test_enterprise_features.py -v
 
 # Phase 10
-python -m pytest tests/test_phase10_ecosystem_integrations.py -v
+python -m pytest tests/integration/test_ecosystem_integrations.py -v
 
 # Phase 11
-python -m pytest tests/test_phase11_optimization_scaling.py -v
+python -m pytest tests/integration/test_optimization_scaling.py -v
 ```
 
 ### Run Single Test
 
 ```bash
-python -m pytest tests/test_phase10_ecosystem_integrations.py::test_index_generation -v
+python -m pytest tests/integration/test_ecosystem_integrations.py::test_index_generation -v
 ```
 
 ### Run with Coverage
@@ -1090,16 +1090,16 @@ uploader.upload_to_telegram('test_file.mp4')
 
 Your bot is **production-ready** when:
 
-✅ All 35+ tests pass  
-✅ `/ping` responds in <2 seconds  
-✅ `/status` shows current queue  
-✅ Completed download appears in designated location  
-✅ Web dashboard loads without errors  
-✅ Logs are being written and rotated  
-✅ No warnings in docker compose logs  
-✅ Resource usage is stable (no memory growth)  
-✅ Response time <5 seconds for all commands  
-✅ All authorized users can command the bot  
+✅ All 35+ tests pass
+✅ `/ping` responds in <2 seconds
+✅ `/status` shows current queue
+✅ Completed download appears in designated location
+✅ Web dashboard loads without errors
+✅ Logs are being written and rotated
+✅ No warnings in docker compose logs
+✅ Resource usage is stable (no memory growth)
+✅ Response time <5 seconds for all commands
+✅ All authorized users can command the bot
 
 ---
 

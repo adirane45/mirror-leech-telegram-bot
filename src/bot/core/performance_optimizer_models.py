@@ -10,10 +10,9 @@ Includes:
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, Optional, Any
-
+from typing import Any, Dict, Optional
 
 # ============================================================================
 # ENUMS
@@ -56,7 +55,7 @@ class ResourceMetric:
     threshold: float = 0.8  # Alert threshold
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     node_id: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -81,7 +80,7 @@ class PerformanceSnapshot:
     disk_io_usage: float = 0.0
     active_tasks: int = 0
     response_time_ms: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -108,7 +107,7 @@ class OptimizationRecommendation:
     priority: int = 1  # 1=low, 5=critical
     estimated_impact: float = 0.0  # 0.0-1.0
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -134,7 +133,7 @@ class OptimizerMetrics:
     avg_response_time_ms: float = 0.0
     nodes_under_load: int = 0
     last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -155,23 +154,19 @@ class OptimizerMetrics:
 
 class PerformanceOptimizationListener(ABC):
     """Abstract listener for performance events"""
-    
+
     @abstractmethod
     async def on_metric_collected(self, metric: ResourceMetric) -> None:
         """Called when metric collected"""
-        pass
-    
+
     @abstractmethod
     async def on_threshold_exceeded(self, metric: ResourceMetric) -> None:
         """Called when threshold exceeded"""
-        pass
-    
+
     @abstractmethod
     async def on_recommendation_made(self, recommendation: OptimizationRecommendation) -> None:
         """Called when recommendation made"""
-        pass
-    
+
     @abstractmethod
     async def on_scaling_action(self, action: ScalingAction, node_id: str) -> None:
         """Called when scaling action taken"""
-        pass

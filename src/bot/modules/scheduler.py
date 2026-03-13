@@ -5,10 +5,15 @@
 
 from datetime import datetime, timedelta
 from secrets import token_hex
+from typing import Any
 
 from ..core.task_scheduler import TaskScheduler
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.telegram_helper.message_utils import send_message
+
+
+async def _send(message: Any, text: str, buttons: Any = None) -> Any:
+    return await send_message(message, text, buttons)
 
 
 def _parse_time(time_str: str) -> datetime:
@@ -26,24 +31,24 @@ def _parse_time(time_str: str) -> datetime:
     return dt
 
 
-@new_task
-async def schedule_task(_, message):
+@new_task  # type: ignore[untyped-decorator]
+async def schedule_task(_: Any, message: Any) -> None:
     """
     Schedule a mirror/leech task for later execution
-    
+
     Usage:
         /schedule HH:MM mirror <link> [options]
         /schedule YYYY-MM-DD HH:MM leech <link> [options]
-    
+
     Examples:
         /schedule 02:30 mirror https://example.com/file.zip
         /schedule 2026-02-01 18:00 leech magnet:?xt=...
-    
+
     Modified by: justadi
     """
     parts = message.text.split(maxsplit=2)
     if len(parts) < 3:
-        await send_message(
+        await _send(
             message,
             "<b>🗓️ Schedule Task</b>\n\n"
             "Usage:\n"
@@ -55,13 +60,13 @@ async def schedule_task(_, message):
     try:
         start_time = _parse_time(parts[1])
     except Exception:
-        await send_message(message, "<b>❌ Invalid time format.</b>")
+        await _send(message, "<b>❌ Invalid time format.</b>")
         return
 
     command_text = parts[2].strip()
     cmd_word = command_text.split(maxsplit=1)[0].lstrip("/").lower()
     if cmd_word not in {"mirror", "leech"}:
-        await send_message(message, "<b>❌ Command must start with mirror or leech.</b>")
+        await _send(message, "<b>❌ Command must start with mirror or leech.</b>")
         return
 
     is_leech = cmd_word == "leech"
@@ -79,29 +84,29 @@ async def schedule_task(_, message):
     )
 
     if ok:
-        await send_message(
+        await _send(
             message,
             "<b>✅ Task Scheduled</b>\n"
             f"<b>ID:</b> <code>{task_id}</code>\n"
             f"<b>When:</b> <code>{start_time}</code>",
         )
     else:
-        await send_message(message, "<b>❌ Failed to schedule task.</b>")
+        await _send(message, "<b>❌ Failed to schedule task.</b>")
 
 
-@new_task
-async def list_schedules(_, message):
+@new_task  # type: ignore[untyped-decorator]
+async def list_schedules(_: Any, message: Any) -> None:
     """
     List all scheduled tasks for current user
-    
+
     Shows task ID, scheduled time, and status for each task
-    
+
     Modified by: justadi
     """
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     tasks = await TaskScheduler.get_scheduled_tasks(user_id)
     if not tasks:
-        await send_message(message, "<b>🗓️ No scheduled tasks.</b>")
+        await _send(message, "<b>🗓️ No scheduled tasks.</b>")
         return
 
     text = "<b>🗓️ Scheduled Tasks</b>\n\n"
@@ -111,26 +116,26 @@ async def list_schedules(_, message):
             f"<b>When:</b> <code>{task.get('scheduled_for')}</code>\n"
             f"<b>Status:</b> <code>{task.get('status')}</code>\n\n"
         )
-    await send_message(message, text)
+    await _send(message, text)
 
 
-@new_task
-async def cancel_schedule(_, message):
+@new_task  # type: ignore[untyped-decorator]
+async def cancel_schedule(_: Any, message: Any) -> None:
     """
     Cancel a scheduled task
-    
+
     Usage: /unschedule <task_id>
-    
+
     Modified by: justadi
     """
     parts = message.text.split(maxsplit=1)
     if len(parts) < 2:
-        await send_message(message, "Usage: <code>/unschedule &lt;task_id&gt;</code>")
+        await _send(message, "Usage: <code>/unschedule &lt;task_id&gt;</code>")
         return
 
     task_id = parts[1].strip()
     ok = await TaskScheduler.cancel_scheduled_task(task_id)
     if ok:
-        await send_message(message, f"<b>✅ Cancelled:</b> <code>{task_id}</code>")
+        await _send(message, f"<b>✅ Cancelled:</b> <code>{task_id}</code>")
     else:
-        await send_message(message, f"<b>❌ Failed to cancel:</b> <code>{task_id}</code>")
+        await _send(message, f"<b>❌ Failed to cancel:</b> <code>{task_id}</code>")

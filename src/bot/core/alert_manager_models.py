@@ -3,9 +3,9 @@ Alert Manager Models
 Data structures for alert management and tracking
 """
 
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, Optional
-from datetime import datetime, UTC
+from typing import Any, Dict, Optional
 
 
 class AlertSeverity(Enum):
@@ -39,7 +39,7 @@ class Alert:
         title: str,
         message: str,
         task_id: Optional[str] = None,
-        details: Optional[Dict] = None,
+        details: Optional[Dict[str, Any]] = None,
     ):
         self.alert_type = alert_type
         self.severity = severity
@@ -50,7 +50,7 @@ class Alert:
         self.timestamp = datetime.now(UTC)
         self.id = f"{self.timestamp.timestamp()}_{self.alert_type.value}"
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Convert alert to dictionary"""
         return {
             "id": self.id,

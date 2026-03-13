@@ -11,31 +11,32 @@ Implements:
 
 import asyncio
 import uuid
-from datetime import datetime, UTC
-from typing import Dict, List, Set, Optional
+from datetime import UTC, datetime
+from typing import Any, Dict, List, Optional, Set
+
+from .api_gateway_limiter import ApiGatewayLimiter
 
 # Import models
 from .api_gateway_models import (
+    ApiGatewayListener,
     ApiRequest,
     ApiResponse,
-    RouteConfig,
-    GatewayMetrics,
-    ApiGatewayListener,
-    RateLimitConfig,
     CircuitBreakerConfig,
-    RequestMethod,
     CircuitState,
+    GatewayMetrics,
+    RateLimitConfig,
+    RequestMethod,
+    RouteConfig,
 )
 
 # Import specialized components
 from .api_gateway_router import ApiGatewayRouter
-from .api_gateway_limiter import ApiGatewayLimiter
 
 
 class ApiGateway:
     """
     API Gateway for distributed request management
-    
+
     Singleton instance managing:
     - Request routing
     - Rate limiting
@@ -43,16 +44,16 @@ class ApiGateway:
     - Authentication/authorization
     - Metrics collection
     """
-    
+
     _instance: Optional['ApiGateway'] = None
     _lock = asyncio.Lock()
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.enabled = False
         self.node_id = ""
         self.auth_tokens: Set[str] = set()
         self.listeners: List[ApiGatewayListener] = []
-        
+
         # Component delegation
         self.router = ApiGatewayRouter()
         self.limiter = ApiGatewayLimiter()
@@ -67,10 +68,10 @@ class ApiGateway:
         self._metrics = self.limiter.metrics
         self._default_rate_limit = self.limiter.default_rate_limit
         self._default_circuit_breaker = self.limiter.default_circuit_breaker
-        
+
         # Background tasks
-        self._cleanup_task: Optional[asyncio.Task] = None
-        self._circuit_check_task: Optional[asyncio.Task] = None
+        self._cleanup_task: Optional[asyncio.Task[None]] = None
+        self._circuit_check_task: Optional[asyncio.Task[None]] = None
 
     @property
     def metrics(self) -> GatewayMetrics:
@@ -101,66 +102,66 @@ class ApiGateway:
     def default_circuit_breaker(self, value: CircuitBreakerConfig) -> None:
         self._default_circuit_breaker = value
         self.limiter.default_circuit_breaker = value
-    
+
     @classmethod
     def get_instance(cls) -> 'ApiGateway':
         """Get singleton instance"""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
-    
+
     async def start(self, node_id: str = "") -> bool:
         """Start API gateway"""
         if self.enabled:
             return True
-        
+
         try:
             self.node_id = node_id or f"gateway_{uuid.uuid4().hex[:8]}"
             self.enabled = True
-            
+
             # Configure components
             self.router.set_enabled(True)
             self.router.set_node_info(self.node_id)
             self.limiter.set_enabled(True)
-            
+
             # Start background tasks
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             self._circuit_check_task = asyncio.create_task(self.limiter.circuit_check_loop())
-            
+
             return True
         except Exception:
             self.enabled = False
             return False
-    
+
     async def stop(self) -> bool:
         """Stop API gateway"""
         if not self.enabled:
             return True
-        
+
         try:
             self.enabled = False
             self.router.set_enabled(False)
             self.limiter.set_enabled(False)
-            
+
             if self._cleanup_task:
                 self._cleanup_task.cancel()
             if self._circuit_check_task:
                 self._circuit_check_task.cancel()
-            
+
             await asyncio.sleep(0.1)
-            
+
             return True
         except Exception:
             return False
-    
+
     # ========================================================================
     # ROUTING DELEGATION
     # ========================================================================
-    
+
     async def register_route(self, route: RouteConfig) -> bool:
         """Register a route"""
         return await self.router.register_route(route)
-    
+
     async def register_node(self, node_id: str) -> bool:
         """Register target node"""
         result = await self.router.register_node(node_id)
@@ -170,98 +171,126 @@ class ApiGateway:
     async def _select_node(self, route: RouteConfig) -> Optional[str]:
         """Compatibility wrapper for node selection"""
         return await self.router.select_node(route, circuit_states=self.circuit_states)
-    
+
+    def _gateway_disabled_response(self, request: ApiRequest) -> ApiResponse:
+        return ApiResponse(
+            request_id=request.request_id,
+            status_code=503,
+            body="Gateway not enabled"
+        )
+
+    async def _notify_request_received(self, request: ApiRequest) -> None:
+        for listener in self.listeners:
+            await listener.on_request_received(request)
+
+    def _failure_response(self, request: ApiRequest, status_code: int, body: str) -> ApiResponse:
+        self.limiter.metrics.failed_requests += 1
+        return ApiResponse(
+            request_id=request.request_id,
+            status_code=status_code,
+            body=body,
+        )
+
+    async def _check_rate_limit(self, request: ApiRequest) -> Optional[ApiResponse]:
+        if await self.limiter.check_rate_limit(request.client_id):
+            return None
+        self.limiter.metrics.rate_limited_requests += 1
+        return ApiResponse(
+            request_id=request.request_id,
+            status_code=429,
+            body="Rate limit exceeded"
+        )
+
+    async def _resolve_route_or_error(self, request: ApiRequest) -> tuple[Optional[RouteConfig], Optional[ApiResponse]]:
+        route = await self.router.get_route(request.path)
+        if route:
+            return route, None
+        return None, self._failure_response(request, 404, "Route not found")
+
+    async def _check_auth_or_error(self, request: ApiRequest, route: RouteConfig) -> Optional[ApiResponse]:
+        if not route.requires_auth:
+            return None
+        auth_token = request.headers.get("Authorization", "")
+        if await self._check_auth(auth_token):
+            return None
+        return self._failure_response(request, 401, "Unauthorized")
+
+    async def _select_target_or_error(self, request: ApiRequest, route: RouteConfig) -> tuple[Optional[str], Optional[ApiResponse]]:
+        target_node = await self.router.select_node(
+            route,
+            circuit_states=self.limiter.circuit_states
+        )
+        if target_node:
+            return target_node, None
+        return None, self._failure_response(request, 503, "No available nodes")
+
+    async def _check_circuit_or_error(self, request: ApiRequest, target_node: str) -> Optional[ApiResponse]:
+        if await self.limiter.check_circuit(target_node):
+            return None
+        self.limiter.metrics.circuit_open_count += 1
+        return ApiResponse(
+            request_id=request.request_id,
+            status_code=503,
+            body="Circuit breaker open"
+        )
+
+    async def _finalize_gateway_response(
+        self,
+        response: ApiResponse,
+        target_node: str,
+        start_time: datetime,
+    ) -> None:
+        elapsed = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
+        response.processing_time_ms = elapsed
+
+        if response.status_code < 400:
+            self.limiter.metrics.successful_requests += 1
+            await self.limiter.record_success(target_node)
+        else:
+            self.limiter.metrics.failed_requests += 1
+            await self.limiter.record_failure(target_node)
+
+        for listener in self.listeners:
+            await listener.on_response_sent(response)
+
     async def route_request(self, request: ApiRequest) -> ApiResponse:
         """Route request to appropriate node"""
         if not self.enabled:
-            return ApiResponse(
-                request_id=request.request_id,
-                status_code=503,
-                body="Gateway not enabled"
-            )
-        
+            return self._gateway_disabled_response(request)
+
         start_time = datetime.now(UTC)
-        
+
         try:
             self.limiter.metrics.total_requests += 1
-            
-            # Notify listeners
-            for listener in self.listeners:
-                await listener.on_request_received(request)
-            
-            # Check rate limit
-            if not await self.limiter.check_rate_limit(request.client_id):
-                self.limiter.metrics.rate_limited_requests += 1
-                return ApiResponse(
-                    request_id=request.request_id,
-                    status_code=429,
-                    body="Rate limit exceeded"
-                )
-            
-            # Find route
-            route = await self.router.get_route(request.path)
-            if not route:
-                self.limiter.metrics.failed_requests += 1
-                return ApiResponse(
-                    request_id=request.request_id,
-                    status_code=404,
-                    body="Route not found"
-                )
-            
-            # Check auth
-            if route.requires_auth:
-                auth_token = request.headers.get("Authorization", "")
-                if not await self._check_auth(auth_token):
-                    self.limiter.metrics.failed_requests += 1
-                    return ApiResponse(
-                        request_id=request.request_id,
-                        status_code=401,
-                        body="Unauthorized"
-                    )
-            
-            # Select target node
-            target_node = await self.router.select_node(
-                route,
-                circuit_states=self.limiter.circuit_states
-            )
-            if not target_node:
-                self.limiter.metrics.failed_requests += 1
-                return ApiResponse(
-                    request_id=request.request_id,
-                    status_code=503,
-                    body="No available nodes"
-                )
-            
-            # Check circuit breaker
-            if not await self.limiter.check_circuit(target_node):
-                self.limiter.metrics.circuit_open_count += 1
-                return ApiResponse(
-                    request_id=request.request_id,
-                    status_code=503,
-                    body="Circuit breaker open"
-                )
-            
+
+            await self._notify_request_received(request)
+
+            if rate_limited := await self._check_rate_limit(request):
+                return rate_limited
+
+            route, route_error = await self._resolve_route_or_error(request)
+            if route_error:
+                return route_error
+            assert route is not None
+
+            if auth_error := await self._check_auth_or_error(request, route):
+                return auth_error
+
+            target_node, node_error = await self._select_target_or_error(request, route)
+            if node_error:
+                return node_error
+            assert target_node is not None
+
+            if circuit_error := await self._check_circuit_or_error(request, target_node):
+                return circuit_error
+
             # Route request
             response = await self.router.route_request(request, target_node)
-            
-            # Calculate processing time
-            elapsed = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
-            response.processing_time_ms = elapsed
-            
-            # Update metrics
-            if response.status_code < 400:
-                self.limiter.metrics.successful_requests += 1
-                await self.limiter.record_success(target_node)
-            else:
-                self.limiter.metrics.failed_requests += 1
-                await self.limiter.record_failure(target_node)
-            
-            # Notify response
-            for listener in self.listeners:
-                await listener.on_response_sent(response)
-            
+
+            await self._finalize_gateway_response(response, target_node, start_time)
+
             return response
-            
+
         except Exception as e:
             self.limiter.metrics.failed_requests += 1
             return ApiResponse(
@@ -270,7 +299,7 @@ class ApiGateway:
                 body=f"Internal error: {str(e)}"
             )
 
-    async def process_request(self, request: dict) -> ApiResponse:
+    async def process_request(self, request: Dict[str, Any]) -> ApiResponse:
         """Compatibility wrapper to process dict-based requests"""
         api_request = ApiRequest(
             method=RequestMethod(request.get('method', 'GET')),
@@ -288,11 +317,11 @@ class ApiGateway:
     async def _record_success(self, node_id: str) -> None:
         """Compatibility wrapper for circuit success recording"""
         await self.limiter.record_success(node_id)
-    
+
     # ========================================================================
     # AUTHENTICATION
     # ========================================================================
-    
+
     async def register_auth_token(self, token: str) -> bool:
         """Register authentication token"""
         try:
@@ -300,25 +329,25 @@ class ApiGateway:
             return True
         except Exception:
             return False
-    
+
     async def _check_auth(self, token: str) -> bool:
         """Check authentication token"""
         return token in self.auth_tokens
-    
+
     # ========================================================================
     # RATE LIMITING DELEGATION
     # ========================================================================
-    
+
     async def set_rate_limit(self, max_requests: int, window_seconds: int) -> bool:
         """Set global rate limit"""
         result = await self.limiter.set_rate_limit(max_requests, window_seconds)
         self._default_rate_limit = self.limiter.default_rate_limit
         return result
-    
+
     # ========================================================================
     # MANAGEMENT
     # ========================================================================
-    
+
     async def add_listener(self, listener: ApiGatewayListener) -> bool:
         """Register gateway listener"""
         try:
@@ -328,19 +357,19 @@ class ApiGateway:
             return True
         except Exception:
             return False
-    
+
     async def get_metrics(self) -> GatewayMetrics:
         """Get gateway metrics"""
         return self.limiter.metrics
-    
-    async def get_circuit_state(self, node_id: str):
+
+    async def get_circuit_state(self, node_id: str) -> Optional[CircuitState]:
         """Get circuit breaker state for node"""
         return self.limiter.get_circuit_state(node_id)
-    
+
     async def is_enabled(self) -> bool:
         """Check if gateway is enabled"""
         return self.enabled
-    
+
     async def _cleanup_loop(self) -> None:
         """Background loop for cleanup"""
         while self.enabled:

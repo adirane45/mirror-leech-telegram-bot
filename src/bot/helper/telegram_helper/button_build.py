@@ -1,16 +1,16 @@
 # Button Building Module
 # Enhanced by: justadi
 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 class ButtonMaker:
-    def __init__(self):
-        self._button = []
-        self._header_button = []
-        self._footer_button = []
+    def __init__(self) -> None:
+        self._button: list[InlineKeyboardButton] = []
+        self._header_button: list[InlineKeyboardButton] = []
+        self._footer_button: list[InlineKeyboardButton] = []
 
-    def url_button(self, key, link, position=None):
+    def url_button(self, key: str, link: str, position: str | None = None) -> None:
         if not position:
             self._button.append(InlineKeyboardButton(text=key, url=link))
         elif position == "header":
@@ -18,7 +18,7 @@ class ButtonMaker:
         elif position == "footer":
             self._footer_button.append(InlineKeyboardButton(text=key, url=link))
 
-    def data_button(self, key, data, position=None):
+    def data_button(self, key: str, data: str, position: str | None = None) -> None:
         if not position:
             self._button.append(InlineKeyboardButton(text=key, callback_data=data))
         elif position == "header":
@@ -30,8 +30,8 @@ class ButtonMaker:
                 InlineKeyboardButton(text=key, callback_data=data)
             )
 
-    def build_menu(self, b_cols=1, h_cols=8, f_cols=8):
-        menu = [
+    def build_menu(self, b_cols: int = 1, h_cols: int = 8, f_cols: int = 8) -> InlineKeyboardMarkup:
+        menu: list[list[InlineKeyboardButton]] = [
             self._button[i : i + b_cols] for i in range(0, len(self._button), b_cols)
         ]
         if self._header_button:
@@ -46,15 +46,13 @@ class ButtonMaker:
                 menu.insert(0, self._header_button)
         if self._footer_button:
             if len(self._footer_button) > f_cols:
-                [
+                for i in range(0, len(self._footer_button), f_cols):
                     menu.append(self._footer_button[i : i + f_cols])
-                    for i in range(0, len(self._footer_button), f_cols)
-                ]
             else:
                 menu.append(self._footer_button)
         return InlineKeyboardMarkup(menu)
 
-    def reset(self):
+    def reset(self) -> None:
         self._button = []
         self._header_button = []
         self._footer_button = []

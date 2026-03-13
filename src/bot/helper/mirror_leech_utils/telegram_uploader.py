@@ -1,44 +1,34 @@
-from PIL import Image
-from aioshutil import rmtree
 from asyncio import sleep
 from logging import getLogger
-from natsort import natsorted
-from os import walk, path as ospath
+from os import path as ospath
+from os import walk
+from re import match as re_match
+from re import sub as re_sub
 from time import time
-from re import match as re_match, sub as re_sub
-from pyrogram.errors import FloodWait, RPCError, BadRequest
-from aiofiles.os import (
-    remove,
-    path as aiopath,
-    rename,
-)
-from pyrogram.types import (
-    InputMediaVideo,
-    InputMediaDocument,
-    InputMediaPhoto,
-)
-from tenacity import (
-    retry,
-    wait_exponential,
-    stop_after_attempt,
-    retry_if_exception_type,
-    RetryError,
-)
+
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove, rename
+from aioshutil import rmtree
+from natsort import natsorted
+from PIL import Image
+from pyrogram.errors import BadRequest, FloodWait, RPCError
+from pyrogram.types import InputMediaDocument, InputMediaPhoto, InputMediaVideo
+from tenacity import RetryError, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ... import intervals
 from ...core.config_manager import Config
+from ...core.file_cache_manager import file_cache_manager
 from ...core.telegram_manager import TgClient
 from ..ext_utils.bot_utils import sync_to_async
-from ..ext_utils.files_utils import is_archive, get_base_name, get_mime_type
-from ...core.file_cache_manager import file_cache_manager
-from ..telegram_helper.message_utils import delete_message
+from ..ext_utils.files_utils import get_base_name, get_mime_type, is_archive
 from ..ext_utils.media_utils import (
-    get_media_info,
-    get_document_type,
-    get_video_thumbnail,
     get_audio_thumbnail,
+    get_document_type,
+    get_media_info,
     get_multiple_frames_thumbnail,
+    get_video_thumbnail,
 )
+from ..telegram_helper.message_utils import delete_message
 
 LOGGER = getLogger(__name__)
 
@@ -284,108 +274,26 @@ class TelegramUploader:
                 self._msgs_dict[m.link] = m.caption
         self._sent_msg = msgs_list[-1]
 
-    async def upload(self):
-        await self._user_settings()
-        res = await self._msg_to_reply()
-        if not res:
+    def _should_track_sent_link(self):
+        return (
+            not self._is_corrupted
+            and (self._listener.is_super_chat or self._listener.up_dest)
+            and not self._is_private
+        )
+
+    async def _flush_pending_groups_for_path(self, f_path):
+        if not self._last_msg_in_group:
             return
-        for dirpath, _, files in natsorted(await sync_to_async(walk, self._path)):
-            if dirpath.strip().endswith("/yt-dlp-thumb"):
-                continue
-            if dirpath.strip().endswith("_mltbss"):
-                await self._send_screenshots(dirpath, files)
-                await rmtree(dirpath, ignore_errors=True)
-                continue
-            for file_ in natsorted(files):
-                self._error = ""
-                self._up_path = f_path = ospath.join(dirpath, file_)
-                if not await aiopath.exists(self._up_path):
-                    if intervals["stopAll"]:
-                        return
-                    LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
-                    continue
-                try:
-                    f_size = await aiopath.getsize(self._up_path)
-                    self._total_files += 1
-                    if f_size == 0:
-                        LOGGER.error(
-                            f"{self._up_path} size is zero, telegram don't upload zero size files"
-                        )
-                        self._corrupted += 1
-                        continue
-                    if self._listener.is_cancelled:
-                        return
-                    cap_mono = await self._prepare_file(file_, dirpath)
-                    cache_payload = await file_cache_manager.prepare_hashes(self._up_path)
-                    if cache_payload:
-                        hashes, size = cache_payload
-                        cached_entry = await file_cache_manager.get_cached_entry(
-                            hashes, size
-                        )
-                        if cached_entry and await self._send_cached_media(
-                            cached_entry, cap_mono
-                        ):
-                            if (
-                                not self._is_corrupted
-                                and (self._listener.is_super_chat or self._listener.up_dest)
-                                and not self._is_private
-                            ):
-                                self._msgs_dict[self._sent_msg.link] = file_
-                            await remove(self._up_path)
-                            await sleep(1)
-                            continue
-                    if self._last_msg_in_group:
-                        group_lists = [
-                            x for v in self._media_dict.values() for x in v.keys()
-                        ]
-                        match = re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", f_path)
-                        if not match or match and match.group(0) not in group_lists:
-                            for key, value in list(self._media_dict.items()):
-                                for subkey, msgs in list(value.items()):
-                                    if len(msgs) > 1:
-                                        await self._send_media_group(subkey, key, msgs)
-                    if self._listener.hybrid_leech and self._listener.user_transmission:
-                        self._user_session = f_size > 2097152000
-                        if self._user_session:
-                            self._sent_msg = await TgClient.user.get_messages(
-                                chat_id=self._sent_msg.chat.id,
-                                message_ids=self._sent_msg.id,
-                            )
-                        else:
-                            self._sent_msg = await self._listener.client.get_messages(
-                                chat_id=self._sent_msg.chat.id,
-                                message_ids=self._sent_msg.id,
-                            )
-                    self._last_msg_in_group = False
-                    self._last_uploaded = 0
-                    await self._upload_file(cap_mono, file_, f_path)
-                    if self._listener.is_cancelled:
-                        return
-                    if cache_payload and not self._is_corrupted:
-                        hashes, size = cache_payload
-                        await self._store_cache_entry(hashes, size, file_)
-                    if (
-                        not self._is_corrupted
-                        and (self._listener.is_super_chat or self._listener.up_dest)
-                        and not self._is_private
-                    ):
-                        self._msgs_dict[self._sent_msg.link] = file_
-                    await sleep(1)
-                except Exception as err:
-                    if isinstance(err, RetryError):
-                        LOGGER.info(
-                            f"Total Attempts: {err.last_attempt.attempt_number}"
-                        )
-                        err = err.last_attempt.exception()
-                    LOGGER.error(f"{err}. Path: {self._up_path}")
-                    self._error = str(err)
-                    self._corrupted += 1
-                    if self._listener.is_cancelled:
-                        return
-                if not self._listener.is_cancelled and await aiopath.exists(
-                    self._up_path
-                ):
-                    await remove(self._up_path)
+        group_lists = [x for v in self._media_dict.values() for x in v.keys()]
+        match = re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", f_path)
+        if match and match.group(0) in group_lists:
+            return
+        for key, value in list(self._media_dict.items()):
+            for subkey, msgs in list(value.items()):
+                if len(msgs) > 1:
+                    await self._send_media_group(subkey, key, msgs)
+
+    async def _flush_all_pending_groups(self):
         for key, value in list(self._media_dict.items()):
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
@@ -395,6 +303,160 @@ class TelegramUploader:
                         LOGGER.info(
                             f"While sending media group at the end of task. Error: {e}"
                         )
+
+    async def _refresh_session_message(self, f_size):
+        if not (self._listener.hybrid_leech and self._listener.user_transmission):
+            return
+        self._user_session = f_size > 2097152000
+        if self._user_session:
+            self._sent_msg = await TgClient.user.get_messages(
+                chat_id=self._sent_msg.chat.id,
+                message_ids=self._sent_msg.id,
+            )
+            return
+        self._sent_msg = await self._listener.client.get_messages(
+            chat_id=self._sent_msg.chat.id,
+            message_ids=self._sent_msg.id,
+        )
+
+    async def _try_cached_upload(self, cap_mono):
+        cache_payload = await file_cache_manager.prepare_hashes(self._up_path)
+        if not cache_payload:
+            return None, False
+        hashes, size = cache_payload
+        cached_entry = await file_cache_manager.get_cached_entry(hashes, size)
+        if not cached_entry:
+            return cache_payload, False
+        if await self._send_cached_media(cached_entry, cap_mono):
+            if self._should_track_sent_link():
+                self._msgs_dict[self._sent_msg.link] = ospath.basename(self._up_path)
+            await remove(self._up_path)
+            await sleep(1)
+            return cache_payload, True
+        return cache_payload, False
+
+    async def _validate_file_path(self, f_path):
+        """Validate file existence and size."""
+        if not await aiopath.exists(f_path):
+            if intervals["stopAll"]:
+                return "stop", None
+            LOGGER.error(f"{f_path} not exists! Continue uploading!")
+            return "continue", None
+        
+        f_size = await aiopath.getsize(f_path)
+        self._total_files += 1
+        
+        if f_size == 0:
+            LOGGER.error(
+                f"{f_path} size is zero, telegram don't upload zero size files"
+            )
+            self._corrupted += 1
+            return "continue", None
+        
+        return None, f_size
+
+    async def _handle_cache_upload(self, cap_mono, file_):
+        """Try to upload from cache if available."""
+        cache_payload, uploaded_from_cache = await self._try_cached_upload(cap_mono)
+        if uploaded_from_cache:
+            return True, None
+        return False, cache_payload
+
+    async def _perform_actual_upload(self, cap_mono, file_, f_path, f_size):
+        """Perform the actual file upload."""
+        await self._flush_pending_groups_for_path(f_path)
+        await self._refresh_session_message(f_size)
+        
+        self._last_msg_in_group = False
+        self._last_uploaded = 0
+        await self._upload_file(cap_mono, file_, f_path)
+
+    async def _post_upload_processing(self, cache_payload, file_):
+        """Handle post-upload tasks like caching and link tracking."""
+        if cache_payload and not self._is_corrupted:
+            hashes, size = cache_payload
+            await self._store_cache_entry(hashes, size, file_)
+        
+        if self._should_track_sent_link():
+            self._msgs_dict[self._sent_msg.link] = file_
+        
+        await sleep(1)
+
+    async def _cleanup_uploaded_file(self):
+        """Clean up the uploaded file if it still exists."""
+        if (
+            not self._listener.is_cancelled
+            and self._up_path
+            and await aiopath.exists(self._up_path)
+        ):
+            await remove(self._up_path)
+
+    async def _upload_single_file(self, file_, dirpath):
+        self._error = ""
+        self._up_path = f_path = ospath.join(dirpath, file_)
+        
+        status, f_size = await self._validate_file_path(f_path)
+        if status:
+            return status
+        
+        try:
+            if self._listener.is_cancelled:
+                return "stop"
+            
+            cap_mono = await self._prepare_file(file_, dirpath)
+            cached, cache_payload = await self._handle_cache_upload(cap_mono, file_)
+            if cached:
+                return "continue"
+            
+            await self._perform_actual_upload(cap_mono, file_, f_path, f_size)
+            
+            if self._listener.is_cancelled:
+                return "stop"
+            
+            await self._post_upload_processing(cache_payload, file_)
+            return "continue"
+        except Exception as err:
+            if isinstance(err, RetryError):
+                LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
+                err = err.last_attempt.exception()
+            LOGGER.error(f"{err}. Path: {self._up_path}")
+            self._error = str(err)
+            self._corrupted += 1
+            if self._listener.is_cancelled:
+                return "stop"
+            return "continue"
+        finally:
+            await self._cleanup_uploaded_file()
+
+    async def upload(self):
+        await self._user_settings()
+        res = await self._msg_to_reply()
+        if not res:
+            return
+        
+        for dirpath, _, files in natsorted(await sync_to_async(walk, self._path)):
+            outcome = await self._process_directory(dirpath, files)
+            if outcome == "stop":
+                return
+        
+        await self._finalize_upload()
+
+    async def _process_directory(self, dirpath, files):
+        if dirpath.strip().endswith("/yt-dlp-thumb"):
+            return None
+        if dirpath.strip().endswith("_mltbss"):
+            await self._send_screenshots(dirpath, files)
+            await rmtree(dirpath, ignore_errors=True)
+            return None
+        
+        for file_ in natsorted(files):
+            outcome = await self._upload_single_file(file_, dirpath)
+            if outcome == "stop":
+                return "stop"
+        return None
+
+    async def _finalize_upload(self):
+        await self._flush_all_pending_groups()
         if self._listener.is_cancelled:
             return
         if self._total_files == 0:
@@ -411,7 +473,176 @@ class TelegramUploader:
         await self._listener.on_upload_complete(
             None, self._msgs_dict, self._total_files, self._corrupted
         )
-        return
+
+    async def _resolve_thumb(self, file, is_video, is_audio, is_image):
+        thumb = self._thumb
+        if not is_image and thumb is None:
+            file_name = ospath.splitext(file)[0]
+            thumb_path = f"{self._path}/yt-dlp-thumb/{file_name}.jpg"
+            if await aiopath.isfile(thumb_path):
+                return thumb_path
+            alt_thumb = thumb_path.replace("/yt-dlp-thumb", "")
+            if await aiopath.isfile(alt_thumb):
+                return alt_thumb
+            if is_audio and not is_video:
+                return await get_audio_thumbnail(self._up_path)
+        return thumb
+
+    async def _reply_document(self, cap_mono, thumb):
+        if self._listener.is_cancelled:
+            return
+        if thumb == "none":
+            thumb = None
+        self._sent_msg = await self._sent_msg.reply_document(
+            document=self._up_path,
+            thumb=thumb,
+            caption=cap_mono,
+            force_document=True,
+            disable_notification=True,
+            progress=self._upload_progress,
+        )
+
+    async def _reply_video(self, cap_mono, thumb):
+        duration = (await get_media_info(self._up_path))[0]
+        if thumb is None and self._listener.thumbnail_layout:
+            thumb = await get_multiple_frames_thumbnail(
+                self._up_path,
+                self._listener.thumbnail_layout,
+                self._listener.screen_shots,
+            )
+        if thumb is None:
+            thumb = await get_video_thumbnail(self._up_path, duration)
+        if thumb is not None and thumb != "none":
+            with Image.open(thumb) as img:
+                width, height = img.size
+        else:
+            width, height = 480, 320
+        if self._listener.is_cancelled:
+            return
+        if thumb == "none":
+            thumb = None
+        self._sent_msg = await self._sent_msg.reply_video(
+            video=self._up_path,
+            caption=cap_mono,
+            duration=duration,
+            width=width,
+            height=height,
+            thumb=thumb,
+            supports_streaming=True,
+            disable_notification=True,
+            progress=self._upload_progress,
+        )
+
+    async def _reply_audio(self, cap_mono, thumb):
+        duration, artist, title = await get_media_info(self._up_path)
+        if self._listener.is_cancelled:
+            return
+        if thumb == "none":
+            thumb = None
+        self._sent_msg = await self._sent_msg.reply_audio(
+            audio=self._up_path,
+            caption=cap_mono,
+            duration=duration,
+            performer=artist,
+            title=title,
+            thumb=thumb,
+            disable_notification=True,
+            progress=self._upload_progress,
+        )
+
+    async def _reply_photo(self, cap_mono):
+        if self._listener.is_cancelled:
+            return
+        self._sent_msg = await self._sent_msg.reply_photo(
+            photo=self._up_path,
+            caption=cap_mono,
+            disable_notification=True,
+            progress=self._upload_progress,
+        )
+
+    async def _send_with_detected_type(
+        self, cap_mono, file, o_path, force_document=False
+    ):
+        is_video, is_audio, is_image = await get_document_type(self._up_path)
+        thumb = await self._resolve_thumb(file, is_video, is_audio, is_image)
+
+        upload_as_document = (
+            self._listener.as_doc
+            or force_document
+            or (not is_video and not is_audio and not is_image)
+        )
+
+        if upload_as_document:
+            if is_video and thumb is None:
+                thumb = await get_video_thumbnail(self._up_path, None)
+            await self._reply_document(cap_mono, thumb)
+            return "documents", thumb
+        if is_video:
+            await self._reply_video(cap_mono, thumb)
+            return "videos", thumb
+        if is_audio:
+            await self._reply_audio(cap_mono, thumb)
+            return "audios", thumb
+        await self._reply_photo(cap_mono)
+        return "photos", thumb
+
+    async def _track_media_group(self, o_path):
+        if (
+            self._listener.is_cancelled
+            or not self._media_group
+            or not (self._sent_msg.video or self._sent_msg.document)
+        ):
+            return
+        key = "documents" if self._sent_msg.document else "videos"
+        match = re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", o_path)
+        if not match:
+            return
+        pname = match.group(0)
+        if pname in self._media_dict[key].keys():
+            self._media_dict[key][pname].append([self._sent_msg.chat.id, self._sent_msg.id])
+        else:
+            self._media_dict[key][pname] = [[self._sent_msg.chat.id, self._sent_msg.id]]
+        msgs = self._media_dict[key][pname]
+        if len(msgs) == 10:
+            await self._send_media_group(pname, key, msgs)
+            return
+        self._last_msg_in_group = True
+
+    async def _cleanup_generated_thumb(self, thumb):
+        if self._thumb is None and thumb is not None and await aiopath.exists(thumb):
+            await remove(thumb)
+
+    async def _ensure_thumb_available(self):
+        if (
+            self._thumb is not None
+            and not await aiopath.exists(self._thumb)
+            and self._thumb != "none"
+        ):
+            self._thumb = None
+
+    async def _send_upload_and_track(self, cap_mono, file, o_path, force_document):
+        key, thumb = await self._send_with_detected_type(
+            cap_mono,
+            file,
+            o_path,
+            force_document,
+        )
+        await self._track_media_group(o_path)
+        await self._cleanup_generated_thumb(thumb)
+        return key, thumb
+
+    async def _retry_after_floodwait(self, flood_wait, cap_mono, file, o_path):
+        LOGGER.warning(str(flood_wait))
+        await sleep(flood_wait.value * 1.3)
+        return await self._upload_file(cap_mono, file, o_path)
+
+    async def _handle_upload_exception(self, err, key, cap_mono, file, o_path):
+        err_type = "RPCError: " if isinstance(err, RPCError) else ""
+        LOGGER.error(f"{err_type}{err}. Path: {self._up_path}")
+        if isinstance(err, BadRequest) and key != "documents":
+            LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
+            return await self._upload_file(cap_mono, file, o_path, True)
+        raise err
 
     @retry(
         wait=wait_exponential(multiplier=2, min=4, max=8),
@@ -419,159 +650,23 @@ class TelegramUploader:
         retry=retry_if_exception_type(Exception),
     )
     async def _upload_file(self, cap_mono, file, o_path, force_document=False):
-        if (
-            self._thumb is not None
-            and not await aiopath.exists(self._thumb)
-            and self._thumb != "none"
-        ):
-            self._thumb = None
-        thumb = self._thumb
+        await self._ensure_thumb_available()
         self._is_corrupted = False
+        key = "documents"
+        thumb = self._thumb
         try:
-            is_video, is_audio, is_image = await get_document_type(self._up_path)
-
-            if not is_image and thumb is None:
-                file_name = ospath.splitext(file)[0]
-                thumb_path = f"{self._path}/yt-dlp-thumb/{file_name}.jpg"
-                if await aiopath.isfile(thumb_path):
-                    thumb = thumb_path
-                elif await aiopath.isfile(thumb_path.replace("/yt-dlp-thumb", "")):
-                    thumb = thumb_path.replace("/yt-dlp-thumb", "")
-                elif is_audio and not is_video:
-                    thumb = await get_audio_thumbnail(self._up_path)
-
-            if (
-                self._listener.as_doc
-                or force_document
-                or (not is_video and not is_audio and not is_image)
-            ):
-                key = "documents"
-                if is_video and thumb is None:
-                    thumb = await get_video_thumbnail(self._up_path, None)
-
-                if self._listener.is_cancelled:
-                    return
-                if thumb == "none":
-                    thumb = None
-                self._sent_msg = await self._sent_msg.reply_document(
-                    document=self._up_path,
-                    thumb=thumb,
-                    caption=cap_mono,
-                    force_document=True,
-                    disable_notification=True,
-                    progress=self._upload_progress,
-                )
-            elif is_video:
-                key = "videos"
-                duration = (await get_media_info(self._up_path))[0]
-                if thumb is None and self._listener.thumbnail_layout:
-                    thumb = await get_multiple_frames_thumbnail(
-                        self._up_path,
-                        self._listener.thumbnail_layout,
-                        self._listener.screen_shots,
-                    )
-                if thumb is None:
-                    thumb = await get_video_thumbnail(self._up_path, duration)
-                if thumb is not None and thumb != "none":
-                    with Image.open(thumb) as img:
-                        width, height = img.size
-                else:
-                    width = 480
-                    height = 320
-                if self._listener.is_cancelled:
-                    return
-                if thumb == "none":
-                    thumb = None
-                self._sent_msg = await self._sent_msg.reply_video(
-                    video=self._up_path,
-                    caption=cap_mono,
-                    duration=duration,
-                    width=width,
-                    height=height,
-                    thumb=thumb,
-                    supports_streaming=True,
-                    disable_notification=True,
-                    progress=self._upload_progress,
-                )
-            elif is_audio:
-                key = "audios"
-                duration, artist, title = await get_media_info(self._up_path)
-                if self._listener.is_cancelled:
-                    return
-                if thumb == "none":
-                    thumb = None
-                self._sent_msg = await self._sent_msg.reply_audio(
-                    audio=self._up_path,
-                    caption=cap_mono,
-                    duration=duration,
-                    performer=artist,
-                    title=title,
-                    thumb=thumb,
-                    disable_notification=True,
-                    progress=self._upload_progress,
-                )
-            else:
-                key = "photos"
-                if self._listener.is_cancelled:
-                    return
-                self._sent_msg = await self._sent_msg.reply_photo(
-                    photo=self._up_path,
-                    caption=cap_mono,
-                    disable_notification=True,
-                    progress=self._upload_progress,
-                )
-
-            if (
-                not self._listener.is_cancelled
-                and self._media_group
-                and (self._sent_msg.video or self._sent_msg.document)
-            ):
-                key = "documents" if self._sent_msg.document else "videos"
-                if match := re_match(r".+(?=\.0*\d+$)|.+(?=\.part\d+\..+$)", o_path):
-                    pname = match.group(0)
-                    if pname in self._media_dict[key].keys():
-                        self._media_dict[key][pname].append(
-                            [self._sent_msg.chat.id, self._sent_msg.id]
-                        )
-                    else:
-                        self._media_dict[key][pname] = [
-                            [self._sent_msg.chat.id, self._sent_msg.id]
-                        ]
-                    msgs = self._media_dict[key][pname]
-                    if len(msgs) == 10:
-                        await self._send_media_group(pname, key, msgs)
-                    else:
-                        self._last_msg_in_group = True
-
-            if (
-                self._thumb is None
-                and thumb is not None
-                and await aiopath.exists(thumb)
-            ):
-                await remove(thumb)
+            key, thumb = await self._send_upload_and_track(
+                cap_mono,
+                file,
+                o_path,
+                force_document,
+            )
         except FloodWait as f:
-            LOGGER.warning(str(f))
-            await sleep(f.value * 1.3)
-            if (
-                self._thumb is None
-                and thumb is not None
-                and await aiopath.exists(thumb)
-            ):
-                await remove(thumb)
-            return await self._upload_file(cap_mono, file, o_path)
+            await self._cleanup_generated_thumb(thumb)
+            return await self._retry_after_floodwait(f, cap_mono, file, o_path)
         except Exception as err:
-            if (
-                self._thumb is None
-                and thumb is not None
-                and await aiopath.exists(thumb)
-            ):
-                await remove(thumb)
-            err_type = "RPCError: " if isinstance(err, RPCError) else ""
-            LOGGER.error(f"{err_type}{err}. Path: {self._up_path}")
-            if isinstance(err, BadRequest) and key != "documents":
-                LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
-                return await self._upload_file(cap_mono, file, o_path, True)
-            raise err
+            await self._cleanup_generated_thumb(thumb)
+            return await self._handle_upload_exception(err, key, cap_mono, file, o_path)
 
     @property
     def speed(self):

@@ -3,17 +3,10 @@ Enhanced Stats Module
 Provides comprehensive stats and analytics with beautiful formatting and visualizations
 """
 
-from typing import Dict, Tuple, Optional
 from time import time
-from psutil import (
-    disk_usage,
-    cpu_percent,
-    virtual_memory,
-    cpu_count,
-    boot_time,
-    net_io_counters,
-)
-from datetime import datetime, timedelta
+from typing import Any, Optional
+
+from psutil import boot_time, cpu_count, cpu_percent, disk_usage, net_io_counters, virtual_memory  # type: ignore[import-untyped]
 
 from ..helper.ext_utils.status_utils import get_readable_file_size, get_readable_time
 
@@ -25,12 +18,12 @@ class ProgressBar:
     def filled_bar(percentage: float, length: int = 10, show_percent: bool = True) -> str:
         """
         Create a filled progress bar
-        
+
         Args:
             percentage: Progress percentage (0-100)
             length: Length of the bar
             show_percent: Show percentage text
-            
+
         Returns:
             Formatted progress bar string
         """
@@ -41,7 +34,7 @@ class ProgressBar:
 
         filled = int(length * percentage / 100)
         bar = "█" * filled + "░" * (length - filled)
-        
+
         if show_percent:
             return f"{bar} {percentage:.1f}%"
         return bar
@@ -87,12 +80,12 @@ class HealthIndicator:
     def get_resource_status(name: str, value: float, max_value: Optional[float] = None) -> str:
         """
         Get formatted resource status with indicator
-        
+
         Args:
             name: Resource name (CPU, RAM, DISK, etc.)
             value: Current value
             max_value: Maximum value (for percentage calculation)
-            
+
         Returns:
             Formatted status string
         """
@@ -109,7 +102,7 @@ class SystemStats:
     """Collect and format system statistics"""
 
     @staticmethod
-    def get_cpu_stats() -> Dict:
+    def get_cpu_stats() -> dict[str, Any]:
         """Get comprehensive CPU statistics"""
         per_cpu = cpu_percent(interval=1, percpu=True)
         return {
@@ -120,7 +113,7 @@ class SystemStats:
         }
 
     @staticmethod
-    def get_memory_stats() -> Dict:
+    def get_memory_stats() -> dict[str, Any]:
         """Get comprehensive memory statistics"""
         memory = virtual_memory()
         return {
@@ -132,7 +125,7 @@ class SystemStats:
         }
 
     @staticmethod
-    def get_disk_stats(path: str = "/") -> Dict:
+    def get_disk_stats(path: str = "/") -> dict[str, Any]:
         """Get comprehensive disk statistics"""
         disk = disk_usage(path)
         return {
@@ -144,7 +137,7 @@ class SystemStats:
         }
 
     @staticmethod
-    def get_network_stats() -> Dict:
+    def get_network_stats() -> dict[str, Any]:
         """Get network I/O statistics"""
         net = net_io_counters()
         return {
@@ -161,7 +154,7 @@ class SystemStats:
         per_cpu_str = " | ".join(
             [f"CPU{i+1}: {round(p)}%" for i, p in enumerate(stats["per_cpu"])]
         )
-        
+
         text = f"<b>CPU Usage:</b> {stats['overall']}%\n"
         text += f"<code>{per_cpu_str}</code>\n"
         text += f"Cores: {stats['cores_physical']} (Physical) / {stats['cores_total']} (Total)"
@@ -171,7 +164,7 @@ class SystemStats:
     def format_memory_details() -> str:
         """Format detailed memory information"""
         stats = SystemStats.get_memory_stats()
-        
+
         text = f"<b>Memory Usage:</b>\n"
         text += f"Total: {get_readable_file_size(stats['total'])}\n"
         text += f"Used: {get_readable_file_size(stats['used'])} ({stats['percent_readable']})\n"
@@ -182,7 +175,7 @@ class SystemStats:
     def format_disk_details(path: str = "/") -> str:
         """Format detailed disk information"""
         stats = SystemStats.get_disk_stats(path)
-        
+
         text = f"<b>Disk Usage ({path}):</b>\n"
         text += f"Total: {get_readable_file_size(stats['total'])}\n"
         text += f"Used: {get_readable_file_size(stats['used'])} ({stats['percent_readable']})\n"
@@ -193,7 +186,7 @@ class SystemStats:
     def format_network_stats() -> str:
         """Format network statistics"""
         stats = SystemStats.get_network_stats()
-        
+
         text = f"<b>Network I/O:</b>\n"
         text += f"Sent: {get_readable_file_size(stats['bytes_sent'])}\n"
         text += f"Received: {get_readable_file_size(stats['bytes_recv'])}"
@@ -204,9 +197,9 @@ class TaskStats:
     """Calculate and format task statistics"""
 
     @staticmethod
-    def calculate_total_speed(tasks: list) -> str:
+    def calculate_total_speed(tasks: list[Any]) -> str:
         """Calculate total speed from all active tasks"""
-        total_speed = 0
+        total_speed = 0.0
         for task in tasks:
             try:
                 speed = task.speed()
@@ -229,12 +222,12 @@ class TaskStats:
             except Exception:
                 pass
 
-        return get_readable_file_size(total_speed, "/s")
+        return f"{get_readable_file_size(total_speed)}/s"
 
     @staticmethod
-    def calculate_total_size(tasks: list) -> str:
+    def calculate_total_size(tasks: list[Any]) -> str:
         """Calculate total size of all active tasks"""
-        total_size = 0
+        total_size = 0.0
         for task in tasks:
             try:
                 size_str = task.size()
@@ -261,7 +254,7 @@ class TaskStats:
         return get_readable_file_size(total_size)
 
     @staticmethod
-    def estimate_total_eta(tasks: list) -> str:
+    def estimate_total_eta(tasks: list[Any]) -> str:
         """Estimate total ETA from all active tasks"""
         max_eta_seconds = 0
         for task in tasks:
@@ -296,8 +289,8 @@ class StatsFormatter:
         cpu_stats = SystemStats.get_cpu_stats()
         mem_stats = SystemStats.get_memory_stats()
         disk_stats = SystemStats.get_disk_stats(download_dir)
-        uptime = get_readable_time(time() - bot_start_time)
-        os_uptime = get_readable_time(time() - boot_time())
+        uptime = get_readable_time(int(time() - bot_start_time))
+        os_uptime = get_readable_time(int(time() - boot_time()))
 
         # Create progress bars
         cpu_bar = ProgressBar.filled_bar(cpu_stats["overall"], length=10)
@@ -356,7 +349,7 @@ class StatsFormatter:
 
     @staticmethod
     def format_detailed_stats(
-        tasks: list,
+            tasks: list[Any],
         cpu_percent: float,
         mem_percent: float,
         disk_percent: float,

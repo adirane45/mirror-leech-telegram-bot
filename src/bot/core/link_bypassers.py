@@ -4,15 +4,15 @@ Phase 10: Link Bypassers
 Normalizes shorteners, ad wrappers, and protected links.
 """
 
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Set
-from urllib.parse import parse_qs, unquote, urljoin, urlparse
 import asyncio
 import logging
 import re
 import time
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -202,9 +202,11 @@ class LinkBypassEngine:
 
     async def normalize_link(self, url: str) -> BypassResult:
         await asyncio.sleep(0)
-        return self.normalize_link_sync(url, return_result=True)
+        result = self.normalize_link_sync(url, return_result=True)
+        assert isinstance(result, BypassResult)
+        return result
 
-    def normalize_link_sync(self, url: str, return_result: bool = False):
+    def normalize_link_sync(self, url: str, return_result: bool = False) -> Union[BypassResult, str]:
         result = self._run_bypass(url)
         if return_result:
             return result
@@ -258,6 +260,23 @@ def _extract_target_param(url: str) -> Optional[str]:
     return None
 
 
+def _resolve_one_hop_or_finish(current: str, changed: bool, timeout: int) -> tuple[Optional[str], Optional[str], bool, Optional[str]]:
+    extracted = _extract_target_param(current)
+    if extracted and extracted != current:
+        return extracted, None, True, "query_param"
+
+    try:
+        next_url, network_reason = _resolve_one_hop(current, timeout=timeout)
+    except Exception as e:
+        logger.debug("Bypass request failed for %s: %s", current, e)
+        return None, ("network_error" if changed else "request_failed"), changed, None
+
+    if not next_url or next_url == current:
+        return None, network_reason, changed, None
+
+    return next_url, None, True, network_reason
+
+
 def _resolve_real_url(url: str, max_hops: int = 10, timeout: int = 12) -> tuple[str, str]:
     if not _is_http_url(url):
         return url, "not_http"
@@ -272,25 +291,15 @@ def _resolve_real_url(url: str, max_hops: int = 10, timeout: int = 12) -> tuple[
             return current, "loop_detected"
         visited.add(current)
 
-        extracted = _extract_target_param(current)
-        if extracted and extracted != current:
-            current = extracted
-            changed = True
-            reason = "query_param"
-            continue
-
-        try:
-            next_url, network_reason = _resolve_one_hop(current, timeout=timeout)
-        except Exception as e:
-            logger.debug("Bypass request failed for %s: %s", current, e)
-            return current, "network_error" if changed else "request_failed"
-
-        if not next_url or next_url == current:
-            return current, reason if changed else network_reason
-
-        current = next_url
-        changed = True
-        reason = network_reason
+        next_url, final_reason, changed, next_reason = _resolve_one_hop_or_finish(
+            current,
+            changed,
+            timeout,
+        )
+        if final_reason:
+            return current, final_reason
+        current = str(next_url)
+        reason = str(next_reason)
 
     return current, "max_hops"
 

@@ -376,7 +376,7 @@ class NewRepository(BaseDbRepository):
         except PyMongoError as e:
             self._log_error("CUSTOM_OPERATION", e)
             return None
-    
+
     async def close(self):
         pass
 ```

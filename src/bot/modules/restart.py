@@ -1,22 +1,21 @@
-from sys import executable
-from aiofiles import open as aiopen
-from aiofiles.os import path as aiopath, remove
-from asyncio import gather, create_subprocess_exec
+from asyncio import create_subprocess_exec, gather
 from os import execl as osexecl
+from sys import executable
 
-from .. import intervals, scheduler, sabnzbd_client, LOGGER
+from aiofiles import open as aiopen
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove
+
+from .. import LOGGER, intervals, sabnzbd_client, scheduler
+from ..core.config_manager import Config
+from ..core.jdownloader_booter import jdownloader
+from ..core.telegram_manager import TgClient
+from ..core.torrent_manager import TorrentManager
 from ..helper.ext_utils.bot_utils import new_task
-from ..helper.telegram_helper.message_utils import (
-    send_message,
-    delete_message,
-)
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.files_utils import clean_all
 from ..helper.telegram_helper.button_build import ButtonMaker
-from ..core.telegram_manager import TgClient
-from ..core.config_manager import Config
-from ..core.jdownloader_booter import jdownloader
-from ..core.torrent_manager import TorrentManager
+from ..helper.telegram_helper.message_utils import delete_message, send_message
 
 
 @new_task
@@ -47,28 +46,30 @@ async def send_incomplete_task_message(cid, msg_id, msg):
         LOGGER.error(e)
 
 
-async def restart_notification():
+async def _read_restart_message_info():
     if await aiopath.isfile(".restartmsg"):
         async with aiopen(".restartmsg") as f:
             contents = await f.read()
             chat_id, msg_id = map(int, contents.splitlines())
-    else:
-        chat_id, msg_id = 0, 0
+            return chat_id, msg_id
+    return 0, 0
 
-    if Config.INCOMPLETE_TASK_NOTIFIER and Config.DATABASE_URL:
-        if notifier_dict := await database.get_incomplete_tasks():
-            for cid, data in notifier_dict.items():
-                msg = "Restarted Successfully!" if cid == chat_id else "Bot Restarted!"
-                for tag, links in data.items():
-                    msg += f"\n\n{tag}: "
-                    for index, link in enumerate(links, start=1):
-                        msg += f" <a href='{link}'>{index}</a> |"
-                        if len(msg.encode()) > 4000:
-                            await send_incomplete_task_message(cid, msg_id, msg)
-                            msg = ""
-                if msg:
-                    await send_incomplete_task_message(cid, msg_id, msg)
 
+async def _build_and_send_incomplete_notifications(notifier_dict, restart_chat_id, restart_msg_id):
+    for cid, data in notifier_dict.items():
+        msg = "Restarted Successfully!" if cid == restart_chat_id else "Bot Restarted!"
+        for tag, links in data.items():
+            msg += f"\n\n{tag}: "
+            for index, link in enumerate(links, start=1):
+                msg += f" <a href='{link}'>{index}</a> |"
+                if len(msg.encode()) > 4000:
+                    await send_incomplete_task_message(cid, restart_msg_id, msg)
+                    msg = ""
+        if msg:
+            await send_incomplete_task_message(cid, restart_msg_id, msg)
+
+
+async def _cleanup_restart_marker(chat_id, msg_id):
     if await aiopath.isfile(".restartmsg"):
         try:
             await TgClient.bot.edit_message_text(
@@ -77,6 +78,16 @@ async def restart_notification():
         except Exception as e:
             LOGGER.warning(f"Failed to edit restart message: {e}")
         await remove(".restartmsg")
+
+
+async def restart_notification():
+    chat_id, msg_id = await _read_restart_message_info()
+
+    if Config.INCOMPLETE_TASK_NOTIFIER and Config.DATABASE_URL:
+        if notifier_dict := await database.get_incomplete_tasks():
+            await _build_and_send_incomplete_notifications(notifier_dict, chat_id, msg_id)
+
+    await _cleanup_restart_marker(chat_id, msg_id)
 
 
 @new_task

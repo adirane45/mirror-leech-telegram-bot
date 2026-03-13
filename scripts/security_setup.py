@@ -4,11 +4,11 @@ Phase 1 Security Setup Script
 Configures authentication, API keys, and service isolation
 """
 
-import requests
-import json
 import secrets
-import os
 from datetime import datetime
+
+import requests
+
 
 class SecuritySetup:
     def __init__(self):
@@ -16,23 +16,23 @@ class SecuritySetup:
         self.prometheus_url = "http://localhost:9091"
         self.app_url = "http://localhost:8000"
         self.results = []
-    
+
     def setup_grafana_api_key(self):
         """Create Grafana API key for programmatic access"""
         print("\n🔑 Setting up Grafana API Key...")
-        
+
         api_key_name = f"mltb-bot-{datetime.now().strftime('%Y%m%d')}"
         headers = {"Content-Type": "application/json"}
-        
+
         # Default Grafana credentials
         auth = ("admin", "admin")
-        
+
         payload = {
             "name": api_key_name,
             "role": "Admin",
             "secondsToLive": 2592000  # 30 days
         }
-        
+
         try:
             response = requests.post(
                 f"{self.grafana_url}/api/auth/keys",
@@ -41,7 +41,7 @@ class SecuritySetup:
                 headers=headers,
                 timeout=5
             )
-            
+
             if response.status_code == 200:
                 key_data = response.json()
                 api_key = key_data.get('key')
@@ -65,55 +65,55 @@ class SecuritySetup:
                 'details': str(e)
             })
             return None
-    
+
     def configure_prometheus_security(self):
         """Configure Prometheus security settings"""
         print("\n🔐 Configuring Prometheus Security...")
-        
+
         # Generate bearer token for metrics endpoint
         bearer_token = secrets.token_urlsafe(32)
-        
+
         self.results.append({
             'service': 'Prometheus',
             'status': '✅ Bearer Token Generated',
             'details': f"Token: {bearer_token[:20]}***"
         })
-        
+
         return bearer_token
-    
+
     def generate_redis_password(self):
         """Generate secure Redis password"""
         print("\n🔒 Generating Redis Credentials...")
-        
+
         redis_password = secrets.token_urlsafe(32)
-        
+
         self.results.append({
             'service': 'Redis',
             'status': '✅ Password Generated',
             'details': f"Password: {redis_password[:20]}***"
         })
-        
+
         return redis_password
-    
+
     def generate_mongodb_credentials(self):
         """Generate MongoDB user credentials"""
         print("\n🔒 Generating MongoDB Credentials...")
-        
+
         mongo_user = "mltb_bot"
         mongo_password = secrets.token_urlsafe(32)
-        
+
         self.results.append({
             'service': 'MongoDB',
             'status': '✅ User Created',
             'details': f"User: {mongo_user} | Pass: {mongo_password[:20]}***"
         })
-        
+
         return mongo_user, mongo_password
-    
+
     def create_security_config(self):
         """Generate security configuration file"""
         print("\n📝 Creating Security Configuration...")
-        
+
         config = {
             "version": "1.0",
             "generated_at": datetime.now().isoformat(),
@@ -216,38 +216,38 @@ class SecuritySetup:
                 }
             }
         }
-        
+
         return config
-    
+
     def run_setup(self):
         """Run complete security setup"""
         print("\n" + "="*70)
         print("🔐 PHASE 1 SECURITY SETUP & AUTHENTICATION")
         print("="*70)
-        
+
         # Generate credentials
-        grafana_key = self.setup_grafana_api_key()
-        prometheus_token = self.configure_prometheus_security()
-        redis_password = self.generate_redis_password()
+        self.setup_grafana_api_key()
+        self.configure_prometheus_security()
+        self.generate_redis_password()
         mongo_user, mongo_password = self.generate_mongodb_credentials()
-        
+
         # Create configuration
         security_config = self.create_security_config()
-        
+
         # Print results
         print("\n" + "="*70)
         print("📊 SECURITY SETUP RESULTS")
         print("="*70 + "\n")
-        
+
         for result in self.results:
             print(f"{result['status']}")
             print(f"  Service: {result['service']}")
             print(f"  {result['details']}\n")
-        
+
         print("="*70)
         print("⚠️  IMPORTANT SECURITY NOTES")
         print("="*70 + "\n")
-        
+
         print("""
 1. DEFAULT CREDENTIALS - CHANGE IMMEDIATELY
    ❌ Grafana: admin / admin (DEFAULT - NOT SECURE)
@@ -294,11 +294,11 @@ class SecuritySetup:
    ✅ Test recovery procedures regularly
    ✅ Document security procedures
         """)
-        
+
         print("="*70)
         print("✅ SECURITY SETUP COMPLETE")
         print("="*70 + "\n")
-        
+
         return security_config
 
 if __name__ == "__main__":

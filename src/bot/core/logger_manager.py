@@ -7,13 +7,13 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
-import logging
 import json
+import logging
 import sys
-from datetime import datetime, UTC
-from pathlib import Path
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime
 from logging import getLogger
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from .config_manager import Config
 
@@ -54,24 +54,24 @@ class LoggerManager:
 
     _instance = None
     _enabled = False
-    _handlers = []
+    _handlers: list[logging.Handler] = []
 
-    def __new__(cls):
+    def __new__(cls) -> "LoggerManager":
         if cls._instance is None:
             cls._instance = super(LoggerManager, cls).__new__(cls)
         return cls._instance
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable enhanced logging"""
         self._enabled = getattr(Config, "ENABLE_ENHANCED_LOGGING", False)
-        
+
         if self._enabled:
             self._setup_json_logging()
             LOGGER.info("✅ Enhanced JSON logging enabled")
         else:
             LOGGER.debug("Enhanced logging disabled")
 
-    def _setup_json_logging(self):
+    def _setup_json_logging(self) -> None:
         """Setup JSON logging format"""
         try:
             # Create logs directory if it doesn't exist
@@ -125,8 +125,8 @@ class LoggerManager:
         self,
         level: str,
         message: str,
-        **extra_fields: Dict[str, Any]
-    ):
+        **extra_fields: Any
+    ) -> None:
         """
         Log a custom event with extra fields
 
@@ -163,7 +163,7 @@ class LoggerManager:
         duration: float,
         speed: float,
         status: str = "completed",
-    ):
+    ) -> None:
         """Log a download event"""
         if not self._enabled:
             return
@@ -187,7 +187,7 @@ class LoggerManager:
         size_bytes: int,
         duration: float,
         status: str = "completed",
-    ):
+    ) -> None:
         """Log an upload event"""
         if not self._enabled:
             return
@@ -209,12 +209,12 @@ class LoggerManager:
         error_message: str,
         task_id: Optional[str] = None,
         context: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         """Log an error event"""
         if not self._enabled:
             return
 
-        extra = {
+        extra: Dict[str, Any] = {
             "event_type": "error",
             "error_type": error_type,
             "error_message": error_message,
@@ -232,8 +232,8 @@ class LoggerManager:
         duration: float,
         metric_name: str,
         metric_value: float,
-        **extra_fields: Dict[str, Any]
-    ):
+        **extra_fields: Any
+    ) -> None:
         """Log a performance event"""
         if not self._enabled:
             return
@@ -248,7 +248,7 @@ class LoggerManager:
 
         self.log_custom_event("INFO", f"Performance: {operation}", **data)
 
-    def close(self):
+    def close(self) -> None:
         """Close all handlers"""
         for handler in self._handlers:
             handler.close()

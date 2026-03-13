@@ -7,12 +7,13 @@ Endpoints:
 - WebSocket /ws/logs - Real-time log streaming
 """
 
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query
-from fastapi.responses import HTMLResponse
 from logging import getLogger
 
-from bot.core.config_manager import Config
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
+
 from bot.core.admin_auth import admin_auth_manager
+from bot.core.config_manager import Config
 from bot.core.log_stream import log_stream_manager
 
 router = APIRouter()
@@ -23,11 +24,11 @@ LOGGER = getLogger(__name__)
 async def get_logs_url(admin_id: str = Query(...), client_id: str = Query(None)):
     """
     Generate admin token and log streaming URL
-    
+
     Query Parameters:
     - admin_id: Admin user ID
     - client_id: Optional client identifier for tracking
-    
+
     Returns:
     {
         "status": "success",
@@ -40,24 +41,24 @@ async def get_logs_url(admin_id: str = Query(...), client_id: str = Query(None))
     if not admin_id:
         LOGGER.warning("Log URL request missing admin_id")
         raise HTTPException(status_code=400, detail="admin_id required")
-    
+
     # Create token
     token = await admin_auth_manager.create_token(admin_id)
     if not token:
         LOGGER.error(f"Failed to create admin token for {admin_id}")
         raise HTTPException(status_code=500, detail="Token creation failed")
-    
+
     # Build URL
     base_url = getattr(Config, "BASE_URL", "") or "http://localhost"
     base_url = base_url.rstrip("/")
     port = getattr(Config, "BASE_URL_PORT", 8060)
     if "://" in base_url and ":" not in base_url.split("//", 1)[1]:
         base_url = f"{base_url}:{port}"
-    
+
     viewer_url = f"{base_url}/admin/logs/viewer?token={token}&admin_id={admin_id}"
-    
+
     LOGGER.info(f"Generated logs URL for admin {admin_id}: {viewer_url[:50]}...")
-    
+
     return {
         "status": "success",
         "token": token,
@@ -72,7 +73,7 @@ async def get_logs_url(admin_id: str = Query(...), client_id: str = Query(None))
 async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
     """
     HTML viewer for real-time log streaming
-    
+
     Query Parameters:
     - token: Admin authentication token
     - admin_id: Admin user ID
@@ -84,9 +85,9 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
     if not is_valid:
         LOGGER.warning(f"Invalid token for admin {admin_id}")
         raise HTTPException(status_code=403, detail="Invalid or expired token")
-    
+
     LOGGER.info(f"Admin {admin_id} accessing logs viewer")
-    
+
     # Return HTML viewer
     html_content = f"""
     <!DOCTYPE html>
@@ -95,9 +96,9 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
         <title>Mirror-Leech Bot - Live Logs</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: 'Monaco', 'Courier New', monospace; 
-                background: #1e1e1e; 
+            body {{
+                font-family: 'Monaco', 'Courier New', monospace;
+                background: #1e1e1e;
                 color: #d4d4d4;
                 padding: 20px;
             }}
@@ -184,7 +185,7 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                     <button onclick="exitViewer()">Exit</button>
                 </div>
             </div>
-            
+
             <div class="controls">
                 <select id="levelFilter" onchange="updateFilter()">
                     <option value="">All Levels</option>
@@ -193,54 +194,54 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                     <option value="INFO">INFO</option>
                     <option value="DEBUG">DEBUG</option>
                 </select>
-                
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Search logs..." 
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search logs..."
                     onkeyup="updateFilter()"
                 >
-                
+
                 <button onclick="pauseResume()" id="pauseBtn">Pause</button>
                 <button onclick="scrollBottom()">Scroll to Bottom</button>
             </div>
-            
+
             <div id="terminal">
                 <div style="color: #4ec9b0;">Connecting to log stream...</div>
             </div>
-            
+
             <div class="status disconnected" id="status">
                 ● Disconnected
             </div>
         </div>
-        
+
         <script>
             const token = "{token}";
             const adminId = "{admin_id}";
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = protocol + '//' + window.location.host + '/ws/logs?token=' + token + '&admin_id=' + adminId;
-            
+
             let ws = null;
             let isPaused = false;
             let allLogs = [];
             let filteredLogs = [];
-            
+
             function connectWebSocket() {{
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = function() {{
                     console.log('Connected to log stream');
                     document.getElementById('status').textContent = '● Connected';
                     document.getElementById('status').classList.remove('disconnected');
                     document.getElementById('status').classList.add('connected');
                 }};
-                
+
                 ws.onmessage = function(event) {{
                     if (isPaused) return;
-                    
+
                     const line = event.data;
                     allLogs.push(line);
-                    
+
                     if (shouldShowLog(line)) {{
                         filteredLogs.push(line);
                         const terminal = document.getElementById('terminal');
@@ -250,18 +251,18 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                         terminal.innerHTML += line + '<br>';
                         terminal.scrollTop = terminal.scrollHeight;
                     }}
-                    
+
                     if (allLogs.length > 10000) {{
                         allLogs = allLogs.slice(-5000);
                     }}
                 }};
-                
+
                 ws.onerror = function(error) {{
                     console.error('WebSocket error:', error);
                     const terminal = document.getElementById('terminal');
                     terminal.innerHTML += '<div class="error">❌ WebSocket Error: ' + error + '</div><br>';
                 }};
-                
+
                 ws.onclose = function() {{
                     console.log('Disconnected from log stream');
                     document.getElementById('status').textContent = '● Disconnected (Reconnecting in 3s)';
@@ -270,13 +271,13 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                     setTimeout(connectWebSocket, 3000);
                 }};
             }}
-            
+
             function shouldShowLog(line) {{
                 const level = document.getElementById('levelFilter').value;
                 const search = document.getElementById('searchInput').value.toLowerCase();
-                
+
                 line = line.toLowerCase();
-                
+
                 if (level && !line.includes(level.toLowerCase())) {{
                     return false;
                 }}
@@ -285,37 +286,37 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                 }}
                 return true;
             }}
-            
+
             function updateFilter() {{
                 const terminal = document.getElementById('terminal');
                 terminal.innerHTML = '';
                 filteredLogs = [];
-                
+
                 allLogs.forEach(line => {{
                     if (shouldShowLog(line)) {{
                         filteredLogs.push(line);
                         terminal.innerHTML += line + '<br>';
                     }}
                 }});
-                
+
                 terminal.scrollTop = terminal.scrollHeight;
             }}
-            
+
             function pauseResume() {{
                 isPaused = !isPaused;
                 document.getElementById('pauseBtn').textContent = isPaused ? 'Resume' : 'Pause';
             }}
-            
+
             function scrollBottom() {{
                 document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
             }}
-            
+
             function clearLogs() {{
                 allLogs = [];
                 filteredLogs = [];
                 document.getElementById('terminal').innerHTML = '<div style="color: #858585;">Logs cleared. Waiting for new entries...</div><br>';
             }}
-            
+
             function downloadLogs() {{
                 const logsText = allLogs.join('\\n');
                 const element = document.createElement('a');
@@ -326,27 +327,27 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
                 element.click();
                 document.body.removeChild(element);
             }}
-            
+
             function copyInfo() {{
                 const text = window.location.href;
                 navigator.clipboard.writeText(text).then(() => {{
                     alert('Link copied to clipboard!');
                 }});
             }}
-            
+
             function exitViewer() {{
                 if (confirm('Close log viewer?')) {{
                     window.close();
                 }}
             }}
-            
+
             // Start
             connectWebSocket();
         </script>
     </body>
     </html>
     """
-    
+
     return html_content
 
 
@@ -354,7 +355,7 @@ async def logs_viewer(token: str = Query(...), admin_id: str = Query(...)):
 async def websocket_logs(websocket: WebSocket, token: str = Query(...), admin_id: str = Query(...)):
     """
     WebSocket endpoint for real-time log streaming
-    
+
     Query Parameters:
     - token: Admin authentication token
     - admin_id: Admin user ID
@@ -365,28 +366,28 @@ async def websocket_logs(websocket: WebSocket, token: str = Query(...), admin_id
         LOGGER.warning(f"Invalid WebSocket token for admin {admin_id}")
         await websocket.close(code=1008, reason="Invalid or expired token")
         return
-    
+
     # Add connection
     success = await log_stream_manager.add_connection(websocket)
     if not success:
         LOGGER.warning("Failed to add log stream connection")
         await websocket.close(code=1008, reason="Server at capacity")
         return
-    
+
     LOGGER.info(f"WebSocket connected for admin {admin_id}")
-    
+
     try:
         # Get filter parameters from first message
         level = None
         search = None
-        
+
         # Stream logs
         await log_stream_manager.stream_logs(websocket, level=level, search=search)
-    
+
     except WebSocketDisconnect:
         LOGGER.info(f"WebSocket disconnected for admin {admin_id}")
         await log_stream_manager.remove_connection(websocket)
-    
+
     except Exception as e:
         LOGGER.error(f"WebSocket error for admin {admin_id}: {e}")
         await log_stream_manager.remove_connection(websocket)

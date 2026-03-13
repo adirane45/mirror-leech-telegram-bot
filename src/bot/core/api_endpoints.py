@@ -4,16 +4,17 @@ Metrics endpoint, health checks, and API status
 Safe Innovation Path - Phase 1
 Phase 3: Enhanced with security features
 
-Enhanced by: justadi  
+Enhanced by: justadi
 Date: February 5, 2026
 Updated: February 8, 2026 (Phase 3 Security)
 """
 
-from fastapi import FastAPI, Response, HTTPException, Request
-from fastapi.responses import PlainTextResponse, JSONResponse
-import time
 import sys
-from typing import Dict, Any
+import time
+from typing import Any, Dict
+
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from .. import LOGGER
 from .config_manager import Config
@@ -21,7 +22,7 @@ from .config_manager import Config
 # Phase 3: Security imports
 try:
     from .input_validator import get_input_validator
-    from .security_audit import get_audit_logger, AuditEventType, AuditSeverity
+    from .security_audit import AuditEventType, AuditSeverity, get_audit_logger
     SECURITY_AVAILABLE = True
 except ImportError:
     SECURITY_AVAILABLE = False
@@ -34,7 +35,7 @@ def add_enhanced_endpoints(app: FastAPI):
     Add enhanced endpoints to existing FastAPI application
     Non-breaking - adds new routes only
     """
-    
+
     @app.get("/metrics", response_class=PlainTextResponse)
     async def metrics_endpoint():
         """
@@ -43,13 +44,13 @@ def add_enhanced_endpoints(app: FastAPI):
         """
         try:
             from .metrics import metrics
-            
+
             if not metrics.is_enabled():
                 raise HTTPException(
                     status_code=503,
                     detail="Metrics collection is disabled"
                 )
-            
+
             metrics_data = metrics.generate_metrics()
             return Response(
                 content=metrics_data,
@@ -66,7 +67,7 @@ def add_enhanced_endpoints(app: FastAPI):
                 status_code=500,
                 detail="Failed to generate metrics"
             )
-    
+
     @app.get("/health")
     async def health_check():
         """
@@ -75,8 +76,9 @@ def add_enhanced_endpoints(app: FastAPI):
         """
         try:
             import psutil
+
             from .redis_manager import redis_client
-            
+
             # Basic health info
             health_status = {
                 "status": "healthy",
@@ -84,29 +86,29 @@ def add_enhanced_endpoints(app: FastAPI):
                 "version": "3.1.0",
                 "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             }
-            
+
             # System resources
             health_status["resources"] = {
                 "cpu_percent": psutil.cpu_percent(interval=1),
                 "memory_percent": psutil.virtual_memory().percent,
                 "disk_percent": psutil.disk_usage('/').percent,
             }
-            
+
             # Service status
             health_status["services"] = {
                 "redis": redis_client.is_enabled,
                 "celery": getattr(Config, 'ENABLE_CELERY', False),
                 "metrics": getattr(Config, 'ENABLE_METRICS', False),
             }
-            
+
             # Determine overall health
             if (health_status["resources"]["cpu_percent"] > 95 or
                 health_status["resources"]["memory_percent"] > 95 or
                 health_status["resources"]["disk_percent"] > 95):
                 health_status["status"] = "degraded"
-            
+
             return JSONResponse(content=health_status)
-            
+
         except Exception as e:
             LOGGER.error(f"Health check failed: {e}")
             return JSONResponse(
@@ -117,7 +119,7 @@ def add_enhanced_endpoints(app: FastAPI):
                     "timestamp": time.time()
                 }
             )
-    
+
     @app.get("/api/v1/status")
     async def api_status():
         """
@@ -125,7 +127,7 @@ def add_enhanced_endpoints(app: FastAPI):
         """
         try:
             from .redis_manager import redis_client
-            
+
             status = {
                 "api_version": "1.0",
                 "bot_version": "3.1.0",
@@ -143,33 +145,33 @@ def add_enhanced_endpoints(app: FastAPI):
                 },
                 "timestamp": time.time()
             }
-            
+
             # Add Redis stats if enabled
             if redis_client.is_enabled:
                 redis_stats = await redis_client.get_stats()
                 status["redis"] = redis_stats
-            
+
             return JSONResponse(content=status)
-            
+
         except Exception as e:
             LOGGER.error(f"API status error: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     @app.get("/api/v1/services/redis/stats")
     async def redis_stats():
         """Get detailed Redis statistics"""
         try:
             from .redis_manager import redis_client
-            
+
             if not redis_client.is_enabled:
                 raise HTTPException(
                     status_code=503,
                     detail="Redis is not enabled"
                 )
-            
+
             stats = await redis_client.get_stats()
             return JSONResponse(content=stats)
-            
+
         except HTTPException:
             raise
         except Exception as e:
@@ -229,12 +231,12 @@ def add_enhanced_endpoints(app: FastAPI):
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
-            
+
             # Phase 3: Input validation
             if SECURITY_AVAILABLE:
                 validator = get_input_validator()
                 audit_logger = get_audit_logger()
-                
+
                 # Validate link URL
                 link = (payload or {}).get("link", "").strip()
                 if link:
@@ -250,7 +252,7 @@ def add_enhanced_endpoints(app: FastAPI):
                         raise HTTPException(status_code=400, detail=f"Invalid URL: {error}")
                 else:
                     raise HTTPException(status_code=400, detail="Missing link")
-                
+
                 # Log API access
                 audit_logger.log_api_access(
                     user_id=str((payload or {}).get("user_id", "unknown")),
@@ -264,7 +266,7 @@ def add_enhanced_endpoints(app: FastAPI):
                 link = (payload or {}).get("link", "").strip()
                 if not link:
                     raise HTTPException(status_code=400, detail="Missing link")
-            
+
             from .client_selector import client_selector
             user_id = (payload or {}).get("user_id")
             client, reason = await client_selector.select_client(link, user_id=user_id)
@@ -283,7 +285,7 @@ def add_enhanced_endpoints(app: FastAPI):
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
-            
+
             # Feature removed as of 2026-03-01
             # Use Kubernetes HPA or Docker Swarm scaling instead
             raise HTTPException(
@@ -302,7 +304,7 @@ def add_enhanced_endpoints(app: FastAPI):
         try:
             if not getattr(Config, "ENABLE_AUTOMATION_API", True):
                 raise HTTPException(status_code=403, detail="Automation API disabled")
-            
+
             # Feature removed as of 2026-03-01
             # Use Kubernetes HPA or Docker Swarm scaling instead
             raise HTTPException(
@@ -314,5 +316,5 @@ def add_enhanced_endpoints(app: FastAPI):
         except Exception as e:
             LOGGER.error(f"Autoscaler scale error: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     LOGGER.info("✅ Enhanced API endpoints added: /metrics, /health, /api/v1/status")

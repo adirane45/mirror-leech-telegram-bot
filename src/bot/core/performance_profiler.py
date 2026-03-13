@@ -7,16 +7,17 @@ Created by: justadi
 Date: February 8, 2026
 """
 
-import time
-import logging
 import asyncio
 import functools
-from typing import Dict, Any, Optional, Callable, List
-from dataclasses import dataclass, field
-from collections import defaultdict, deque
-from datetime import datetime
-import psutil
+import logging
 import threading
+import time
+from collections import defaultdict, deque
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
+
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class ProfileStats:
 class PerformanceProfiler:
     """
     Advanced performance profiler with bottleneck detection
-    
+
     Features:
     - Function execution timing
     - Memory usage tracking
@@ -60,7 +61,7 @@ class PerformanceProfiler:
     - Statistical analysis (percentiles)
     - Historical data retention
     """
-    
+
     def __init__(
         self,
         slow_threshold_ms: float = 1000.0,
@@ -72,25 +73,25 @@ class PerformanceProfiler:
         self.retention_size = retention_size
         self.enable_memory_tracking = enable_memory_tracking
         self.enable_cpu_tracking = enable_cpu_tracking
-        
+
         # Metrics storage
         self.metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=retention_size))
         self.stats: Dict[str, ProfileStats] = {}
-        
+
         # Bottleneck detection
         self.bottlenecks: List[PerformanceMetric] = []
         self.lock = threading.RLock()
-        
+
         logger.info(
             f"PerformanceProfiler initialized (slow_threshold={slow_threshold_ms}ms, "
             f"retention={retention_size}, memory_tracking={enable_memory_tracking}, "
             f"cpu_tracking={enable_cpu_tracking})"
         )
-    
+
     def profile(self, name: Optional[str] = None, context: Optional[Dict[str, Any]] = None):
         """
         Decorator to profile function execution
-        
+
         Usage:
             @profiler.profile(name="my_function")
             def my_function():
@@ -98,7 +99,7 @@ class PerformanceProfiler:
         """
         def decorator(func: Callable) -> Callable:
             func_name = name or f"{func.__module__}.{func.__name__}"
-            
+
             if asyncio.iscoroutinefunction(func):
                 @functools.wraps(func)
                 async def async_wrapper(*args, **kwargs):
@@ -109,28 +110,28 @@ class PerformanceProfiler:
                 def sync_wrapper(*args, **kwargs):
                     return self._profile_sync(func, func_name, context or {}, *args, **kwargs)
                 return sync_wrapper
-        
+
         return decorator
-    
+
     def _profile_sync(self, func: Callable, func_name: str, ctx: Dict[str, Any], *args, **kwargs):
         """Profile synchronous function"""
         process = psutil.Process()
         start_time = time.time()
         start_memory = process.memory_info().rss / 1024 / 1024 if self.enable_memory_tracking else 0
         start_cpu = process.cpu_percent() if self.enable_cpu_tracking else 0
-        
+
         error_occurred = False
         try:
             result = func(*args, **kwargs)
             return result
-        except Exception as e:
+        except Exception:
             error_occurred = True
             raise
         finally:
             duration_ms = (time.time() - start_time) * 1000
             end_memory = process.memory_info().rss / 1024 / 1024 if self.enable_memory_tracking else 0
             end_cpu = process.cpu_percent() if self.enable_cpu_tracking else 0
-            
+
             metric = PerformanceMetric(
                 name=func_name,
                 duration_ms=duration_ms,
@@ -139,28 +140,28 @@ class PerformanceProfiler:
                 cpu_percent=end_cpu - start_cpu,
                 context=ctx
             )
-            
+
             self._record_metric(metric, error_occurred)
-    
+
     async def _profile_async(self, func: Callable, func_name: str, ctx: Dict[str, Any], *args, **kwargs):
         """Profile asynchronous function"""
         process = psutil.Process()
         start_time = time.time()
         start_memory = process.memory_info().rss / 1024 / 1024 if self.enable_memory_tracking else 0
         start_cpu = process.cpu_percent() if self.enable_cpu_tracking else 0
-        
+
         error_occurred = False
         try:
             result = await func(*args, **kwargs)
             return result
-        except Exception as e:
+        except Exception:
             error_occurred = True
             raise
         finally:
             duration_ms = (time.time() - start_time) * 1000
             end_memory = process.memory_info().rss / 1024 / 1024 if self.enable_memory_tracking else 0
             end_cpu = process.cpu_percent() if self.enable_cpu_tracking else 0
-            
+
             metric = PerformanceMetric(
                 name=func_name,
                 duration_ms=duration_ms,
@@ -169,19 +170,19 @@ class PerformanceProfiler:
                 cpu_percent=end_cpu - start_cpu,
                 context=ctx
             )
-            
+
             self._record_metric(metric, error_occurred)
-    
+
     def _record_metric(self, metric: PerformanceMetric, error: bool = False):
         """Record performance metric"""
         with self.lock:
             # Store metric
             self.metrics[metric.name].append(metric)
-            
+
             # Update stats
             if metric.name not in self.stats:
                 self.stats[metric.name] = ProfileStats(function_name=metric.name)
-            
+
             stats = self.stats[metric.name]
             stats.call_count += 1
             stats.total_time_ms += metric.duration_ms
@@ -189,13 +190,13 @@ class PerformanceProfiler:
             stats.min_time_ms = min(stats.min_time_ms, metric.duration_ms)
             stats.max_time_ms = max(stats.max_time_ms, metric.duration_ms)
             stats.last_called = metric.timestamp
-            
+
             if error:
                 stats.error_count += 1
-            
+
             # Update percentiles
             self._update_percentiles(metric.name)
-            
+
             # Detect bottlenecks
             if metric.duration_ms > self.slow_threshold_ms:
                 self.bottlenecks.append(metric)
@@ -203,21 +204,21 @@ class PerformanceProfiler:
                     f"Slow operation detected: {metric.name} took {metric.duration_ms:.2f}ms "
                     f"(threshold: {self.slow_threshold_ms}ms)"
                 )
-    
+
     def _update_percentiles(self, func_name: str):
         """Update percentile statistics"""
         metrics_list = list(self.metrics[func_name])
         if not metrics_list:
             return
-        
+
         durations = sorted([m.duration_ms for m in metrics_list])
         stats = self.stats[func_name]
-        
+
         n = len(durations)
         stats.p50_time_ms = durations[int(n * 0.50)] if n > 0 else 0
         stats.p95_time_ms = durations[int(n * 0.95)] if n > 0 else 0
         stats.p99_time_ms = durations[int(n * 0.99)] if n > 0 else 0
-    
+
     def get_stats(self, func_name: Optional[str] = None) -> Dict[str, Any]:
         """Get performance statistics"""
         with self.lock:
@@ -243,7 +244,7 @@ class PerformanceProfiler:
                     func: self.get_stats(func)
                     for func in self.stats.keys()
                 }
-    
+
     def get_bottlenecks(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get detected bottlenecks"""
         with self.lock:
@@ -252,7 +253,7 @@ class PerformanceProfiler:
                 key=lambda m: m.duration_ms,
                 reverse=True
             )[:limit]
-            
+
             return [
                 {
                     "function": m.name,
@@ -264,7 +265,7 @@ class PerformanceProfiler:
                 }
                 for m in sorted_bottlenecks
             ]
-    
+
     def get_slowest_functions(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get slowest functions by average execution time"""
         with self.lock:
@@ -273,7 +274,7 @@ class PerformanceProfiler:
                 key=lambda s: s.avg_time_ms,
                 reverse=True
             )[:limit]
-            
+
             return [
                 {
                     "function": s.function_name,
@@ -285,7 +286,7 @@ class PerformanceProfiler:
                 }
                 for s in sorted_stats
             ]
-    
+
     def clear_metrics(self, func_name: Optional[str] = None):
         """Clear stored metrics"""
         with self.lock:
@@ -298,9 +299,9 @@ class PerformanceProfiler:
                 self.metrics.clear()
                 self.stats.clear()
                 self.bottlenecks.clear()
-        
+
         logger.info(f"Cleared metrics for: {func_name or 'all functions'}")
-    
+
     def export_report(self) -> Dict[str, Any]:
         """Export comprehensive performance report"""
         with self.lock:
@@ -349,7 +350,7 @@ def get_profiler(
 def profile(name: Optional[str] = None, context: Optional[Dict[str, Any]] = None):
     """
     Convenience decorator for profiling functions
-    
+
     Usage:
         @profile(name="my_function")
         def my_function():

@@ -1,0 +1,11 @@
+=== TODO Comments ===
+Total TODO comments: 1
+
+=== FIXME Comments ===
+Total FIXME comments: 0
+
+=== XXX Comments ===
+Total XXX comments: 1
+
+Sample TODOs:
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator_refactored.py:39:# TODO: Gradually extract these into specialized handler modules:

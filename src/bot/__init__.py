@@ -2,9 +2,9 @@
 # Enhanced with Interactive UI and Queue Manager
 # Modified by: justadi
 
-from collections import deque
-
 import sys
+from collections import deque
+from typing import Any
 
 try:
     import uvloop
@@ -19,23 +19,25 @@ from time import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+_SabnzbdClient: Any = None
 try:
-    from integrations.sabnzbdapi import SabnzbdClient
+    from integrations.sabnzbdapi import SabnzbdClient as _SabnzbdClient
 except ImportError:
-    # Fallback: SABnzbd integration is optional
-    SabnzbdClient = None
+    _SabnzbdClient = None
 
 # Import Config and TgClient for backwards compatibility
+_Config: Any = None
 try:
-    from config.main_config import Config
+    from config.main_config import Config as _Config
 except (ImportError, ModuleNotFoundError):
     try:
-        from config import Config
+        from config import Config as _Config
     except (ImportError, ModuleNotFoundError):
-        Config = None  # Defer loading if not available yet
+        _Config = None
 
 # TgClient will be imported later once config is loaded
-TgClient = None
+Config = _Config
+TgClient: Any = None
 
 getLogger("requests").setLevel(WARNING)
 getLogger("urllib3").setLevel(WARNING)
@@ -59,33 +61,33 @@ basicConfig(
 
 LOGGER = getLogger(__name__)
 cpu_no = cpu_count()
-threads = max(1, cpu_no // 2)
+threads = max(1, (cpu_no or 1) // 2)
 cores = ",".join(str(i) for i in reversed(range(threads)))
 
 DOWNLOAD_DIR = "/app/downloads/"
 intervals = {"status": {}, "qb": "", "jd": "", "nzb": "", "stopAll": False}
-qb_torrents = {}
-jd_downloads = {}
-nzb_jobs = {}
-user_data = {}
-aria2_options = {}
-qbit_options = {}
-nzb_options = {}
-queued_dl = {}
-queued_up = {}
-status_dict = {}
-task_dict = {}
-rss_dict = {}
-auth_chats = {}
+qb_torrents: dict[str, Any] = {}
+jd_downloads: dict[str, Any] = {}
+nzb_jobs: dict[str, Any] = {}
+user_data: dict[str, Any] = {}
+aria2_options: dict[str, Any] = {}
+qbit_options: dict[str, Any] = {}
+nzb_options: dict[str, Any] = {}
+queued_dl: dict[str, Any] = {}
+queued_up: dict[str, Any] = {}
+status_dict: dict[str, Any] = {}
+task_dict: dict[str, Any] = {}
+rss_dict: dict[str, Any] = {}
+auth_chats: dict[str, Any] = {}
 excluded_extensions = ["aria2", "!qB"]
-included_extensions = []
-drives_names = []
-drives_ids = []
-index_urls = []
-sudo_users = []
-non_queued_dl = set()
-non_queued_up = set()
-multi_tags = set()
+included_extensions: list[str] = []
+drives_names: list[str] = []
+drives_ids: list[str] = []
+index_urls: list[str] = []
+sudo_users: list[int] = []
+non_queued_dl: set[str] = set()
+non_queued_up: set[str] = set()
+multi_tags: set[str] = set()
 task_dict_lock = Lock()
 queue_dict_lock = Lock()
 qb_listener_lock = Lock()
@@ -95,19 +97,19 @@ cpu_eater_lock = Lock()
 same_directory_lock = Lock()
 
 sabnzbd_client = (
-    SabnzbdClient(
+    _SabnzbdClient(
         host="http://localhost",
         api_key="mltb",
         port="8070",
     )
-    if SabnzbdClient is not None
+    if _SabnzbdClient is not None
     else None
 )
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)
 
 # UI/UX enhancements: history and settings
-download_history = deque(maxlen=200)
+download_history: deque[dict[str, Any]] = deque(maxlen=200)
 ui_settings = {
     "theme": "dark",
     "notifications": True,

@@ -3,22 +3,129 @@ Enhanced Status Integration Module
 Integrates enhanced stats and feedback into existing bot handlers
 """
 
-from typing import Optional, List, Dict
 from asyncio import iscoroutinefunction
 from html import escape
 from time import time
+from typing import Dict, List
 
-from ..helper.ext_utils.status_utils import (
-    get_readable_file_size,
-    get_readable_time,
-    STATUS_EMOJI,
-)
-from .enhanced_stats import ProgressBar, HealthIndicator, StatsFormatter, SystemStats
-from .enhanced_feedback import FeedbackFormatter, ProgressTracker
+from ..helper.ext_utils.status_utils import STATUS_EMOJI, get_readable_file_size, get_readable_time
+from .enhanced_feedback import FeedbackFormatter
+from .enhanced_stats import HealthIndicator, ProgressBar, SystemStats
 
 
 class EnhancedStatusBuilder:
     """Build enhanced status messages with better formatting"""
+
+    @staticmethod
+    async def _resolve_task_status(task):
+        if iscoroutinefunction(task.status):
+            return await task.status()
+        return task.status()
+
+    @staticmethod
+    def _build_compact_message(msg, task):
+        if hasattr(task, "speed") and callable(task.speed):
+            speed = task.speed()
+            msg += f"Speed: {speed}"
+        return msg
+
+    @staticmethod
+    @staticmethod
+    def _add_progress_bar(msg, progress):
+        return msg + f"Progress: {ProgressBar.filled_bar(progress, length=12)}\n"
+    
+    @staticmethod
+    def _add_file_count(msg, task):
+        if hasattr(task.listener, "subname") and task.listener.subname:
+            ac = len(task.listener.files_to_proceed)
+            count = f"{task.listener.proceed_count}/{ac or '?'}"
+            msg += f"Count: {count}\n"
+            return msg, f"/{get_readable_file_size(task.listener.subsize)}"
+        return msg, ""
+    
+    @staticmethod
+    def _add_size_info(msg, task, subsize):
+        if hasattr(task, "processed_bytes"):
+            msg += f"Size: {task.processed_bytes()}{subsize} of {task.size()}\n"
+        return msg
+    
+    @staticmethod
+    def _add_speed_info(msg, task, include_health):
+        if not hasattr(task, "speed"):
+            return msg
+        
+        speed = task.speed()
+        if include_health:
+            speed_limit = (
+                int(task.listener.speed_limit / 100 * 10)
+                if hasattr(task.listener, "speed_limit")
+                else 50
+            )
+            health = HealthIndicator.get_health_indicator(speed_limit)
+            msg += f"Speed: {health} {speed}\n"
+        else:
+            msg += f"Speed: {speed}\n"
+        return msg
+    
+    @staticmethod
+    def _add_eta_info(msg, task):
+        if hasattr(task, "eta"):
+            msg += f"ETA: ⏳ {task.eta()}\n"
+        return msg
+    
+    @staticmethod
+    def _add_torrent_info(msg, task):
+        if hasattr(task.listener, "is_torrent") and task.listener.is_torrent:
+            try:
+                if hasattr(task, "seeders_num"):
+                    msg += (
+                        f"Seeders: {task.seeders_num()} | "
+                        f"Leechers: {task.leechers_num()}\n"
+                    )
+            except Exception:
+                pass
+        return msg
+    
+    @staticmethod
+    def _append_progress_details(msg, task, tstatus, include_progress_bar, include_health):
+        if (
+            tstatus in ["Seed", "QueueUp"]
+            or not hasattr(task.listener, "progress")
+            or not task.listener.progress
+        ):
+            return msg
+
+        progress = task.progress()
+        if include_progress_bar:
+            msg = EnhancedStatusBuilder._add_progress_bar(msg, progress)
+        
+        msg, subsize = EnhancedStatusBuilder._add_file_count(msg, task)
+        msg = EnhancedStatusBuilder._add_size_info(msg, task, subsize)
+        msg = EnhancedStatusBuilder._add_speed_info(msg, task, include_health)
+        msg = EnhancedStatusBuilder._add_eta_info(msg, task)
+        msg = EnhancedStatusBuilder._add_torrent_info(msg, task)
+        
+        return msg
+
+    @staticmethod
+    def _append_seed_details(msg, task):
+        if hasattr(task, "size"):
+            msg += f"Size: {task.size()}\n"
+        if hasattr(task, "seed_speed"):
+            msg += f"Speed: {task.seed_speed()}\n"
+        if hasattr(task, "uploaded_bytes"):
+            msg += f"Uploaded: {task.uploaded_bytes()}\n"
+        if hasattr(task, "ratio"):
+            msg += f"Ratio: {task.ratio()} | "
+        if hasattr(task, "seeding_time"):
+            msg += f"Time: {task.seeding_time()}\n"
+        return msg
+
+    @staticmethod
+    def _append_fallback_size(msg, task):
+        if hasattr(task, "size"):
+            msg += f"Size: {task.size()}\n"
+        return msg
 
     @staticmethod
     async def build_task_message(
@@ -30,91 +137,29 @@ class EnhancedStatusBuilder:
     ) -> str:
         """Build enhanced status message for a single task"""
         try:
-            # Get task status
-            if iscoroutinefunction(task.status):
-                tstatus = await task.status()
-            else:
-                tstatus = task.status()
-
-            # Get status emoji
+            tstatus = await EnhancedStatusBuilder._resolve_task_status(task)
             status_emoji = STATUS_EMOJI.get(tstatus, "⚙️")
-
-            # Build message
             msg = f"<b>{index}. {status_emoji} {tstatus}:</b> "
             msg += f"<code>{escape(task.name())}</code>\n"
 
             if compact:
-                # Compact view - just essential info
-                if hasattr(task, "speed") and callable(task.speed):
-                    speed = task.speed()
-                    msg += f"Speed: {speed}"
-                return msg
+                return EnhancedStatusBuilder._build_compact_message(msg, task)
 
-            # Detailed view
             if hasattr(task.listener, "subname") and task.listener.subname:
                 msg += f"<i>{task.listener.subname}</i>\n"
 
-            # Progress section
-            if (
-                tstatus not in ["Seed", "QueueUp"]
-                and hasattr(task.listener, "progress")
-                and task.listener.progress
-            ):
-                progress = task.progress()
-                
-                if include_progress_bar:
-                    msg += f"Progress: {ProgressBar.filled_bar(progress, length=12)}\n"
-                
-                # File processing info
-                if hasattr(task.listener, "subname") and task.listener.subname:
-                    subsize = f"/{get_readable_file_size(task.listener.subsize)}"
-                    ac = len(task.listener.files_to_proceed)
-                    count = f"{task.listener.proceed_count}/{ac or '?'}"
-                    msg += f"Count: {count}\n"
-                else:
-                    subsize = ""
-
-                # Size and speed
-                if hasattr(task, "processed_bytes"):
-                    msg += f"Size: {task.processed_bytes()}{subsize} of {task.size()}\n"
-
-                if hasattr(task, "speed"):
-                    speed = task.speed()
-                    if include_health:
-                        health = HealthIndicator.get_health_indicator(
-                            int(task.listener.speed_limit / 100 * 10) if hasattr(task.listener, "speed_limit") else 50
-                        )
-                        msg += f"Speed: {health} {speed}\n"
-                    else:
-                        msg += f"Speed: {speed}\n"
-
-                if hasattr(task, "eta"):
-                    msg += f"ETA: ⏳ {task.eta()}\n"
-
-                # Torrent specific info
-                if hasattr(task.listener, "is_torrent") and task.listener.is_torrent:
-                    try:
-                        if hasattr(task, "seeders_num"):
-                            msg += f"Seeders: {task.seeders_num()} | Leechers: {task.leechers_num()}\n"
-                    except Exception:
-                        pass
-
-            elif tstatus == "Seed" and hasattr(task, "size"):
-                msg += f"Size: {task.size()}\n"
-                if hasattr(task, "seed_speed"):
-                    msg += f"Speed: {task.seed_speed()}\n"
-                if hasattr(task, "uploaded_bytes"):
-                    msg += f"Uploaded: {task.uploaded_bytes()}\n"
-                if hasattr(task, "ratio"):
-                    msg += f"Ratio: {task.ratio()} | "
-                if hasattr(task, "seeding_time"):
-                    msg += f"Time: {task.seeding_time()}\n"
-
+            msg = EnhancedStatusBuilder._append_progress_details(
+                msg,
+                task,
+                tstatus,
+                include_progress_bar,
+                include_health,
+            )
+            if tstatus == "Seed" and hasattr(task, "size"):
+                msg = EnhancedStatusBuilder._append_seed_details(msg, task)
             else:
-                if hasattr(task, "size"):
-                    msg += f"Size: {task.size()}\n"
+                msg = EnhancedStatusBuilder._append_fallback_size(msg, task)
 
-            # Cancel command
             if hasattr(task, "gid"):
                 from ..helper.telegram_helper.bot_commands import BotCommands
                 msg += f"<code>/{BotCommands.CancelTaskCommand[1]} {task.gid()}</code>"
@@ -153,19 +198,19 @@ class EnhancedStatusBuilder:
         """Build enhanced resource footer"""
         text = "\n" + "=" * 40 + "\n"
         text += "<b>📊 SYSTEM RESOURCES</b>\n"
-        
+
         if include_health:
             cpu_health = HealthIndicator.get_health_indicator(int(cpu_percent))
             mem_health = HealthIndicator.get_health_indicator(int(mem_percent))
-            
+
             text += f"{cpu_health} CPU: {cpu_percent:.1f}% | "
             text += f"{mem_health} RAM: {mem_percent:.1f}% | "
         else:
             text += f"CPU: {cpu_percent:.1f}% | RAM: {mem_percent:.1f}% | "
-        
+
         text += f"💿 Free: {disk_free}\n"
         text += f"⏱️ Uptime: {uptime}"
-        
+
         return text
 
     @staticmethod

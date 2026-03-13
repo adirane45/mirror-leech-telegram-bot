@@ -206,18 +206,18 @@ The repositories integrate seamlessly with the existing bot code:
 # In handlers or commands
 async def handle_user_settings(user_id):
     repos = get_repositories_manager()
-    
+
     # Get user preferences
     prefs = await repos.user_preferences.get_all_preferences(user_id)
-    
+
     # Update preference
     await repos.user_preferences.update_preference(
         user_id, "theme", "dark"
     )
-    
+
     # Check download tasks
     tasks = await repos.download_tasks.get_user_tasks(user_id)
-    
+
     # Reduce boilerplate, consistent error handling
 ```
 

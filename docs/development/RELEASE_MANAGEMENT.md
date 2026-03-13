@@ -529,7 +529,7 @@ Or install a specific version:
 docker pull ghcr.io/owner/mirror-leech-telegram-bot:v3.2.0
 ```
 
-See [Releases](https://github.com/owner/mirror-leech-telegram-bot/releases) 
+See [Releases](https://github.com/owner/mirror-leech-telegram-bot/releases)
 for all available versions.
 ```
 
@@ -642,4 +642,3 @@ For your next release after v3.2.0:
 - [ ] Verify Docker image in GHCR
 - [ ] Deploy to production (optional)
 - [ ] Announce release to team
-

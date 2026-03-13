@@ -84,7 +84,7 @@ MAX_CONCURRENT_DOWNLOADS = 5
 MAX_CONCURRENT_UPLOADS = 5
 QUEUE_ALL = False  # Queue all tasks instead of parallel
 
-# Size Limits  
+# Size Limits
 TORRENT_LIMIT = 0  # GB (0 = unlimited)
 DIRECT_LIMIT = 0  # GB
 YTDLP_LIMIT = 0  # GB

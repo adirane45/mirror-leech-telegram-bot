@@ -3,23 +3,16 @@ Enhanced Dashboard Handler Module
 Provides handlers for accessing enhanced stats and feedback through bot commands
 """
 
-from time import time
 from asyncio import iscoroutinefunction
-from psutil import cpu_percent, virtual_memory, disk_usage
 
-from .. import bot_start_time, task_dict, task_dict_lock, DOWNLOAD_DIR
-from ..helper.ext_utils.status_utils import get_readable_file_size, get_readable_time
-from ..helper.telegram_helper.message_utils import send_message
-from ..helper.telegram_helper.button_build import ButtonMaker
+from psutil import cpu_percent, disk_usage, virtual_memory
+
+from .. import DOWNLOAD_DIR, bot_start_time, task_dict, task_dict_lock
+from ..core.enhanced_stats import HealthIndicator, ProgressBar, StatsFormatter, SystemStats, TaskStats
+from ..core.enhanced_status_integration import EnhancedDashboard
 from ..helper.ext_utils.bot_utils import new_task
-from ..core.enhanced_stats import (
-    ProgressBar,
-    HealthIndicator,
-    SystemStats,
-    StatsFormatter,
-    TaskStats,
-)
-from ..core.enhanced_status_integration import EnhancedStatusBuilder, EnhancedDashboard
+from ..helper.ext_utils.status_utils import get_readable_file_size
+from ..helper.telegram_helper.message_utils import send_message
 
 
 @new_task
@@ -176,9 +169,9 @@ async def progress_summary_handler(_, message):
     for i, task in enumerate(tasks[:5], 1):  # Show top 5
         try:
             if iscoroutinefunction(task.status):
-                tstatus = await task.status()
+                await task.status()
             else:
-                tstatus = task.status()
+                task.status()
 
             progress = task.progress() if hasattr(task, "progress") else 0
             text += f"{i}. {task.name()[:30]}\n"

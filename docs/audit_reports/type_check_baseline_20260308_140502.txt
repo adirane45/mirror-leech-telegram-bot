@@ -1,0 +1,3430 @@
+Running type safety checks...
+mypy src/ config/ --pretty --show-error-codes
+src/web/nodes.py:4: error: Class cannot subclass "NodeMixin" (has type "Any") 
+[misc]
+    class TorNode(NodeMixin):
+                  ^~~~~~~~~
+src/web/nodes.py:5: error: Function is missing a type annotation 
+[no-untyped-def]
+        def __init__(
+        ^~~~~~~~~~~~~
+src/web/nodes.py:33: error: Function is missing a type annotation 
+[no-untyped-def]
+    def qb_get_folders(path):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:37: error: Function is missing a type annotation 
+[no-untyped-def]
+    def get_folders(path, root_path):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:42: error: Function is missing a type annotation 
+[no-untyped-def]
+    def make_tree(res, tool, root_path=""):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:44: error: Call to untyped function "TorNode" in typed context
+ [no-untyped-call]
+            parent = TorNode("QBITTORRENT")
+                     ^~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:47: error: Call to untyped function "qb_get_folders" in typed
+context  [no-untyped-call]
+                folders = qb_get_folders(i.name)
+                          ^~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:56: error: Call to untyped function "TorNode" in typed context
+ [no-untyped-call]
+                            previous_node = TorNode(
+                                            ^~~~~~~~
+src/web/nodes.py:65: error: Call to untyped function "TorNode" in typed context
+ [no-untyped-call]
+                    TorNode(
+                    ^~~~~~~~
+src/web/nodes.py:75: error: Call to untyped function "TorNode" in typed context
+ [no-untyped-call]
+                    TorNode(
+                    ^~~~~~~~
+src/web/nodes.py:85: error: Call to untyped function "TorNode" in typed context
+ [no-untyped-call]
+            parent = TorNode("ARIA2")
+                     ^~~~~~~~~~~~~~~~
+src/web/nodes.py:88: error: Call to untyped function "get_folders" in typed
+context  [no-untyped-call]
+                folders = get_folders(i["path"], root_path)
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:100: error: Call to untyped function "TorNode" in typed
+context  [no-untyped-call]
+                            previous_node = TorNode(
+                                            ^~~~~~~~
+src/web/nodes.py:115: error: Call to untyped function "TorNode" in typed
+context  [no-untyped-call]
+                    TorNode(
+                    ^~~~~~~~
+src/web/nodes.py:131: error: Call to untyped function "TorNode" in typed
+context  [no-untyped-call]
+                    TorNode(
+                    ^~~~~~~~
+src/web/nodes.py:141: error: Call to untyped function "TorNode" in typed
+context  [no-untyped-call]
+            parent = TorNode("SABNZBD+")
+                     ^~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:144: error: Call to untyped function "TorNode" in typed
+context  [no-untyped-call]
+                TorNode(
+                ^~~~~~~~
+src/web/nodes.py:157: error: Call to untyped function "create_list" in typed
+context  [no-untyped-call]
+        result = create_list(parent)
+                 ^~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:169: error: Function is missing a type annotation 
+[no-untyped-def]
+    def create_list(parent, contents=None):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:174: error: Need type annotation for "children" (hint:
+"children: list[<type>] = ...")  [var-annotated]
+                children = []
+                ^~~~~~~~
+src/web/nodes.py:175: error: Call to untyped function "create_list" in typed
+context  [no-untyped-call]
+                create_list(i, children)
+                ^~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:198: error: Function is missing a type annotation 
+[no-untyped-def]
+    def extract_file_ids(data):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/nodes.py:208: error: Call to untyped function "extract_file_ids" in
+typed context  [no-untyped-call]
+                child_selected, child_unselected = extract_file_ids(item["...
+                                                   ^~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/ext_utils/bulk_links.py:2: error: Library stubs not installed
+for "aiofiles.os"  [import-untyped]
+    from aiofiles.os import remove
+    ^
+src/bot/helper/ext_utils/bulk_links.py:5: error: Function is missing a type
+annotation  [no-untyped-def]
+    def filter_links(links_list, bulk_start, bulk_end):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:11: error: Function is missing a type
+annotation  [no-untyped-def]
+    def get_links_from_message(text):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:16: error: Function is missing a type
+annotation  [no-untyped-def]
+    async def get_links_from_file(message):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:17: error: Need type annotation for
+"links_list" (hint: "links_list: list[<type>] = ...")  [var-annotated]
+        links_list = []
+        ^~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:26: error: Function is missing a type
+annotation  [no-untyped-def]
+    async def extract_bulk_links(message, bulk_start, bulk_end):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:32: error: Call to untyped function
+"get_links_from_file" in typed context  [no-untyped-call]
+                links_list = await get_links_from_file(reply_to)
+                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:34: error: Call to untyped function
+"get_links_from_message" in typed context  [no-untyped-call]
+                links_list = get_links_from_message(text)
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/bulk_links.py:35: error: Call to untyped function
+"filter_links" in typed context  [no-untyped-call]
+        return filter_links(links_list, bulk_start, bulk_end) if links_lis...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:3: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def check_login(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:4: error: "SubFunctions" has no
+attribute "get_config"  [attr-defined]
+            res = await self.get_config("servers")
+                        ^~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:7: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def add_server(self, server: dict):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:7: error: Missing type parameters for
+generic type "dict"  [type-arg]
+        async def add_server(self, server: dict):
+                                           ^
+integrations/sabnzbdapi/bound_methods.py:27: error: "SubFunctions" has no
+attribute "set_special_config"  [attr-defined]
+            return await self.set_special_config("servers", server)
+                         ^~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:29: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def create_category(self, name: str, dir: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:30: error: "SubFunctions" has no
+attribute "set_special_config"  [attr-defined]
+            return await self.set_special_config("categories", {"name": na...
+                         ^~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:32: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def delete_category(self, name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/bound_methods.py:33: error: "SubFunctions" has no
+attribute "delete_config"  [attr-defined]
+            return await self.delete_config("categories", name)
+                         ^~~~~~~~~~~~~~~~~~
+src/web/admin_login.py:260: error: Function is missing a return type annotation
+ [no-untyped-def]
+    def get_login_html():
+    ^~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/progress_utils.py:36: error: Function is missing a
+type annotation for one or more arguments  [no-untyped-def]
+    def get_download_progress_text(download) -> str:
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:7: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_magnet(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:11: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_url(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:20: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_gdrive_link(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:24: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_telegram_link(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:28: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_share_link(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:37: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_rclone_path(path: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/ext_utils/links_utils.py:46: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def is_gdrive_id(id_: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/myjd/exception.py:58: error: Function is missing a type annotation
+ [no-untyped-def]
+        def get_exception(
+        ^~~~~~~~~~~~~~~~~~
+integrations/myjd/exception.py:62: error: Call to untyped function (unknown) in
+typed context  [no-untyped-call]
+            return EXCEPTION_CLASSES.get(exception_type.upper(), MYJDUnkno...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+integrations/myjd/exception.py:66: error: Function is missing a type annotation
+ [no-untyped-def]
+        def __init__(self, exception_source, *args, **kwargs):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:6: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def add_uri(
+        ^~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:13: error: Missing type parameters for
+generic type "list"  [type-arg]
+            script: list = None,
+                    ^
+integrations/sabnzbdapi/job_functions.py:13: error: Incompatible default for
+argument "script" (default has type "None", argument has type "list[Any]") 
+[assignment]
+            script: list = None,
+                           ^~~~
+integrations/sabnzbdapi/job_functions.py:13: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+integrations/sabnzbdapi/job_functions.py:13: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+integrations/sabnzbdapi/job_functions.py:27: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:40: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def get_downloads(
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:141: error: Incompatible types in
+assignment (expression has type "str", variable has type
+"int | list[str] | None")  [assignment]
+                priority = priority if isinstance(priority, str) else ","....
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+integrations/sabnzbdapi/job_functions.py:141: error: Argument 1 to "join" of
+"str" has incompatible type "int | list[str]"; expected "Iterable[str]" 
+[arg-type]
+    ...iority = priority if isinstance(priority, str) else ",".join(priority)
+                                                                    ^~~~~~~~
+integrations/sabnzbdapi/job_functions.py:143: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:156: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def pause_job(self, nzo_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:158: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "queue", "name": "pause", "val...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:160: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def resume_job(self, nzo_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:162: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "queue", "name": "resume", "va...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:164: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def delete_job(self, nzo_id: str | list[str], delete_files: ...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+integrations/sabnzbdapi/job_functions.py:166: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:175: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def pause_all(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:177: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "pause"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:179: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def resume_all(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:181: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "resume"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:183: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def purge_all(self, delete_files: bool = False):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:185: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:189: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def get_files(self, nzo_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:206: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "get_files", "value": nzo_id})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:208: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def remove_file(self, nzo_id: str, file_ids: str | list[str]...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:209: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:218: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def get_history(
+        ^~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:377: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:392: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def retry_item(self, nzo_id: str, password: str = ""):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:394: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "retry", "value": nzo_id, "pas...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:396: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def retry_all(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:398: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "retry_all"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:400: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def delete_history(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:404: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:414: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def change_job_pp(self, nzo_id: str, pp: int):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:416: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "change_opts", "value": nzo_id...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:418: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def set_speedlimit(self, limit: str | int):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:420: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "config", "name": "speedlimit"...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:422: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def delete_config(self, section: str, keyword: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:424: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:428: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def set_config_default(self, keyword: str | list[str]):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:430: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "set_config_default", "keyword...
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:432: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def get_config(self, section: str = None, keyword: str = Non...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:432: error: Incompatible default for
+argument "section" (default has type "None", argument has type "str") 
+[assignment]
+        async def get_config(self, section: str = None, keyword: str = Non...
+                                                  ^~~~
+integrations/sabnzbdapi/job_functions.py:432: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+integrations/sabnzbdapi/job_functions.py:432: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+integrations/sabnzbdapi/job_functions.py:432: error: Incompatible default for
+argument "keyword" (default has type "None", argument has type "str") 
+[assignment]
+    ... async def get_config(self, section: str = None, keyword: str = None):
+                                                                       ^~~~
+integrations/sabnzbdapi/job_functions.py:434: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:438: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def set_config(self, section: str, keyword: str, value: str)...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:440: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:449: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def set_special_config(self, section: str, items: dict):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:449: error: Missing type parameters
+for generic type "dict"  [type-arg]
+        async def set_special_config(self, section: str, items: dict):
+                                                                ^
+integrations/sabnzbdapi/job_functions.py:451: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call(
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:459: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def server_stats(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:492: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "server_stats"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:494: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def version(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:496: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "version"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:498: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def restart(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:500: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "restart"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:502: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def restart_repair(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:504: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "restart_repair"})
+                         ^~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:506: error: Function is missing a
+return type annotation  [no-untyped-def]
+        async def shutdown(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+integrations/sabnzbdapi/job_functions.py:508: error: "JobFunctions" has no
+attribute "call"  [attr-defined]
+            return await self.call({"mode": "shutdown"})
+                         ^~~~~~~~~
+src/bot/core/health_models.py:73: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        check_fn: Callable
+                  ^
+src/bot/core/enhanced_feedback_models.py:44: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+            data: Optional[Dict] = None,
+                           ^
+src/bot/core/enhanced_feedback_models.py:63: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def to_dict(self) -> Dict:
+                             ^
+src/bot/core/alert_manager_models.py:42: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+            details: Optional[Dict] = None,
+                              ^
+src/bot/core/alert_manager_models.py:53: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def to_dict(self):
+        ^~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handler_registry.py:122: error:
+Incompatible types in assignment (expression has type "str | None", variable has
+type "str")  [assignment]
+            if handler := cls.SINGLE_DOMAIN_HANDLERS.get(domain):
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handler_registry.py:136: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def register_single(cls, domain: str, handler_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handler_registry.py:141: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def register_multi(cls, domains: tuple, handler_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handler_registry.py:141: error:
+Missing type parameters for generic type "tuple"  [type-arg]
+        def register_multi(cls, domains: tuple, handler_name: str):
+                                         ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handler_registry.py:146: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def register_special(cls, key: str, handler_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:37: error:
+Function is missing a type annotation  [no-untyped-def]
+        def __init__(self, registry):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:49: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def _resolve_handler(self, link: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:58: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def _execute_handler(self, handler, link: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:58: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def _execute_handler(self, handler, link: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:68: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def execute(self, link: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:80: error:
+Returning Any from function declared to return "str"  [no-any-return]
+        return HandlerDispatcher(HandlerRegistry).execute(link)
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:80: error:
+Call to untyped function "HandlerDispatcher" in typed context  [no-untyped-call]
+        return HandlerDispatcher(HandlerRegistry).execute(link)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/batch_operations.py:48: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/batch_operations.py:48: note: Use "-> None" if function does not return a value
+src/bot/core/logging_config.py:60: error: Item "None" of
+"type[BaseException] | None" has no attribute "__name__"  [union-attr]
+                    "type": record.exc_info[0].__name__,
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/logging_config.py:122: error: Incompatible types in assignment
+(expression has type "Formatter", variable has type "JsonFormatter") 
+[assignment]
+            formatter = logging.Formatter(
+                        ^~~~~~~~~~~~~~~~~~
+src/bot/core/logging_config.py:236: error: "Thread" has no attribute
+"request_id"  [attr-defined]
+            threading.current_thread().request_id = request_id
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/replication_conflict_resolver.py:35: error: Missing type
+parameters for generic type "Callable"  [type-arg]
+            self.conflict_resolver: Optional[Callable] = None
+                                             ^
+src/bot/core/replication_conflict_resolver.py:124: error: Missing type
+parameters for generic type "Callable"  [type-arg]
+        def set_custom_resolver(self, resolver: Callable) -> None:
+                                                ^
+src/web/torrent_file_browser.py:47: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_file(self, path: str, size: int, index: int = 0):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:52: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def select_file(self, index: int, selected: bool = True):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:64: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def select_all(self):
+        ^~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:64: note: Use "-> None" if function does not return a value
+src/web/torrent_file_browser.py:71: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def deselect_all(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:71: note: Use "-> None" if function does not return a value
+src/web/torrent_file_browser.py:100: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:100: note: Use "-> None" if function does not return a value
+src/web/torrent_file_browser.py:145: error: Need type annotation for
+"dir_structure" (hint: "dir_structure: dict[<type>, <type>] = ...") 
+[var-annotated]
+            dir_structure = {}
+            ^~~~~~~~~~~~~
+src/web/torrent_file_browser.py:161: error: Function is missing a type
+annotation  [no-untyped-def]
+            def build_tree_node(dir_dict, parent_path=""):
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:172: error: Call to untyped function
+"build_tree_node" in typed context  [no-untyped-call]
+                            "children": build_tree_node(dir_content, dir_p...
+                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/web/torrent_file_browser.py:189: error: Call to untyped function
+"build_tree_node" in typed context  [no-untyped-call]
+            tree["children"] = build_tree_node(dir_structure)
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/torrent_file_browser.py:228: error: Call to untyped function
+"TorrentFileBrowser" in typed context  [no-untyped-call]
+    file_browser = TorrentFileBrowser()
+                   ^~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:28: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:28: note: Use "-> None" if function does not return a value
+src/web/scheduled_downloads.py:33: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add(self, download_id: str, priority: int = 5, url: str = "", ...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/web/scheduled_downloads.py:49: error: Returning Any from function declared
+to return "int"  [no-any-return]
+                        return priority
+                        ^~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:50: error: Incompatible return value type (got
+"None", expected "int")  [return-value]
+                return None
+                       ^~~~
+src/web/scheduled_downloads.py:71: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def peek(self) -> Optional[Dict]:
+                                   ^
+src/web/scheduled_downloads.py:75: error: Returning Any from function declared
+to return "dict[Any, Any] | None"  [no-any-return]
+                    return self.queue[0][2]
+                    ^~~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:78: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def pop(self) -> Optional[Dict]:
+                                  ^
+src/web/scheduled_downloads.py:83: error: Returning Any from function declared
+to return "dict[Any, Any] | None"  [no-any-return]
+                    return item
+                    ^~~~~~~~~~~
+src/web/scheduled_downloads.py:104: error: Call to untyped function
+"PriorityQueue" in typed context  [no-untyped-call]
+            self.priority_queue = PriorityQueue()
+                                  ^~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:105: error: Call to untyped function
+"_init_database" in typed context  [no-untyped-call]
+            self._init_database()
+            ^~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:107: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _get_connection(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:113: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _init_database(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:113: note: Use "-> None" if function does not return a value
+src/web/scheduled_downloads.py:116: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                conn = self._get_connection()
+                       ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:192: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+    ...              schedule_type: str = "once", schedule_data: Dict = None,
+                                                                 ^
+src/web/scheduled_downloads.py:192: error: Incompatible default for argument
+"schedule_data" (default has type "None", argument has type "dict[Any, Any]") 
+[assignment]
+    ...              schedule_type: str = "once", schedule_data: Dict = None,
+                                                                        ^~~~
+src/web/scheduled_downloads.py:192: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:192: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:193: error: Incompatible default for argument
+"next_run" (default has type "None", argument has type "datetime")  [assignment]
+    ...                            next_run: datetime = None, destination: st...
+                                                        ^~~~
+src/web/scheduled_downloads.py:193: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:193: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:194: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+                                  options: Dict = None) -> bool:
+                                           ^
+src/web/scheduled_downloads.py:194: error: Incompatible default for argument
+"options" (default has type "None", argument has type "dict[Any, Any]") 
+[assignment]
+                                  options: Dict = None) -> bool:
+                                                  ^~~~
+src/web/scheduled_downloads.py:194: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:194: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:198: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:230: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:246: error: Incompatible default for argument
+"next_run" (default has type "None", argument has type "datetime")  [assignment]
+    ...                            next_run: datetime = None, last_run: datet...
+                                                        ^~~~
+src/web/scheduled_downloads.py:246: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:246: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:246: error: Incompatible default for argument
+"last_run" (default has type "None", argument has type "datetime")  [assignment]
+    ...        next_run: datetime = None, last_run: datetime = None) -> bool:
+                                                               ^~~~
+src/web/scheduled_downloads.py:250: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:258: error: Argument 1 to "append" of "list" has
+incompatible type "datetime"; expected "str"  [arg-type]
+                        params.append(next_run)
+                                      ^~~~~~~~
+src/web/scheduled_downloads.py:263: error: Argument 1 to "append" of "list" has
+incompatible type "datetime"; expected "str"  [arg-type]
+                        params.append(last_run)
+                                      ^~~~~~~~
+src/web/scheduled_downloads.py:277: error: Incompatible default for argument
+"status" (default has type "None", argument has type "str")  [assignment]
+    ... def get_scheduled_downloads(self, status: str = None) -> List[Dict[st...
+                                                        ^~~~
+src/web/scheduled_downloads.py:277: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:277: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:281: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:299: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+                        destination: str = "", options: Dict = None,
+                                                        ^
+src/web/scheduled_downloads.py:299: error: Incompatible default for argument
+"options" (default has type "None", argument has type "dict[Any, Any]") 
+[assignment]
+                        destination: str = "", options: Dict = None,
+                                                               ^~~~
+src/web/scheduled_downloads.py:299: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/scheduled_downloads.py:299: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/scheduled_downloads.py:304: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:332: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:347: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:363: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:383: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:403: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:428: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:444: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def dequeue_download(self) -> Optional[Dict]:
+                                               ^
+src/web/scheduled_downloads.py:449: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:465: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/scheduled_downloads.py:482: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:30: error: Call to untyped function
+"_init_database" in typed context  [no-untyped-call]
+            self._init_database()
+            ^~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:32: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _get_connection(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:38: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _init_database(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:38: note: Use "-> None" if function does not return a value
+src/web/download_history.py:41: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                conn = self._get_connection()
+                       ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:107: error: Incompatible default for argument
+"metadata" (default has type "None", argument has type "dict[str, Any]") 
+[assignment]
+    ...      destination: str = "", metadata: Dict[str, Any] = None) -> bool:
+                                                               ^~~~
+src/web/download_history.py:107: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/download_history.py:107: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/download_history.py:111: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:135: error: Incompatible default for argument
+"total_size" (default has type "None", argument has type "int")  [assignment]
+                                   total_size: int = None, error: str = No...
+                                                     ^~~~
+src/web/download_history.py:135: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/download_history.py:135: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/download_history.py:135: error: Incompatible default for argument
+"error" (default has type "None", argument has type "str")  [assignment]
+    ...                   total_size: int = None, error: str = None) -> bool:
+                                                               ^~~~
+src/web/download_history.py:139: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:148: error: Argument 1 to "append" of "list" has
+incompatible type "int"; expected "str"  [arg-type]
+                        params.append(total_size)
+                                      ^~~~~~~~~~
+src/web/download_history.py:177: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:193: error: Incompatible default for argument
+"operation" (default has type "None", argument has type "str")  [assignment]
+    ...history(self, limit: int = 100, operation: str = None) -> List[Dict[st...
+                                                        ^~~~
+src/web/download_history.py:193: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/web/download_history.py:193: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/web/download_history.py:197: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:208: error: Argument 1 to "append" of "list" has
+incompatible type "int"; expected "str"  [arg-type]
+                    params.append(limit)
+                                  ^~~~~
+src/web/download_history.py:223: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:288: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:311: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:343: error: Call to untyped function
+"_get_connection" in typed context  [no-untyped-call]
+                    conn = self._get_connection()
+                           ^~~~~~~~~~~~~~~~~~~~~~
+src/web/download_history.py:366: error: Returning Any from function declared to
+return "int"  [no-any-return]
+                    return deleted
+                    ^~~~~~~~~~~~~~
+src/bot/core/security_headers.py:28: error: Missing type parameters for generic
+type "list"  [type-arg]
+    ...t__(self, enforce_https: bool = True, domains: Optional[list] = None):
+                                                               ^
+src/bot/core/security_headers.py:196: error: Missing type parameters for
+generic type "list"  [type-arg]
+            allow_origins: Optional[list] = None,
+                                    ^
+src/bot/core/security_headers.py:197: error: Missing type parameters for
+generic type "list"  [type-arg]
+            allow_methods: Optional[list] = None,
+                                    ^
+src/bot/core/security_headers.py:198: error: Missing type parameters for
+generic type "list"  [type-arg]
+            allow_headers: Optional[list] = None,
+                                    ^
+src/bot/core/security_headers.py:287: error: Function "builtins.any" is not
+valid as a type  [valid-type]
+        def get_secure_cookie_attributes(self) -> Dict[str, any]:
+                                                            ^
+src/bot/core/security_headers.py:287: note: Perhaps you meant "typing.Any" instead of "any"?
+src/bot/core/security_headers.py:318: error: Missing type parameters for
+generic type "list"  [type-arg]
+    def get_cors_config(allow_origins: Optional[list] = None) -> CORSConfi...
+                                                ^
+src/bot/core/lazy_imports.py:160: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def preload_module(self, module_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:165: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def preload_essential_modules(self, module_names: List[str]):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:184: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _load(self):
+        ^~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:193: error: Function is missing a type annotation 
+[no-untyped-def]
+        def __getattr__(self, name):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:194: error: Call to untyped function "_load" in
+typed context  [no-untyped-call]
+            module = self._load()
+                     ^~~~~~~~~~~~
+src/bot/core/lazy_imports.py:197: error: Function is missing a type annotation 
+[no-untyped-def]
+        def __setattr__(self, name, value):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:198: error: Call to untyped function "_load" in
+typed context  [no-untyped-call]
+            module = self._load()
+                     ^~~~~~~~~~~~
+src/bot/core/lazy_imports.py:201: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __dir__(self):
+        ^~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:202: error: Call to untyped function "_load" in
+typed context  [no-untyped-call]
+            module = self._load()
+                     ^~~~~~~~~~~~
+src/bot/core/lazy_imports.py:237: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:237: note: Use "-> None" if function does not return a value
+src/bot/core/lazy_imports.py:244: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def track_import(
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:297: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:297: note: Use "-> None" if function does not return a value
+src/bot/core/lazy_imports.py:302: error: Call to untyped function
+"ImportTracker" in typed context  [no-untyped-call]
+            self.import_tracker = ImportTracker()
+                                  ^~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:306: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def measure_startup_time(self, func: Callable) -> float:
+                                             ^
+src/bot/core/lazy_imports.py:393: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:393: note: Use "-> None" if function does not return a value
+src/bot/core/lazy_imports.py:433: error: Missing type parameters for generic
+type "Type"  [type-arg]
+        ) -> Type:
+             ^
+src/bot/core/lazy_imports.py:442: error: Returning Any from function declared
+to return "type[Any]"  [no-any-return]
+            return getattr(module, class_name)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:448: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        ) -> Callable:
+             ^
+src/bot/core/lazy_imports.py:457: error: Returning Any from function declared
+to return "Callable[..., Any]"  [no-any-return]
+            return getattr(module, function_name)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:459: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def unload(self, module_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:483: error: Function is missing a return type
+annotation  [no-untyped-def]
+    def lazy_import_decorator(module_name: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:493: error: Function is missing a type annotation 
+[no-untyped-def]
+        def decorator(func):
+        ^~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:495: error: Function is missing a type annotation 
+[no-untyped-def]
+            def wrapper(*args, **kwargs):
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/lazy_imports.py:510: error: Call to untyped function
+"DynamicModuleLoader" in typed context  [no-untyped-call]
+    _dynamic_loader = DynamicModuleLoader()
+                      ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/input_validator.py:236: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/input_validator.py:236: note: Use "-> None" if function does not return a value
+src/bot/core/input_validator.py:248: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        def validate_field(
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/input_validator.py:271: error: Returning Any from function
+declared to return "tuple[bool, str | None]"  [no-any-return]
+            return validator.validate(value)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/input_validator.py:317: error: Incompatible types in assignment
+(expression has type "str | None", target has type "str")  [assignment]
+                    errors[field_name] = error
+                                         ^~~~~
+src/bot/core/input_validator.py:383: error: Call to untyped function
+"InputValidator" in typed context  [no-untyped-call]
+            _input_validator_instance = InputValidator()
+                                        ^~~~~~~~~~~~~~~~
+src/bot/core/ml_anomaly_detection.py:83: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ml_anomaly_detection.py:83: note: Use "-> None" if function does not return a value
+src/bot/core/ml_anomaly_detection.py:88: error: Missing type parameters for
+generic type "deque"  [type-arg]
+            self.data: Dict[str, deque] = {}  # metric_name -> deque of va...
+                                 ^
+src/bot/core/ml_anomaly_detection.py:535: error: Need type annotation for
+"hour_counts" (hint: "hour_counts: dict[<type>, <type>] = ...")  [var-annotated]
+                hour_counts = {}
+                ^~~~~~~~~~~
+src/bot/core/ml_anomaly_detection.py:539: error: Argument "key" to "max" has
+incompatible type overloaded function; expected
+"Callable[[int], SupportsDunderLT[Any] | SupportsDunderGT[Any]]"  [arg-type]
+                most_common_hour = max(hour_counts, key=hour_counts.get)
+                                                        ^~~~~~~~~~~~~~~
+src/bot/core/ml_anomaly_detection.py:594: error: Need type annotation for
+"by_metric" (hint: "by_metric: dict[<type>, <type>] = ...")  [var-annotated]
+                by_metric = {}
+                ^~~~~~~~~
+src/bot/core/ml_anomaly_detection.py:643: error: Call to untyped function
+"MLAnomalyDetector" in typed context  [no-untyped-call]
+            _anomaly_detector = MLAnomalyDetector()
+                                ^~~~~~~~~~~~~~~~~~~
+src/bot/core/mfa_manager.py:15: error: Cannot find implementation or library
+stub for module named "pyotp"  [import-not-found]
+    import pyotp
+    ^
+src/bot/core/mfa_manager.py:16: error: Library stubs not installed for "qrcode"
+ [import-untyped]
+    import qrcode
+    ^
+src/bot/core/mfa_manager.py:16: note: Hint: "python3 -m pip install types-qrcode"
+src/bot/core/csrf_protection.py:282: error: Function "builtins.any" is not
+valid as a type  [valid-type]
+            body: Optional[Dict[str, any]] = None,
+                                     ^
+src/bot/core/csrf_protection.py:282: note: Perhaps you meant "typing.Any" instead of "any"?
+src/bot/core/advanced_analytics.py:33: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_point(self, value: float, labels: Optional[Dict[str, str]]...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/advanced_analytics.py:113: error: Missing type parameters for
+generic type "deque"  [type-arg]
+            self.event_history: deque = deque(maxlen=10000)
+                                ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:11: error:
+Skipping analyzing "cloudscraper": module is installed, but missing library
+stubs or py.typed marker  [import-untyped]
+    from cloudscraper import create_scraper
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:12: error:
+Library stubs not installed for "lxml.etree"  [import-untyped]
+    from lxml.etree import HTML
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:13: error:
+Library stubs not installed for "requests.adapters"  [import-untyped]
+    from requests.adapters import HTTPAdapter
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:23: error:
+Function is missing a type annotation  [no-untyped-def]
+    def create_session_with_retries(max_retries=10):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:39: error:
+Missing type parameters for generic type "tuple"  [type-arg]
+    def extract_password(url: str, separator: str = "::") -> tuple:
+                                                             ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:51: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def validate_json_response(json_data, error_key="message", ok_status="...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:65: error:
+Function is missing a return type annotation  [no-untyped-def]
+    def make_api_request(session, method: str, url: str, use_scraper=False...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:65: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+    def make_api_request(session, method: str, url: str, use_scraper=False...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:68: error:
+Call to untyped function "APIRequestBuilder" in typed context  [no-untyped-call]
+            builder = APIRequestBuilder(session=session)
+                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:110: error:
+Function is missing a type annotation  [no-untyped-def]
+    def get_captcha_token(session, params):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:124: error:
+Function is missing a type annotation  [no-untyped-def]
+    def cf_bypass_helper(url):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:133: error:
+Function is missing a type annotation  [no-untyped-def]
+    def handle_api_errors(func):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:154: error:
+Function is missing a type annotation  [no-untyped-def]
+        def wrapper(*args, **kwargs):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:195: error:
+Function is missing a type annotation  [no-untyped-def]
+    def validate_response(*required_keys):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:214: error:
+Function is missing a type annotation  [no-untyped-def]
+        def decorator(func):
+        ^~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:216: error:
+Function is missing a type annotation  [no-untyped-def]
+            def wrapper(*args, **kwargs):
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:234: error:
+Function is missing a return type annotation  [no-untyped-def]
+    def with_retry(max_attempts: int = 3, backoff_factor: float = 2.0, bac...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:255: error:
+Function is missing a type annotation  [no-untyped-def]
+        def decorator(func):
+        ^~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:257: error:
+Function is missing a type annotation  [no-untyped-def]
+            def wrapper(*args, **kwargs):
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:317: error:
+Function is missing a type annotation  [no-untyped-def]
+        def __init__(self, session=None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:324: error:
+Call to untyped function "create_session_with_retries" in typed context 
+[no-untyped-call]
+            self.session = session or create_session_with_retries()
+                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:358: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def with_headers(self, headers: dict) -> "APIRequestBuilder":
+                                        ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:368: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def with_json(self, data: dict) -> "APIRequestBuilder":
+                                  ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:374: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def with_data(self, data: dict) -> "APIRequestBuilder":
+                                  ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:379: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def with_form(self, data: dict) -> "APIRequestBuilder":
+                                  ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:385: error:
+Incompatible types in assignment (expression has type "float", variable has type
+"int")  [assignment]
+            self._timeout = seconds
+                            ^~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:399: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def execute(self):
+        ^~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_utils.py:431: error:
+Function is missing a return type annotation  [no-untyped-def]
+            def _make_request():
+            ^~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:8: error:
+Skipping analyzing "cloudscraper": module is installed, but missing library
+stubs or py.typed marker  [import-untyped]
+    from cloudscraper import create_scraper
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:9: error:
+Library stubs not installed for "requests"  [import-untyped]
+    from requests import Session
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:10: error:
+Library stubs not installed for "requests.adapters"  [import-untyped]
+    from requests.adapters import HTTPAdapter
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:21: error:
+Need type annotation for "DOMAINS" (hint: "DOMAINS: list[<type>] = ...") 
+[var-annotated]
+        DOMAINS = []  # Override in subclass
+        ^~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:35: error:
+Function is missing a type annotation  [no-untyped-def]
+        def create_session_with_retries(max_retries=10):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:51: error:
+Missing type parameters for generic type "tuple"  [type-arg]
+        def extract_password(url: str, separator: str = "::") -> tuple:
+                                                                 ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:63: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def validate_json_response(json_data, error_key="message", ok_stat...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:77: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def make_api_request(session, method: str, url: str, use_scraper=F...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:77: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def make_api_request(session, method: str, url: str, use_scraper=F...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:95: error:
+Function is missing a return type annotation  [no-untyped-def]
+        def make_request(self, method: str, url: str, use_scraper=False, *...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:95: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def make_request(self, method: str, url: str, use_scraper=False, *...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:105: error:
+Call to untyped function "create_session_with_retries" of "BaseHandler" in typed
+context  [no-untyped-call]
+            self.session = self.create_session_with_retries()
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:135: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def __init__(self, url: str = None, session=None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:135: error:
+Incompatible default for argument "url" (default has type "None", argument has
+type "str")  [assignment]
+        def __init__(self, url: str = None, session=None):
+                                      ^~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:135: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:135: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:138: error:
+Call to untyped function "create_session_with_retries" of "BaseHandler" in typed
+context  [no-untyped-call]
+            self.session = session or self.create_session_with_retries()
+                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:147: error:
+Need type annotation for "_errors" (hint: "_errors: list[<type>] = ...") 
+[var-annotated]
+            self._errors = []
+            ^~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:149: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def _validate_response(self, response, required_key: str = None, e...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:149: error:
+Incompatible default for argument "required_key" (default has type "None",
+argument has type "str")  [assignment]
+    ...ate_response(self, response, required_key: str = None, error_key: str ...
+                                                        ^~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:149: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:149: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:149: error:
+Missing type parameters for generic type "dict"  [type-arg]
+    ...sponse, required_key: str = None, error_key: str = "message") -> dict:
+                                                                        ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:185: error:
+Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+                return data
+                ^~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:211: error:
+Missing type parameters for generic type "list"  [type-arg]
+        def _get_errors(self) -> list:
+                                 ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:256: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def __init__(self, url: str = None, session=None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:256: error:
+Incompatible default for argument "url" (default has type "None", argument has
+type "str")  [assignment]
+        def __init__(self, url: str = None, session=None):
+                                      ^~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:256: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:256: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:259: error:
+Need type annotation for "_visited_ids" (hint:
+"_visited_ids: set[<type>] = ...")  [var-annotated]
+            self._visited_ids = set()  # Track visited to prevent loops
+            ^~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:261: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def _traverse(self, identifier, path: str = "", depth: int = 0) ->...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:285: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def _add_file(self, item_data: dict, folder_path: str = "") -> Non...
+                                       ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:297: error:
+Unsupported operand types for + ("object" and "int")  [operator]
+                self.details['file_count'] += 1
+                ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:303: error:
+"object" has no attribute "append"  [attr-defined]
+                self.details['contents'].append({
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:321: error:
+Unsupported operand types for + ("object" and "int")  [operator]
+            self.details['folder_count'] += 1
+            ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:384: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def __init__(self, url: str = None, session=None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:384: error:
+Incompatible default for argument "url" (default has type "None", argument has
+type "str")  [assignment]
+        def __init__(self, url: str = None, session=None):
+                                      ^~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:384: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:384: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:386: error:
+Need type annotation for "_token_cache" (hint:
+"_token_cache: dict[<type>, <type>] = ...")  [var-annotated]
+            self._token_cache = {}  # Cache for tokens
+            ^~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:387: error:
+Need type annotation for "_token_metadata" (hint:
+"_token_metadata: dict[<type>, <type>] = ...")  [var-annotated]
+            self._token_metadata = {}  # Track token creation time, expiry
+            ^~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:389: error:
+Function is missing a type annotation for one or more arguments 
+[no-untyped-def]
+        def get_or_create_token(self, cache_key: str, token_func, force_re...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:411: error:
+Returning Any from function declared to return "str"  [no-any-return]
+                    return cached_token
+                    ^~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:426: error:
+Returning Any from function declared to return "str"  [no-any-return]
+                return new_token
+                ^~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:434: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def _is_token_expired(self, metadata: dict, ttl_seconds: int = 360...
+                                              ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:450: error:
+Returning Any from function declared to return "bool"  [no-any-return]
+            return age > ttl_seconds
+            ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_base.py:469: error:
+Missing type parameters for generic type "dict"  [type-arg]
+        def _get_cache_stats(self) -> dict:
+                                      ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator_refactored.py:54: error:
+Argument 1 to "module_from_spec" has incompatible type "ModuleSpec | None";
+expected "ModuleSpec"  [arg-type]
+        _original = importlib.util.module_from_spec(spec)
+                                                    ^~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator_refactored.py:56: error:
+Item "None" of "ModuleSpec | None" has no attribute "loader"  [union-attr]
+            spec.loader.exec_module(_original)
+            ^~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator_refactored.py:56: error:
+Item "None" of "Loader | Any | None" has no attribute "exec_module" 
+[union-attr]
+            spec.loader.exec_module(_original)
+            ^~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_generator_refactored.py:119: error:
+Returning Any from function declared to return "str"  [no-any-return]
+            return result
+            ^~~~~~~~~~~~~
+src/bot/core/secrets_manager.py:50: error: Missing type parameters for generic
+type "list"  [type-arg]
+            self.access_log: Dict[str, list] = {}
+                                       ^
+src/bot/core/secrets_manager.py:63: error: Incompatible types in assignment
+(expression has type "bytes", variable has type "str")  [assignment]
+                key = key.encode()
+                      ^~~~~~~~~~~~
+src/bot/core/secrets_manager.py:76: error: Incompatible return value type (got
+"str", expected "bytes")  [return-value]
+            return key
+                   ^~~
+src/bot/core/secrets_manager.py:205: error: Missing type parameters for generic
+type "list"  [type-arg]
+        def get_access_log(self, secret_name: str) -> list:
+                                                      ^
+src/bot/core/secrets_manager.py:232: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/secrets_manager.py:232: note: Use "-> None" if function does not return a value
+src/bot/core/secrets_manager.py:463: error: Call to untyped function
+"EnvironmentSecretsManager" in typed context  [no-untyped-call]
+            _env_secrets_instance = EnvironmentSecretsManager()
+                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/zero_copy_uploader.py:98: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        def _fallback_send(
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/helper/telegram_helper/bot_commands.py:3: error: "type[Config]" has no
+attribute "CMD_SUFFIX"  [attr-defined]
+    i = Config.CMD_SUFFIX
+        ^~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:14: error:
+Skipping analyzing "cloudscraper": module is installed, but missing library
+stubs or py.typed marker  [import-untyped]
+    from cloudscraper import create_scraper
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:15: error:
+Library stubs not installed for "lxml.etree"  [import-untyped]
+    from lxml.etree import HTML
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:16: error:
+Library stubs not installed for "requests"  [import-untyped]
+    from requests import get
+    ^
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:26: error:
+Function is missing a type annotation  [no-untyped-def]
+    def streamtape(url):
+    ^~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:43: error:
+Function is missing a type annotation  [no-untyped-def]
+    def doods(url):
+    ^~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:71: error:
+Function is missing a type annotation  [no-untyped-def]
+    def filelions_and_streamwish(url):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:87: error:
+"type[Config]" has no attribute "FILELION_API"  [attr-defined]
+            apiKey = Config.FILELION_API
+                     ^~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:99: error:
+"type[Config]" has no attribute "STREAMWISH_API"  [attr-defined]
+            apiKey = Config.STREAMWISH_API
+                     ^~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:140: error:
+Function is missing a return type annotation  [no-untyped-def]
+    def streamvid(url: str):
+    ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_streaming.py:192: error:
+Function is missing a type annotation  [no-untyped-def]
+    def streamhub(url):
+    ^~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:40: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_metric(self, duration: float):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:46: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+        def get_stats(self) -> Dict:
+                               ^
+src/bot/core/profiler.py:74: error: Missing type parameters for generic type
+"tuple"  [type-arg]
+        _context_stack: List[tuple] = []
+                             ^
+src/bot/core/profiler.py:76: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:81: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:81: note: Use "-> None" if function does not return a value
+src/bot/core/profiler.py:87: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def enable(self):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:87: note: Use "-> None" if function does not return a value
+src/bot/core/profiler.py:102: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def profile_sync(self, operation: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:123: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def profile_async(self, operation: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:143: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _record_metric(self, operation: str, duration: float):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:166: error: Incompatible return value type (got
+"Timer | DummyTimer", expected "Timer")  [return-value]
+            return Timer(self, operation) if self._enabled else DummyTimer...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:168: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+        def get_stats(self, operation: Optional[str] = None) -> Dict:
+                                                                ^
+src/bot/core/profiler.py:196: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+    ...erations(self, threshold: float = 1.0, limit: int = 10) -> List[Dict]:
+                                                                       ^
+src/bot/core/profiler.py:222: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def reset(self, operation: Optional[str] = None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/profiler.py:294: error: Call to untyped function "Profiler" in
+typed context  [no-untyped-call]
+    profiler = Profiler()
+               ^~~~~~~~~~
+src/bot/core/logger_manager.py:57: error: Need type annotation for "_handlers"
+(hint: "_handlers: list[<type>] = ...")  [var-annotated]
+        _handlers = []
+        ^~~~~~~~~
+src/bot/core/logger_manager.py:59: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:64: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def enable(self):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:64: note: Use "-> None" if function does not return a value
+src/bot/core/logger_manager.py:69: error: Call to untyped function
+"_setup_json_logging" in typed context  [no-untyped-call]
+                self._setup_json_logging()
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:74: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _setup_json_logging(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:74: note: Use "-> None" if function does not return a value
+src/bot/core/logger_manager.py:124: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log_custom_event(
+        ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:158: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log_download(
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:174: error: Argument "event_type" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                event_type="download",
+                           ^~~~~~~~~~
+src/bot/core/logger_manager.py:175: error: Argument "task_id" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                task_id=task_id,
+                        ^~~~~~~
+src/bot/core/logger_manager.py:176: error: Argument "filename" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                filename=filename,
+                         ^~~~~~~~
+src/bot/core/logger_manager.py:177: error: Argument "size_bytes" to
+"log_custom_event" of "LoggerManager" has incompatible type "int"; expected
+"dict[str, Any]"  [arg-type]
+                size_bytes=size_bytes,
+                           ^~~~~~~~~~
+src/bot/core/logger_manager.py:178: error: Argument "duration_seconds" to
+"log_custom_event" of "LoggerManager" has incompatible type "float"; expected
+"dict[str, Any]"  [arg-type]
+                duration_seconds=duration,
+                                 ^~~~~~~~
+src/bot/core/logger_manager.py:179: error: Argument "speed_mbps" to
+"log_custom_event" of "LoggerManager" has incompatible type "float"; expected
+"dict[str, Any]"  [arg-type]
+                speed_mbps=speed,
+                           ^~~~~
+src/bot/core/logger_manager.py:180: error: Argument "status" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                status=status,
+                       ^~~~~~
+src/bot/core/logger_manager.py:183: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log_upload(
+        ^~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:198: error: Argument "event_type" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                event_type="upload",
+                           ^~~~~~~~
+src/bot/core/logger_manager.py:199: error: Argument "task_id" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                task_id=task_id,
+                        ^~~~~~~
+src/bot/core/logger_manager.py:200: error: Argument "destination" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                destination=destination,
+                            ^~~~~~~~~~~
+src/bot/core/logger_manager.py:201: error: Argument "size_bytes" to
+"log_custom_event" of "LoggerManager" has incompatible type "int"; expected
+"dict[str, Any]"  [arg-type]
+                size_bytes=size_bytes,
+                           ^~~~~~~~~~
+src/bot/core/logger_manager.py:202: error: Argument "duration_seconds" to
+"log_custom_event" of "LoggerManager" has incompatible type "float"; expected
+"dict[str, Any]"  [arg-type]
+                duration_seconds=duration,
+                                 ^~~~~~~~
+src/bot/core/logger_manager.py:203: error: Argument "status" to
+"log_custom_event" of "LoggerManager" has incompatible type "str"; expected
+"dict[str, Any]"  [arg-type]
+                status=status,
+                       ^~~~~~
+src/bot/core/logger_manager.py:206: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log_error_event(
+        ^~~~~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:225: error: Incompatible types in assignment
+(expression has type "dict[str, Any]", target has type "str")  [assignment]
+                extra["context"] = context
+                                   ^~~~~~~
+src/bot/core/logger_manager.py:227: error: Argument 3 to "log_custom_event" of
+"LoggerManager" has incompatible type "**dict[str, str]"; expected
+"dict[str, Any]"  [arg-type]
+    ...       self.log_custom_event("ERROR", f"Error: {error_type}", **extra)
+                                                                       ^~~~~
+src/bot/core/logger_manager.py:227: note: "dict" is invariant -- see https://mypy.readthedocs.io/en/stable/common_issues.html#variance
+src/bot/core/logger_manager.py:227: note: Consider using "Mapping" instead, which is covariant in the value type
+src/bot/core/logger_manager.py:229: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def log_performance_event(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:249: error: Argument 3 to "log_custom_event" of
+"LoggerManager" has incompatible type "**dict[str, object]"; expected
+"dict[str, Any]"  [arg-type]
+    ...    self.log_custom_event("INFO", f"Performance: {operation}", **data)
+                                                                        ^~~~
+src/bot/core/logger_manager.py:249: note: "dict" is invariant -- see https://mypy.readthedocs.io/en/stable/common_issues.html#variance
+src/bot/core/logger_manager.py:249: note: Consider using "Mapping" instead, which is covariant in the value type
+src/bot/core/logger_manager.py:251: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def close(self):
+        ^~~~~~~~~~~~~~~~
+src/bot/core/logger_manager.py:251: note: Use "-> None" if function does not return a value
+src/bot/core/logger_manager.py:290: error: Call to untyped function
+"LoggerManager" in typed context  [no-untyped-call]
+    logger_manager = LoggerManager()
+                     ^~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:70: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:70: note: Use "-> None" if function does not return a value
+src/bot/core/zombie_reaper.py:366: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def start_auto_reap(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:366: note: Use "-> None" if function does not return a value
+src/bot/core/zombie_reaper.py:386: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def stop_auto_reap(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:386: note: Use "-> None" if function does not return a value
+src/bot/core/zombie_reaper.py:413: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:413: note: Use "-> None" if function does not return a value
+src/bot/core/zombie_reaper.py:464: error: Incompatible return value type (got
+"dict[str, float]", expected "dict[str, int]")  [return-value]
+            return recovered
+                   ^~~~~~~~~
+src/bot/core/zombie_reaper.py:515: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def guard_process(self, pid: int, name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:573: error: Call to untyped function
+"ProcessMonitor" in typed context  [no-untyped-call]
+        monitor = ProcessMonitor()
+                  ^~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:580: error: Call to untyped function
+"ProcessMonitor" in typed context  [no-untyped-call]
+        monitor = ProcessMonitor()
+                  ^~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:585: error: Function is missing a return type
+annotation  [no-untyped-def]
+    async def start_reaper_daemon(interval: int = 60):
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:592: error: Call to untyped function
+"ProcessMonitor" in typed context  [no-untyped-call]
+        monitor = ProcessMonitor()
+                  ^~~~~~~~~~~~~~~~
+src/bot/core/zombie_reaper.py:596: error: Call to untyped function
+"start_auto_reap" in typed context  [no-untyped-call]
+        await reaper.start_auto_reap()
+              ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/web3_ipfs_storage.py:294: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+            self.storage_index: Dict[str, Dict] = {}  # filename -> metada...
+                                          ^
+src/bot/core/web3_ipfs_storage.py:295: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+            self.cid_to_metadata: Dict[str, Dict] = {}  # CID -> metadata
+                                            ^
+src/bot/core/web3_ipfs_storage.py:345: error: Generator has incompatible item
+type "int"; expected "bool"  [misc]
+                1 for r in results
+                ^
+src/bot/core/web3_ipfs_storage.py:346: error: Item "BaseException" of
+"IPFSUploadResult | BaseException" has no attribute "success"  [union-attr]
+                if not isinstance(r, Exception) and r.success
+                                                    ^~~~~~~~~
+src/bot/core/web3_ipfs_storage.py:353: error: List comprehension has
+incompatible type List[IPFSUploadResult | BaseException]; expected
+List[IPFSUploadResult]  [misc]
+            return [r for r in results if not isinstance(r, Exception)]
+                    ^
+src/bot/core/web3_ipfs_storage.py:363: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def search_by_filename(self, filename: str) -> Optional[Dict]:
+                                                                ^
+src/bot/core/web3_ipfs_storage.py:367: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def search_by_cid(self, cid: str) -> Optional[Dict]:
+                                                      ^
+src/bot/core/web3_ipfs_storage.py:371: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def get_all_stored_files(self) -> List[Dict]:
+                                               ^
+src/bot/core/stream_weaver.py:87: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:87: note: Use "-> None" if function does not return a value
+src/bot/core/stream_weaver.py:89: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+            self.master_playlist: Optional[Dict] = None
+                                           ^
+src/bot/core/stream_weaver.py:90: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+            self.media_playlists: Dict[str, Dict] = {}
+                                            ^
+src/bot/core/stream_weaver.py:140: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def _parse_stream_info(self, line: str) -> Dict:
+                                                   ^
+src/bot/core/stream_weaver.py:152: error: Incompatible types in assignment
+(expression has type "tuple[int, int]", target has type "int")  [assignment]
+                info['resolution'] = (
+                                     ^
+src/bot/core/stream_weaver.py:157: error: Incompatible types in assignment
+(expression has type "tuple[int, int]", target has type "int")  [assignment]
+                info['resolution'] = (1920, 1080)  # Default
+                                     ^~~~~~~~~~~~
+src/bot/core/stream_weaver.py:162: error: Incompatible types in assignment
+(expression has type "list[str] | Any", target has type "int")  [assignment]
+                info['codecs'] = codecs_match.group(1).split(',')
+                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:164: error: Incompatible types in assignment
+(expression has type "list[str]", target has type "int")  [assignment]
+                info['codecs'] = ['avc1', 'mp4a']  # Default
+                                 ^~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:246: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:246: note: Use "-> None" if function does not return a value
+src/bot/core/stream_weaver.py:298: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:298: note: Use "-> None" if function does not return a value
+src/bot/core/stream_weaver.py:369: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:369: note: Use "-> None" if function does not return a value
+src/bot/core/stream_weaver.py:371: error: Call to untyped function "HLSParser"
+in typed context  [no-untyped-call]
+            self.hls_parser = HLSParser()
+                              ^~~~~~~~~~~
+src/bot/core/stream_weaver.py:372: error: Call to untyped function "DASHParser"
+in typed context  [no-untyped-call]
+            self.dash_parser = DASHParser()
+                               ^~~~~~~~~~~~
+src/bot/core/stream_weaver.py:373: error: Call to untyped function "DRMHandler"
+in typed context  [no-untyped-call]
+            self.drm_handler = DRMHandler()
+                               ^~~~~~~~~~~~
+src/bot/core/stream_weaver.py:593: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _process_segment(self, segment_file: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:601: error: Call to untyped function
+"StreamWeaver" in typed context  [no-untyped-call]
+        weaver = StreamWeaver()
+                 ^~~~~~~~~~~~~~
+src/bot/core/stream_weaver.py:611: error: Call to untyped function
+"StreamWeaver" in typed context  [no-untyped-call]
+        weaver = StreamWeaver()
+                 ^~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:100: error: Unsupported operand types for * ("None"
+and "float")  [operator]
+            jitter = int(delay * 0.1)
+                         ^
+src/bot/core/smart_retry.py:100: note: Left operand is of type "int | None"
+src/bot/core/smart_retry.py:102: error: Unsupported operand types for + ("None"
+and "int")  [operator]
+            return delay + random.randint(-jitter, jitter)
+                   ^
+src/bot/core/smart_retry.py:102: note: Left operand is of type "int | None"
+src/bot/core/smart_retry.py:124: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:124: note: Use "-> None" if function does not return a value
+src/bot/core/smart_retry.py:127: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self._watchers: List[Callable] = []
+                                 ^
+src/bot/core/smart_retry.py:129: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def add(self, failure: FailureContext):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:147: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def remove(self, task_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:183: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_watcher(self, callback: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:183: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def add_watcher(self, callback: Callable):
+                                        ^
+src/bot/core/smart_retry.py:191: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:191: note: Use "-> None" if function does not return a value
+src/bot/core/smart_retry.py:194: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def save_checkpoint(self, task_id: str, data: Dict[str, Any]):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:208: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def delete_checkpoint(self, task_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:213: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def clear_old_checkpoints(self, max_age_hours: int = 24):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:232: error: Incompatible default for argument
+"error_message" (default has type "None", argument has type "str")  [assignment]
+    ...ify_error(error: Exception, error_message: str = None) -> FailureType:
+                                                        ^~~~
+src/bot/core/smart_retry.py:232: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/smart_retry.py:232: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/smart_retry.py:273: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:273: note: Use "-> None" if function does not return a value
+src/bot/core/smart_retry.py:274: error: Call to untyped function
+"DeadLetterQueue" in typed context  [no-untyped-call]
+            self.dlq = DeadLetterQueue()
+                       ^~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:275: error: Call to untyped function
+"CheckpointManager" in typed context  [no-untyped-call]
+            self.checkpoints = CheckpointManager()
+                               ^~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:276: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self._retry_tasks: Dict[str, asyncio.Task] = {}
+                                         ^
+src/bot/core/smart_retry.py:278: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def handle_failure(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:283: error: Incompatible default for argument
+"metadata" (default has type "None", argument has type "dict[str, Any]") 
+[assignment]
+            metadata: Dict[str, Any] = None,
+                                       ^~~~
+src/bot/core/smart_retry.py:283: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/smart_retry.py:283: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/smart_retry.py:284: error: Incompatible default for argument
+"checkpoint" (default has type "None", argument has type "dict[str, Any]") 
+[assignment]
+            checkpoint: Dict[str, Any] = None,
+                                         ^~~~
+src/bot/core/smart_retry.py:284: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/smart_retry.py:284: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/smart_retry.py:312: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def record_retry(self, task_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:325: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def processor_loop(self, retry_callback: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:325: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        async def processor_loop(self, retry_callback: Callable):
+                                                       ^
+src/bot/core/smart_retry.py:375: error: Call to untyped function
+"DeadLetterQueue" in typed context  [no-untyped-call]
+    dlq = DeadLetterQueue()
+          ^~~~~~~~~~~~~~~~~
+src/bot/core/smart_retry.py:376: error: Call to untyped function
+"SmartRetryEngine" in typed context  [no-untyped-call]
+    smart_retry = SmartRetryEngine()
+                  ^~~~~~~~~~~~~~~~~~
+src/bot/core/smart_notifications.py:133: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_notifications.py:133: note: Use "-> None" if function does not return a value
+src/bot/core/smart_notifications.py:142: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+    ...       self.channel_handlers: Dict[NotificationChannel, Callable] = {}
+                                                               ^
+src/bot/core/smart_notifications.py:145: error: Missing type parameters for
+generic type "Queue"  [type-arg]
+            self.queue: asyncio.Queue = asyncio.Queue()
+                        ^
+src/bot/core/smart_notifications.py:146: error: Missing type parameters for
+generic type "Task"  [type-arg]
+            self._worker_task: Optional[asyncio.Task] = None
+                                        ^
+src/bot/core/smart_notifications.py:175: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        def update_rule(self, rule_id: str, **updates) -> bool:
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/smart_notifications.py:210: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            handler: Callable
+                     ^
+src/bot/core/smart_notifications.py:542: error: Call to untyped function
+"SmartNotificationSystem" in typed context  [no-untyped-call]
+            _notification_system = SmartNotificationSystem()
+                                   ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/replication_sync_engine.py:49: error: Missing type parameters for
+generic type "Task"  [type-arg]
+            self._replication_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/replication_sync_engine.py:50: error: Missing type parameters for
+generic type "Task"  [type-arg]
+            self._lag_monitor_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/replication_sync_engine.py:51: error: Missing type parameters for
+generic type "Task"  [type-arg]
+            self._log_cleanup_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/recovery_manager.py:25: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+    ...it__(self, path: str, is_valid: bool, details: Optional[Dict] = None):
+                                                               ^
+src/bot/core/recovery_manager.py:42: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:47: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:47: note: Use "-> None" if function does not return a value
+src/bot/core/recovery_manager.py:52: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def enable(self):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:52: note: Use "-> None" if function does not return a value
+src/bot/core/recovery_manager.py:71: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        ) -> Tuple[bool, Dict]:
+                         ^
+src/bot/core/recovery_manager.py:95: error: "object" has no attribute "append" 
+[attr-defined]
+                details["errors"].append(f"Path does not exist: {path}")
+                ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:104: error: "object" has no attribute "append"
+ [attr-defined]
+                    details["errors"].append(f"Hash calculation failed: {e...
+                    ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:112: error: "object" has no attribute "extend"
+ [attr-defined]
+                    details["errors"].extend(structure_errors)
+                    ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:114: error: Argument 1 to "len" has
+incompatible type "object"; expected "Sized"  [arg-type]
+            is_valid = len(details["errors"]) == 0
+                           ^~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:213: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        ) -> Dict:
+             ^
+src/bot/core/recovery_manager.py:241: error: Unsupported operand types for +
+("object" and "int")  [operator]
+                        report["valid_paths"] += 1
+                        ^
+src/bot/core/recovery_manager.py:242: error: "object" has no attribute "append"
+ [attr-defined]
+                        report["details"].append({
+                        ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:255: error: Unsupported operand types for +
+("object" and "int")  [operator]
+                            report["repaired_paths"] += 1
+                            ^
+src/bot/core/recovery_manager.py:256: error: "object" has no attribute "append"
+ [attr-defined]
+                            report["details"].append({
+                            ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:261: error: Unsupported operand types for +
+("object" and "int")  [operator]
+                            report["failed_paths"] += 1
+                            ^
+src/bot/core/recovery_manager.py:262: error: "object" has no attribute "append"
+ [attr-defined]
+                            report["details"].append({
+                            ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:269: error: Unsupported operand types for +
+("object" and "int")  [operator]
+                    report["failed_paths"] += 1
+                    ^
+src/bot/core/recovery_manager.py:270: error: "object" has no attribute "append"
+ [attr-defined]
+                    report["details"].append({
+                    ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/recovery_manager.py:283: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def get_integrity_history(self, limit: int = 50) -> List[Dict]:
+                                                                 ^
+src/bot/core/recovery_manager.py:299: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+        def get_recovery_status(self) -> Dict:
+                                         ^
+src/bot/core/recovery_manager.py:317: error: Call to untyped function
+"RecoveryManager" in typed context  [no-untyped-call]
+    recovery_manager = RecoveryManager()
+                       ^~~~~~~~~~~~~~~~~
+src/bot/core/rate_limiter.py:111: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/rate_limiter.py:111: note: Use "-> None" if function does not return a value
+src/bot/core/rate_limiter.py:126: error: Call to untyped function "RateLimiter"
+in typed context  [no-untyped-call]
+                cls._instance = RateLimiter()
+                                ^~~~~~~~~~~~~
+src/bot/core/query_optimizer.py:25: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/query_optimizer.py:25: note: Use "-> None" if function does not return a value
+src/bot/core/query_optimizer.py:37: error: Call to untyped function
+"QueryOptimizer" in typed context  [no-untyped-call]
+                cls._instance = QueryOptimizer()
+                                ^~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:58: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        execute_callback: Optional[Callable] = None
+                                   ^
+src/bot/core/priority_queue.py:59: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        progress_callback: Optional[Callable] = None
+                                    ^
+src/bot/core/priority_queue.py:87: error: Incompatible types in assignment
+(expression has type "float", variable has type "int")  [assignment]
+                size_bonus = 2.0
+                             ^~~
+src/bot/core/priority_queue.py:161: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def complete(self, task_id: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:170: error: Item "None" of "timedelta | None"
+has no attribute "total_seconds"  [union-attr]
+    ...              f"✅ Task '{task_id}' completed ({task.total_duration().t...
+                                                        ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/priority_queue.py:173: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def fail(self, task_id: str, reason: str = "Unknown"):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:191: error: Item "None" of "timedelta | None"
+has no attribute "total_seconds"  [union-attr]
+                exec_times = [t.total_duration().total_seconds() for t in ...
+                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:236: error: Incompatible default for argument
+"new_priority" (default has type "None", argument has type "TaskPriority") 
+[assignment]
+    ...equeue(self, task_id: str, new_priority: TaskPriority = None) -> bool:
+                                                               ^~~~
+src/bot/core/priority_queue.py:236: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/priority_queue.py:236: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/priority_queue.py:256: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:256: note: Use "-> None" if function does not return a value
+src/bot/core/priority_queue.py:258: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self._dispatcher_tasks: Dict[str, asyncio.Task] = {}
+                                              ^
+src/bot/core/priority_queue.py:259: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self._executors: Dict[str, Callable] = {}
+                                       ^
+src/bot/core/priority_queue.py:262: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def create_queue(self, name: str, max_concurrent: int = 3):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:277: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            execute_callback: Optional[Callable] = None,
+                                       ^
+src/bot/core/priority_queue.py:298: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def set_executor(self, queue_name: str, executor: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:298: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        async def set_executor(self, queue_name: str, executor: Callable):
+                                                                ^
+src/bot/core/priority_queue.py:303: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def start_dispatcher(self, queue_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:316: error: Function is missing a return type
+annotation  [no-untyped-def]
+            async def dispatch_loop():
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:316: note: Use "-> None" if function does not return a value
+src/bot/core/priority_queue.py:341: error: Call to untyped function
+"dispatch_loop" in typed context  [no-untyped-call]
+            task = asyncio.create_task(dispatch_loop())
+                                       ^~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:381: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def log_stats(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:381: note: Use "-> None" if function does not return a value
+src/bot/core/priority_queue.py:397: error: Call to untyped function
+"DynamicQueueManager" in typed context  [no-untyped-call]
+    queue_manager = DynamicQueueManager()
+                    ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:400: error: Function is missing a return type
+annotation  [no-untyped-def]
+    async def initialize_queue_system():
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/priority_queue.py:400: note: Use "-> None" if function does not return a value
+src/bot/core/performance_scaling_engine.py:37: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_scaling_engine.py:37: note: Use "-> None" if function does not return a value
+src/bot/core/performance_scaling_engine.py:170: error: Function is missing a
+type annotation for one or more arguments  [no-untyped-def]
+        async def analysis_loop(self, get_snapshots_fn, node_ids_fn) -> No...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_profiler.py:20: error: Library stubs not installed for
+"psutil"  [import-untyped]
+    import psutil
+    ^
+src/bot/core/performance_profiler.py:78: error: Missing type parameters for
+generic type "deque"  [type-arg]
+            self.metrics: Dict[str, deque] = defaultdict(lambda: deque(max...
+                                    ^
+src/bot/core/performance_profiler.py:91: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def profile(self, name: Optional[str] = None, context: Optional[Di...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:100: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            def decorator(func: Callable) -> Callable:
+                                ^
+src/bot/core/performance_profiler.py:105: error: Function is missing a type
+annotation  [no-untyped-def]
+                    async def async_wrapper(*args, **kwargs):
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_profiler.py:110: error: Function is missing a type
+annotation  [no-untyped-def]
+                    def sync_wrapper(*args, **kwargs):
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_profiler.py:116: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _profile_sync(self, func: Callable, func_name: str, ctx: Dict[...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:116: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        def _profile_sync(self, func: Callable, func_name: str, ctx: Dict[...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:116: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+        def _profile_sync(self, func: Callable, func_name: str, ctx: Dict[...
+                                      ^
+src/bot/core/performance_profiler.py:146: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def _profile_async(self, func: Callable, func_name: str, ctx...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:146: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        async def _profile_async(self, func: Callable, func_name: str, ctx...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:146: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+        async def _profile_async(self, func: Callable, func_name: str, ctx...
+                                             ^
+src/bot/core/performance_profiler.py:176: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _record_metric(self, metric: PerformanceMetric, error: bool = ...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_profiler.py:208: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _update_percentiles(self, func_name: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_profiler.py:290: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def clear_metrics(self, func_name: Optional[str] = None):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_profiler.py:350: error: Function is missing a return
+type annotation  [no-untyped-def]
+    def profile(name: Optional[str] = None, context: Optional[Dict[str, An...
+    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/performance_metrics_collector.py:27: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/performance_metrics_collector.py:27: note: Use "-> None" if function does not return a value
+src/bot/core/performance_metrics_collector.py:114: error: Missing type
+parameters for generic type "set"  [type-arg]
+        def set_node_info(self, node_id: str, peers: set) -> None:
+                                                     ^
+src/bot/core/parallel_downloads.py:68: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            chunk_download_callbacks: Dict[int, Callable],
+                                                ^
+src/bot/core/parallel_downloads.py:191: error: Missing type parameters for
+generic type "tuple"  [type-arg]
+            self._speed_samples: List[tuple] = []  # (timestamp, bytes_per...
+                                      ^
+src/bot/core/parallel_downloads.py:218: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+    ...     download_callback: Callable[[int, int, int, Callable], asyncio.Ta...
+                                                        ^
+src/bot/core/parallel_downloads.py:218: error: Missing type parameters for
+generic type "Task"  [type-arg]
+    ... download_callback: Callable[[int, int, int, Callable], asyncio.Task],
+                                                               ^
+src/bot/core/parallel_downloads.py:264: error: Call to untyped function
+"_cleanup_chunks" in typed context  [no-untyped-call]
+                    self._cleanup_chunks()
+                    ^~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:265: error: Call to untyped function
+"_log_performance" in typed context  [no-untyped-call]
+                    self._log_performance()
+                    ^~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:276: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            download_callback: Callable,
+                               ^
+src/bot/core/parallel_downloads.py:277: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            progress_callback: Optional[Callable],
+                                        ^
+src/bot/core/parallel_downloads.py:290: error: Function is missing a return
+type annotation  [no-untyped-def]
+                async def write_chunk(data: bytes):
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:325: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def _call_progress_callback(self, callback: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:325: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+        async def _call_progress_callback(self, callback: Callable):
+                                                          ^
+src/bot/core/parallel_downloads.py:348: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _cleanup_chunks(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:348: note: Use "-> None" if function does not return a value
+src/bot/core/parallel_downloads.py:358: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _log_performance(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:358: note: Use "-> None" if function does not return a value
+src/bot/core/parallel_downloads.py:386: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def pause(self):
+        ^~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:386: note: Use "-> None" if function does not return a value
+src/bot/core/parallel_downloads.py:393: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def resume(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/parallel_downloads.py:393: note: Use "-> None" if function does not return a value
+src/bot/core/mtproto_parallel_uploader.py:34: error: Function is missing a type
+annotation  [no-untyped-def]
+        def __init__(self, client):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/mtproto_parallel_uploader.py:117: error: Returning Any from
+function declared to return "str"  [no-any-return]
+            return response.photo.file_id
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/monitoring.py:32: error: Missing type parameters for generic type
+"list"  [type-arg]
+        issues: list = field(default_factory=list)
+                ^
+src/bot/core/monitoring.py:47: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/monitoring.py:47: note: Use "-> None" if function does not return a value
+src/bot/core/monitoring.py:55: error: Function "builtins.callable" is not valid
+as a type  [valid-type]
+            check_func: callable,
+                        ^
+src/bot/core/monitoring.py:55: note: Perhaps you meant "typing.Callable" instead of "callable"?
+src/bot/core/monitoring.py:127: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/monitoring.py:127: note: Use "-> None" if function does not return a value
+src/bot/core/monitoring.py:195: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/monitoring.py:195: note: Use "-> None" if function does not return a value
+src/bot/core/monitoring.py:199: error: Incompatible default for argument
+"metadata" (default has type "None", argument has type "dict[str, Any]") 
+[assignment]
+    ...t_trace(self, operation: str, metadata: Dict[str, Any] = None) -> str:
+                                                                ^~~~
+src/bot/core/monitoring.py:199: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/monitoring.py:199: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/monitoring.py:247: error: Returning Any from function declared to
+return "dict[str, Any] | None"  [no-any-return]
+            return trace
+            ^~~~~~~~~~~~
+src/bot/core/monitoring.py:251: error: Call to untyped function
+"SystemHealthMonitor" in typed context  [no-untyped-call]
+    health_monitor = SystemHealthMonitor()
+                     ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/monitoring.py:252: error: Call to untyped function "SLAMonitor" in
+typed context  [no-untyped-call]
+    sla_monitor = SLAMonitor()
+                  ^~~~~~~~~~~~
+src/bot/core/monitoring.py:253: error: Call to untyped function
+"DistributedTracer" in typed context  [no-untyped-call]
+    distributed_tracer = DistributedTracer()
+                         ^~~~~~~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:168: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                        return data[0]
+                        ^~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:176: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _strip_metadata(self, file_path: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:216: error: Generator has incompatible item
+type "int"; expected "bool"  [misc]
+                1 for r in results
+                ^
+src/bot/core/metadata_stripper.py:217: error: Item "BaseException" of
+"StripResult | BaseException" has no attribute "success"  [union-attr]
+                if not isinstance(r, Exception) and r.success
+                                                    ^~~~~~~~~
+src/bot/core/metadata_stripper.py:224: error: List comprehension has
+incompatible type List[StripResult | BaseException]; expected List[StripResult] 
+[misc]
+            return [r for r in results if not isinstance(r, Exception)]
+                    ^
+src/bot/core/metadata_stripper.py:286: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:286: note: Use "-> None" if function does not return a value
+src/bot/core/metadata_stripper.py:288: error: Missing type parameters for
+generic type "Dict"  [type-arg]
+            self.findings: List[Dict] = []
+                                ^
+src/bot/core/metadata_stripper.py:348: error: List comprehension has
+incompatible type List[dict[str, Any] | BaseException]; expected List[dict[str,
+Any]]  [misc]
+            return [r for r in results if not isinstance(r, Exception)]
+                    ^
+src/bot/core/metadata_stripper.py:440: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _save_json_sync(file_path: Path, data: Dict[str, Any]):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:449: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                return json.load(f)
+                ^~~~~~~~~~~~~~~~~~~
+src/bot/core/metadata_stripper.py:461: error: Call to untyped function
+"PrivacyAnalyzer" in typed context  [no-untyped-call]
+        analyzer = PrivacyAnalyzer()
+                   ^~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:94: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def open(self):
+        ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:94: note: Use "-> None" if function does not return a value
+src/bot/core/memory_mapped_files.py:116: error: Item "None" of "Any | None" has
+no attribute "fileno"  [union-attr]
+                self.file_handle.fileno(),
+                ^~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:139: error: Call to untyped function "open"
+in typed context  [no-untyped-call]
+                await self.open()
+                      ^~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:141: error: Item "None" of "mmap | None"
+has no attribute "seek"  [union-attr]
+            self.mmap_obj.seek(position)
+            ^~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:142: error: Item "None" of "mmap | None"
+has no attribute "read"  [union-attr]
+            data = self.mmap_obj.read(size)
+                   ^~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:146: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def write(self, position: int, data: bytes):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:155: error: Call to untyped function "open"
+in typed context  [no-untyped-call]
+                await self.open()
+                      ^~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:160: error: Item "None" of "mmap | None"
+has no attribute "seek"  [union-attr]
+            self.mmap_obj.seek(position)
+            ^~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:161: error: Item "None" of "mmap | None"
+has no attribute "write"  [union-attr]
+            self.mmap_obj.write(data)
+            ^~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:176: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def iter_chunks(self, chunk_size: int = 8 * 1024 * 1024):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:187: error: Call to untyped function "open"
+in typed context  [no-untyped-call]
+                await self.open()
+                      ^~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:191: error: Unsupported operand types for <
+("int" and "None")  [operator]
+            while position < self.map_length:
+                  ^
+src/bot/core/memory_mapped_files.py:191: note: Right operand is of type "int | None"
+src/bot/core/memory_mapped_files.py:192: error: Unsupported operand types for -
+("None" and "int")  [operator]
+                size = min(chunk_size, self.map_length - position)
+                                       ^
+src/bot/core/memory_mapped_files.py:192: note: Left operand is of type "int | None"
+src/bot/core/memory_mapped_files.py:227: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def close(self):
+        ^~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:227: note: Use "-> None" if function does not return a value
+src/bot/core/memory_mapped_files.py:239: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def __aenter__(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:241: error: Call to untyped function "open"
+in typed context  [no-untyped-call]
+            await self.open()
+                  ^~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:244: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:246: error: Call to untyped function
+"close" in typed context  [no-untyped-call]
+            await self.close()
+                  ^~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:339: error: Argument "bytes_processed" to
+"ProcessStats" has incompatible type "float"; expected "int"  [arg-type]
+                bytes_processed=self.stats["bytes_processed"],
+                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:346: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def _process_chunk(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:425: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:425: note: Use "-> None" if function does not return a value
+src/bot/core/memory_mapped_files.py:497: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _preallocate_file_sync(dest_path: str, file_size: int):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:508: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:508: note: Use "-> None" if function does not return a value
+src/bot/core/memory_mapped_files.py:586: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def _preallocate_file_sync(dest_path: str, file_size: int):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:601: error: Call to untyped function
+"MMapCopier" in typed context  [no-untyped-call]
+        copier = MMapCopier()
+                 ^~~~~~~~~~~~
+src/bot/core/memory_mapped_files.py:607: error: Call to untyped function
+"MMapSearcher" in typed context  [no-untyped-call]
+        searcher = MMapSearcher()
+                   ^~~~~~~~~~~~~~
+src/bot/core/media_info.py:49: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/media_info.py:49: note: Use "-> None" if function does not return a value
+src/bot/core/media_info.py:53: error: Call to untyped function
+"_check_dependencies" in typed context  [no-untyped-call]
+            self._check_dependencies()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/media_info.py:55: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _check_dependencies(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/media_info.py:55: note: Use "-> None" if function does not return a value
+src/bot/core/media_info.py:63: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+        async def get_media_info(self, file_path: str) -> Optional[Dict]:
+                                                                   ^
+src/bot/core/media_info.py:145: error: Missing type parameters for generic type
+"dict"  [type-arg]
+        def _parse_format(self, format_data: dict) -> dict:
+                                             ^
+src/bot/core/media_info.py:157: error: Missing type parameters for generic type
+"dict"  [type-arg]
+        def _parse_video_stream(self, stream: dict) -> dict:
+                                              ^
+src/bot/core/media_info.py:167: error: Incompatible types in assignment
+(expression has type "float | int", variable has type "int")  [assignment]
+                    fps = num / den if den != 0 else 0
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/media_info.py:188: error: Missing type parameters for generic type
+"dict"  [type-arg]
+        def _parse_audio_stream(self, stream: dict) -> dict:
+                                              ^
+src/bot/core/media_info.py:203: error: Missing type parameters for generic type
+"dict"  [type-arg]
+        def _parse_subtitle_stream(self, stream: dict) -> dict:
+                                                 ^
+src/bot/core/media_info.py:213: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+        def format_info(self, media_info: Dict, detailed: bool = True) -> ...
+                                          ^
+src/bot/core/media_info.py:310: error: Incompatible types in assignment
+(expression has type "float", variable has type "int")  [assignment]
+                bytes /= 1024.0
+                ^~~~~~~~~~~~~~~
+src/bot/core/media_info.py:369: error: Missing type parameters for generic type
+"Dict"  [type-arg]
+        def get_quality_rating(self, media_info: Dict) -> str:
+                                                 ^
+src/bot/core/media_info.py:405: error: Call to untyped function
+"MediaInfoExtractor" in typed context  [no-untyped-call]
+    media_info_extractor = MediaInfoExtractor()
+                           ^~~~~~~~~~~~~~~~~~~~
+src/bot/core/load_balancer.py:25: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/load_balancer.py:25: note: Use "-> None" if function does not return a value
+src/bot/core/load_balancer.py:29: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self.request_handler: Optional[Callable] = None
+                                           ^
+src/bot/core/load_balancer.py:42: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self.health_check_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/load_balancer.py:48: error: Call to untyped function
+"LoadBalancer" in typed context  [no-untyped-call]
+                cls._instance = LoadBalancer()
+                                ^~~~~~~~~~~~~~
+src/bot/core/load_balancer.py:173: error: Incompatible types in assignment
+(expression has type "float", variable has type "int")  [assignment]
+                current += instance.weight
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/link_bypassers.py:15: error: Library stubs not installed for
+"requests"  [import-untyped]
+    import requests
+    ^
+src/bot/core/link_bypassers.py:15: note: Hint: "python3 -m pip install types-requests"
+src/bot/core/link_bypassers.py:205: error: Returning Any from function declared
+to return "BypassResult"  [no-any-return]
+            return self.normalize_link_sync(url, return_result=True)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/link_bypassers.py:207: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def normalize_link_sync(self, url: str, return_result: bool = Fals...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/health_monitor.py:34: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/health_monitor.py:39: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/health_monitor.py:39: note: Use "-> None" if function does not return a value
+src/bot/core/health_monitor.py:48: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self._recovery_callbacks: Dict[str, List[Callable]] = {}
+                                                     ^
+src/bot/core/health_monitor.py:49: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self._health_check_task: Optional[asyncio.Task] = None
+                                              ^
+src/bot/core/health_monitor.py:71: error: Call to untyped function
+"_health_check_loop" in typed context  [no-untyped-call]
+    ...   self._health_check_task = asyncio.create_task(self._health_check_lo...
+                                                        ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/health_monitor.py:106: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            check_fn: Callable,
+                      ^
+src/bot/core/health_monitor.py:172: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            callback: Callable
+                      ^
+src/bot/core/health_monitor.py:294: error: Name "check_health" already defined
+on line 158  [no-redef]
+        async def check_health(self) -> Dict[str, Any]:
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/health_monitor.py:305: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _health_check_loop(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/health_monitor.py:305: note: Use "-> None" if function does not return a value
+src/bot/core/health_monitor.py:334: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _run_health_check(self, check_id: str, health_check: Hea...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/health_monitor.py:401: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _trigger_recovery(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/gdrive_batch_optimizer.py:25: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/gdrive_batch_optimizer.py:25: note: Use "-> None" if function does not return a value
+src/bot/core/failover_models.py:169: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/failover_models.py:169: note: Use "-> None" if function does not return a value
+src/bot/core/failover_models.py:170: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self.restart_handlers: Dict[str, Callable] = {}
+                                             ^
+src/bot/core/failover_models.py:171: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self.reconnect_handlers: Dict[str, Callable] = {}
+                                               ^
+src/bot/core/edge_workers.py:91: error: Missing type parameters for generic
+type "tuple"  [type-arg]
+            self.cache: Dict[str, tuple] = {}  # key -> (data, expiry)
+                                  ^
+src/bot/core/edge_workers.py:176: error: Returning Any from function declared
+to return "str | None"  [no-any-return]
+                    return data
+                    ^~~~~~~~~~~
+src/bot/core/edge_workers.py:181: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _set_cache(self, key: str, data: str, ttl: int):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/edge_workers.py:190: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def set_kv(self, key: str, value: Any):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/edge_workers.py:220: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/edge_workers.py:220: note: Use "-> None" if function does not return a value
+src/bot/core/edge_workers.py:223: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+            self.deployment_log: List[Dict] = []
+                                      ^
+src/bot/core/edge_workers.py:499: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def invalidate_cache(self, content_url: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/edge_workers.py:554: error: Call to untyped function
+"EdgeWorkerManager" in typed context  [no-untyped-call]
+        manager = EdgeWorkerManager()
+                  ^~~~~~~~~~~~~~~~~~~
+src/bot/core/edge_workers.py:581: error: Call to untyped function
+"EdgeWorkerManager" in typed context  [no-untyped-call]
+        manager = EdgeWorkerManager()
+                  ^~~~~~~~~~~~~~~~~~~
+src/bot/core/drive_quota_bypass.py:79: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/drive_quota_bypass.py:79: note: Use "-> None" if function does not return a value
+src/bot/core/drive_quota_bypass.py:94: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_account(
+        ^~~~~~~~~~~~~~~~
+src/bot/core/drive_quota_bypass.py:258: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def _transfer_chunk(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/drive_quota_bypass.py:421: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                return self.request_cache[file_id]
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/drive_quota_bypass.py:565: error: Call to untyped function
+"DriveQuotaManager" in typed context  [no-untyped-call]
+        manager = DriveQuotaManager()
+                  ^~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:188: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:188: note: Use "-> None" if function does not return a value
+src/bot/core/cross_seed_farming.py:195: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def add_tracker(self, tracker: TrackerConnection):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:316: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def set_ratio_goal(self, tracker_url: str, target_ratio: float):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:321: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def farm_ratio(self, torrent_info: TorrentInfo, duration_hou...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/cross_seed_farming.py:392: error: Function is missing a return
+type annotation  [no-untyped-def]
+        async def auto_farm(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:392: note: Use "-> None" if function does not return a value
+src/bot/core/cross_seed_farming.py:503: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/cross_seed_farming.py:503: note: Use "-> None" if function does not return a value
+src/bot/core/cross_seed_farming.py:510: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def add_connection(self, connection: TrackerConnection):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/connection_pool_manager.py:31: error: Missing type parameters for
+generic type "Queue"  [type-arg]
+            self.available_connections: asyncio.Queue = asyncio.Queue()
+                                        ^
+src/bot/core/connection_pool_manager.py:33: error: Missing type parameters for
+generic type "set"  [type-arg]
+            self.active_connections: set = set()
+                                     ^
+src/bot/core/connection_pool_manager.py:64: error: Missing return statement 
+[return]
+        async def acquire_connection(self, timeout: float = 10.0) -> Optio...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/connection_pool_manager.py:212: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/connection_pool_manager.py:212: note: Use "-> None" if function does not return a value
+src/bot/core/connection_pool_manager.py:220: error: Call to untyped function
+"ConnectionPoolManager" in typed context  [no-untyped-call]
+                cls._instance = ConnectionPoolManager()
+                                ^~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:102: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        async def solve(
+        ^~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:173: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        async def _submit_captcha(
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:228: error: Argument "total_attempts" to
+"SolverStats" has incompatible type "float"; expected "int"  [arg-type]
+                total_attempts=self.stats["total_attempts"],
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:229: error: Argument "successful_solves" to
+"SolverStats" has incompatible type "float"; expected "int"  [arg-type]
+                successful_solves=self.stats["successful"],
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:230: error: Argument "failed_solves" to
+"SolverStats" has incompatible type "float"; expected "int"  [arg-type]
+                failed_solves=self.stats["failed"],
+                              ^~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:325: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:325: note: Use "-> None" if function does not return a value
+src/bot/core/captcha_solver.py:328: error: Missing type parameters for generic
+type "Queue"  [type-arg]
+            self.solve_queue: asyncio.Queue = asyncio.Queue()
+                              ^
+src/bot/core/captcha_solver.py:332: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def add_solver(self, solver: CaptchaSolver):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:451: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def init_browser(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:451: note: Use "-> None" if function does not return a value
+src/bot/core/captcha_solver.py:473: error: Call to untyped function
+"init_browser" in typed context  [no-untyped-call]
+                await self.init_browser()
+                      ^~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:491: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def close_browser(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/captcha_solver.py:491: note: Use "-> None" if function does not return a value
+src/bot/core/cache_manager.py:29: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/cache_manager.py:29: note: Use "-> None" if function does not return a value
+src/bot/core/cache_manager.py:36: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self.cache_warming_tasks: List[asyncio.Task] = []
+                                           ^
+src/bot/core/cache_manager.py:42: error: Call to untyped function
+"CacheManager" in typed context  [no-untyped-call]
+                cls._instance = CacheManager()
+                                ^~~~~~~~~~~~~~
+src/bot/core/cache_manager.py:265: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            loader_func: Callable,
+                         ^
+src/bot/core/cache_manager.py:287: error: Function is missing a return type
+annotation  [no-untyped-def]
+                async def warm_task():
+                ^~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/cache_manager.py:287: note: Use "-> None" if function does not return a value
+src/bot/core/cache_manager.py:299: error: Call to untyped function "warm_task"
+in typed context  [no-untyped-call]
+                task = asyncio.create_task(warm_task())
+                                           ^~~~~~~~~~~
+src/bot/core/blake3_hasher.py:84: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def register_progress_callback(self, callback: Callable[[HashProgr...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/blake3_hasher.py:190: error: Returning Any from function declared
+to return "str"  [no-any-return]
+            return hasher.hexdigest()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:207: error: Returning Any from function declared
+to return "str"  [no-any-return]
+            return hasher.hexdigest()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:216: error: Returning Any from function declared
+to return "str"  [no-any-return]
+            return hasher.hexdigest()
+            ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:218: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def _get_hasher(self, algorithm: str):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:261: error: Incompatible return value type (got
+"dict[str, HashResult | BaseException]", expected "dict[str, HashResult]") 
+[return-value]
+            return result_dict
+                   ^~~~~~~~~~~
+src/bot/core/blake3_hasher.py:293: error: Function "builtins.any" is not valid
+as a type  [valid-type]
+        def get_performance_stats(self) -> Dict[str, any]:
+                                                     ^
+src/bot/core/blake3_hasher.py:293: note: Perhaps you meant "typing.Any" instead of "any"?
+src/bot/core/blake3_hasher.py:302: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def cleanup(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:302: note: Use "-> None" if function does not return a value
+src/bot/core/blake3_hasher.py:379: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def cleanup(self):
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/blake3_hasher.py:379: note: Use "-> None" if function does not return a value
+src/bot/core/blake3_hasher.py:381: error: Call to untyped function "cleanup" in
+typed context  [no-untyped-call]
+            await self.hasher.cleanup()
+                  ^~~~~~~~~~~~~~~~~~~~~
+src/bot/core/batch_processor.py:26: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/batch_processor.py:26: note: Use "-> None" if function does not return a value
+src/bot/core/batch_processor.py:35: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            self.process_handler: Optional[Callable] = None
+                                           ^
+src/bot/core/batch_processor.py:43: error: Missing type parameters for generic
+type "Task"  [type-arg]
+            self.processor_task: Optional[asyncio.Task] = None
+                                          ^
+src/bot/core/batch_processor.py:50: error: Call to untyped function
+"BatchProcessor" in typed context  [no-untyped-call]
+                cls._instance = BatchProcessor()
+                                ^~~~~~~~~~~~~~~~
+src/bot/core/batch_processor.py:55: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+            process_handler: Optional[Callable] = None,
+                                      ^
+src/bot/core/backup_manager.py:31: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def _load_metadata(self) -> Dict:
+                                    ^
+src/bot/core/backup_manager.py:36: error: Returning Any from function declared
+to return "dict[Any, Any]"  [no-any-return]
+                        return json.load(f)
+                        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:42: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def save(self):
+        ^~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:42: note: Use "-> None" if function does not return a value
+src/bot/core/backup_manager.py:50: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def update(self, key: str, value):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:50: error: Function is missing a type annotation
+for one or more arguments  [no-untyped-def]
+        def update(self, key: str, value):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:53: error: Call to untyped function "save" in
+typed context  [no-untyped-call]
+            self.save()
+            ^~~~~~~~~~~
+src/bot/core/backup_manager.py:66: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:71: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def enable(self):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:71: note: Use "-> None" if function does not return a value
+src/bot/core/backup_manager.py:93: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        ) -> Optional[Dict]:
+                      ^
+src/bot/core/backup_manager.py:113: error: Unsupported left operand type for /
+("None")  [operator]
+                backup_dir = self._backup_root / backup_name
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:113: note: Left operand is of type "Path | None"
+src/bot/core/backup_manager.py:198: error: Unsupported left operand type for /
+("None")  [operator]
+                backup_dir = self._backup_root / backup_name
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:198: note: Left operand is of type "Path | None"
+src/bot/core/backup_manager.py:247: error: Unsupported left operand type for /
+("None")  [operator]
+                backup_dir = self._backup_root / backup_name
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:247: note: Left operand is of type "Path | None"
+src/bot/core/backup_manager.py:266: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def list_backups(self) -> List[Dict]:
+                                       ^
+src/bot/core/backup_manager.py:271: error: Need type annotation for "backups"
+(hint: "backups: list[<type>] = ...")  [var-annotated]
+            backups = []
+            ^~~~~~~
+src/bot/core/backup_manager.py:273: error: Item "None" of "Path | None" has no
+attribute "exists"  [union-attr]
+            if not self._backup_root.exists():
+                   ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:277: error: Item "None" of "Path | None" has no
+attribute "iterdir"  [union-attr]
+                for backup_dir in self._backup_root.iterdir():
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:319: error: Item "None" of "Path | None" has no
+attribute "iterdir"  [union-attr]
+                for backup_dir in self._backup_root.iterdir():
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/backup_manager.py:353: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def get_backup_stats(self) -> Dict:
+                                      ^
+src/bot/core/backup_manager.py:371: error: Call to untyped function
+"BackupManager" in typed context  [no-untyped-call]
+    backup_manager = BackupManager()
+                     ^~~~~~~~~~~~~~~
+src/bot/core/archive_manager.py:57: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/archive_manager.py:57: note: Use "-> None" if function does not return a value
+src/bot/core/archive_manager.py:68: error: Function "builtins.callable" is not
+valid as a type  [valid-type]
+            progress_callback: Optional[callable] = None
+                                        ^
+src/bot/core/archive_manager.py:68: note: Perhaps you meant "typing.Callable" instead of "callable"?
+src/bot/core/archive_manager.py:69: error: Missing type parameters for generic
+type "dict"  [type-arg]
+        ) -> Tuple[bool, str, dict]:
+                              ^
+src/bot/core/archive_manager.py:107: error: Call to untyped function
+"_compress_zip" in typed context  [no-untyped-call]
+                    success, msg = await self._compress_zip(source_path, o...
+                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:109: error: Call to untyped function
+"_compress_tar" in typed context  [no-untyped-call]
+                    success, msg = await self._compress_tar(source_path, o...
+                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:111: error: Call to untyped function
+"_compress_7z" in typed context  [no-untyped-call]
+                    success, msg = await self._compress_7z(source_path, ou...
+                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:144: error: Function "builtins.callable" is not
+valid as a type  [valid-type]
+            progress_callback: Optional[callable] = None
+                                        ^
+src/bot/core/archive_manager.py:144: note: Perhaps you meant "typing.Callable" instead of "callable"?
+src/bot/core/archive_manager.py:145: error: Missing type parameters for generic
+type "dict"  [type-arg]
+        ) -> Tuple[bool, str, dict]:
+                              ^
+src/bot/core/archive_manager.py:184: error: Call to untyped function
+"_extract_zip" in typed context  [no-untyped-call]
+                    success, msg, file_count = await self._extract_zip(arc...
+                                                     ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:186: error: Call to untyped function
+"_extract_tar" in typed context  [no-untyped-call]
+                    success, msg, file_count = await self._extract_tar(arc...
+                                                     ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:188: error: Call to untyped function
+"_extract_7z" in typed context  [no-untyped-call]
+                    success, msg, file_count = await self._extract_7z(arch...
+                                                     ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:190: error: Call to untyped function
+"_extract_rar" in typed context  [no-untyped-call]
+                    success, msg, file_count = await self._extract_rar(arc...
+                                                     ^~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:215: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _compress_zip(self, source_path, output_path, level, cal...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:230: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _compress_tar(self, source_path, output_path, format, ca...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:242: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _compress_7z(self, source_path, output_path, level, call...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:262: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _extract_zip(self, archive_path, extract_to, password, f...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:279: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _extract_tar(self, archive_path, extract_to, files, call...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:296: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _extract_7z(self, archive_path, extract_to, password, ca...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:321: error: Function is missing a type
+annotation  [no-untyped-def]
+        async def _extract_rar(self, archive_path, extract_to, password, c...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+src/bot/core/archive_manager.py:390: error: No overload variant matches
+argument types "str", "str"  [call-overload]
+            with tarfile.open(output_path, mode) as tar:
+                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/archive_manager.py:390: note: Possible overload variants:
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None = ..., mode: Literal['r', 'r:*', 'r:', 'r:gz', 'r:bz2', 'r:xz'] = ..., fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None, mode: Literal['x', 'x:', 'a', 'a:', 'w', 'w:', 'w:tar'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None = ..., *, mode: Literal['x', 'x:', 'a', 'a:', 'w', 'w:', 'w:tar'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None, mode: Literal['x:gz', 'x:bz2', 'w:gz', 'w:bz2'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., compresslevel: int = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None = ..., *, mode: Literal['x:gz', 'x:bz2', 'w:gz', 'w:bz2'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., compresslevel: int = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None, mode: Literal['x:xz', 'w:xz'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., preset: Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | None = ..., *, mode: Literal['x:xz', 'w:xz'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., preset: Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9] | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None, mode: Literal['r|*', 'r|', 'r|gz', 'r|bz2', 'r|xz', 'r|zst'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None = ..., *, mode: Literal['r|*', 'r|', 'r|gz', 'r|bz2', 'r|xz', 'r|zst'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None, mode: Literal['w|', 'w|xz', 'w|zst'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None = ..., *, mode: Literal['w|', 'w|xz', 'w|zst'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None, mode: Literal['w|gz', 'w|bz2'], fileobj: _Fileobj | None = ..., bufsize: int = ..., *, format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., compresslevel: int = ...) -> TarFile
+src/bot/core/archive_manager.py:390: note:     def open(cls, name: str | bytes | PathLike[str] | PathLike[bytes] | Buffer | None = ..., *, mode: Literal['w|gz', 'w|bz2'], fileobj: _Fileobj | None = ..., bufsize: int = ..., format: int | None = ..., tarinfo: type[TarInfo] | None = ..., dereference: bool | None = ..., ignore_zeros: bool | None = ..., encoding: str | None = ..., errors: str = ..., pax_headers: Mapping[str, str] | None = ..., debug: int | None = ..., errorlevel: int | None = ..., compresslevel: int = ...) -> TarFile
+src/bot/core/archive_manager.py:440: error: Missing type parameters for generic
+type "dict"  [type-arg]
+        def get_supported_formats(self) -> dict:
+                                           ^
+src/bot/core/archive_manager.py:462: error: Call to untyped function
+"ArchiveManager" in typed context  [no-untyped-call]
+    archive_manager = ArchiveManager()
+                      ^~~~~~~~~~~~~~~~
+src/bot/core/api_gateway_router.py:24: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_gateway_router.py:24: note: Use "-> None" if function does not return a value
+src/bot/core/api_gateway_router.py:26: error: Missing type parameters for
+generic type "dict"  [type-arg]
+            self.nodes: Dict[str, dict] = {}
+                                  ^
+src/bot/core/api_gateway_router.py:41: error: Missing type parameters for
+generic type "dict"  [type-arg]
+    ...register_node(self, node_id: str, meta: Optional[dict] = None) -> bool...
+                                                        ^
+src/bot/core/api_gateway_router.py:95: error: Function is missing a type
+annotation for one or more arguments  [no-untyped-def]
+        async def route_request(
+        ^~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/api_gateway_router.py:140: error: Missing type parameters for
+generic type "list"  [type-arg]
+        def get_all_nodes(self) -> list:
+                                   ^
+src/bot/core/api_gateway_limiter.py:29: error: Function is missing a return
+type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_gateway_limiter.py:29: note: Use "-> None" if function does not return a value
+src/bot/core/api_gateway_limiter.py:41: error: Missing type parameters for
+generic type "Task"  [type-arg]
+            self._circuit_check_task: Optional[asyncio.Task] = None
+                                               ^
+src/bot/core/api_enhancements.py:82: error: Need type annotation for
+"valid_tokens" (hint: "valid_tokens: set[<type>] = ...")  [var-annotated]
+            self.valid_tokens = set()
+            ^~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:158: error: Incompatible default for argument
+"allowed_origins" (default has type "None", argument has type "list[str]") 
+[assignment]
+        def __init__(self, allowed_origins: List[str] = None):
+                                                        ^~~~
+src/bot/core/api_enhancements.py:158: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/bot/core/api_enhancements.py:158: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/bot/core/api_enhancements.py:175: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:175: note: Use "-> None" if function does not return a value
+src/bot/core/api_enhancements.py:176: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            self.serializers: Dict[ContentType, Callable] = {}
+                                                ^
+src/bot/core/api_enhancements.py:177: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            self.deserializers: Dict[ContentType, Callable] = {}
+                                                  ^
+src/bot/core/api_enhancements.py:182: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            serializer: Callable
+                        ^
+src/bot/core/api_enhancements.py:190: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            deserializer: Callable
+                          ^
+src/bot/core/api_enhancements.py:213: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:213: note: Use "-> None" if function does not return a value
+src/bot/core/api_enhancements.py:214: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            self.handlers: Dict[APIVersion, Dict[str, Callable]] = {
+                                                      ^
+src/bot/core/api_enhancements.py:224: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+            handler: Callable
+                     ^
+src/bot/core/api_enhancements.py:236: error: Missing type parameters for
+generic type "Callable"  [type-arg]
+        ) -> Optional[Callable]:
+                      ^
+src/bot/core/api_enhancements.py:260: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:260: note: Use "-> None" if function does not return a value
+src/bot/core/api_enhancements.py:269: error: Need type annotation for "paths"
+(hint: "paths: dict[<type>, <type>] = ...")  [var-annotated]
+            paths = {}
+            ^~~~~
+src/bot/core/api_enhancements.py:337: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:337: note: Use "-> None" if function does not return a value
+src/bot/core/api_enhancements.py:339: error: Call to untyped function
+"ContentNegotiation" in typed context  [no-untyped-call]
+            self.content_negotiation = ContentNegotiation()
+                                       ^~~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:340: error: Call to untyped function
+"APIVersionManager" in typed context  [no-untyped-call]
+            self.version_manager = APIVersionManager()
+                                   ^~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:341: error: Call to untyped function
+"APIDocumentationGenerator" in typed context  [no-untyped-call]
+            self.documentation = APIDocumentationGenerator()
+                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/api_enhancements.py:384: error: Call to untyped function
+"APIGateway" in typed context  [no-untyped-call]
+    gateway = APIGateway()
+              ^~~~~~~~~~~~
+src/bot/core/alert_manager.py:30: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        _subscribers: Dict[str, List[Callable]] = {}
+                                     ^
+src/bot/core/alert_manager.py:31: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        _alert_handlers: List[Callable] = []
+                              ^
+src/bot/core/alert_manager.py:33: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:38: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:38: note: Use "-> None" if function does not return a value
+src/bot/core/alert_manager.py:45: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def enable(self):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:45: note: Use "-> None" if function does not return a value
+src/bot/core/alert_manager.py:59: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def register_handler(self, handler: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:59: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def register_handler(self, handler: Callable):
+                                            ^
+src/bot/core/alert_manager.py:70: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def unregister_handler(self, handler: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:70: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def unregister_handler(self, handler: Callable):
+                                              ^
+src/bot/core/alert_manager.py:82: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+            details: Optional[Dict] = None,
+                              ^
+src/bot/core/alert_manager.py:99: error: Incompatible return value type (got
+"None", expected "Alert")  [return-value]
+                return None
+                       ^~~~
+src/bot/core/alert_manager.py:121: error: Function is missing a return type
+annotation  [no-untyped-def]
+        async def _notify_subscribers(self, alert: Alert):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:135: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def subscribe(self, alert_type: AlertType, callback: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:135: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def subscribe(self, alert_type: AlertType, callback: Callable):
+                                                             ^
+src/bot/core/alert_manager.py:151: error: Function is missing a return type
+annotation  [no-untyped-def]
+        def unsubscribe(self, alert_type: AlertType, callback: Callable):
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:151: error: Missing type parameters for generic
+type "Callable"  [type-arg]
+        def unsubscribe(self, alert_type: AlertType, callback: Callable):
+                                                               ^
+src/bot/core/alert_manager.py:162: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        ) -> List[Dict]:
+                  ^
+src/bot/core/alert_manager.py:187: error: Call to untyped function "to_dict" in
+typed context  [no-untyped-call]
+            return [a.to_dict() for a in reversed(alerts)]
+                    ^~~~~~~~~~~
+src/bot/core/alert_manager.py:189: error: Missing type parameters for generic
+type "Dict"  [type-arg]
+        def get_alert_summary(self) -> Dict:
+                                       ^
+src/bot/core/alert_manager.py:209: error: Unsupported right operand type for in
+("object")  [operator]
+                if alert_type not in summary["by_type"]:
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:210: error: Unsupported target for indexed
+assignment ("object")  [index]
+                    summary["by_type"][alert_type] = 0
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:211: error: Value of type "object" is not
+indexable  [index]
+                summary["by_type"][alert_type] += 1
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:211: error: Unsupported target for indexed
+assignment ("object")  [index]
+                summary["by_type"][alert_type] += 1
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/alert_manager.py:244: error: Call to untyped function
+"AlertManager" in typed context  [no-untyped-call]
+    alert_manager = AlertManager()
+                    ^~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/task_coordinator_backup.py:18: error: Cannot find
+implementation or library stub for module named "bot.core.ARCHIVE.task_models" 
+[import-not-found]
+    from .task_models import (
+    ^
+src/bot/core/ARCHIVE/task_coordinator_backup.py:45: error: Function is missing
+a return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/task_coordinator_backup.py:45: note: Use "-> None" if function does not return a value
+src/bot/core/ARCHIVE/task_coordinator_backup.py:61: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._scheduler_task: Optional[asyncio.Task] = None
+                                           ^
+src/bot/core/ARCHIVE/task_coordinator_backup.py:62: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._monitor_task: Optional[asyncio.Task] = None
+                                         ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:17: error: Cannot find
+implementation or library stub for module named
+"bot.core.ARCHIVE.replication_models"  [import-not-found]
+    from .replication_models import (
+    ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:45: error: Function is
+missing a return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:45: note: Use "-> None" if function does not return a value
+src/bot/core/ARCHIVE/replication_manager_backup.py:57: error: Missing type
+parameters for generic type "Callable"  [type-arg]
+            self.conflict_resolver: Optional[Callable] = None
+                                             ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:65: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._replication_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:66: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._lag_monitor_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:67: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._log_cleanup_task: Optional[asyncio.Task] = None
+                                             ^
+src/bot/core/ARCHIVE/replication_manager_backup.py:82: error: Name "uuid" is
+not defined  [name-defined]
+                self.node_id = node_id or f"node_{uuid.uuid4().hex[:8]}"
+                                                  ^~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:557: error: Returning Any
+from function declared to return "str"  [no-any-return]
+                return ReplicationLag.MINIMAL.value
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:559: error: Returning Any
+from function declared to return "str"  [no-any-return]
+                return ReplicationLag.LOW.value
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:561: error: Returning Any
+from function declared to return "str"  [no-any-return]
+                return ReplicationLag.MEDIUM.value
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:563: error: Returning Any
+from function declared to return "str"  [no-any-return]
+                return ReplicationLag.HIGH.value
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/replication_manager_backup.py:565: error: Returning Any
+from function declared to return "str"  [no-any-return]
+                return ReplicationLag.CRITICAL.value
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/performance_optimizer_backup.py:18: error: Cannot find
+implementation or library stub for module named
+"bot.core.ARCHIVE.performance_optimizer_models"  [import-not-found]
+    from .performance_optimizer_models import (
+    ^
+src/bot/core/ARCHIVE/performance_optimizer_backup.py:45: error: Function is
+missing a return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/performance_optimizer_backup.py:45: note: Use "-> None" if function does not return a value
+src/bot/core/ARCHIVE/performance_optimizer_backup.py:69: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._collector_task: Optional[asyncio.Task] = None
+                                           ^
+src/bot/core/ARCHIVE/performance_optimizer_backup.py:70: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._analyzer_task: Optional[asyncio.Task] = None
+                                          ^
+src/bot/core/ARCHIVE/failover_manager_backup.py:21: error: Cannot find
+implementation or library stub for module named
+"bot.core.ARCHIVE.failover_models"  [import-not-found]
+    from .failover_models import (
+    ^
+src/bot/core/ARCHIVE/failover_manager_backup.py:51: error: Function is missing
+a return type annotation  [no-untyped-def]
+        def __new__(cls):
+        ^~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/failover_manager_backup.py:56: error: Function is missing
+a return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/failover_manager_backup.py:56: note: Use "-> None" if function does not return a value
+src/bot/core/ARCHIVE/failover_manager_backup.py:66: error: Missing type
+parameters for generic type "Queue"  [type-arg]
+            self.recovery_queue: asyncio.Queue = asyncio.Queue()
+                                 ^
+src/bot/core/ARCHIVE/failover_manager_backup.py:91: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._recovery_executor_task: Optional[asyncio.Task] = None
+                                                   ^
+src/bot/core/ARCHIVE/failover_manager_backup.py:92: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._cascade_monitor_task: Optional[asyncio.Task] = None
+                                                 ^
+src/bot/core/ARCHIVE/failover_manager_backup.py:93: error: Missing type
+parameters for generic type "Task"  [type-arg]
+            self._metrics_task: Optional[asyncio.Task] = None
+                                         ^
+src/bot/core/ARCHIVE/api_gateway_backup.py:18: error: Cannot find
+implementation or library stub for module named
+"bot.core.ARCHIVE.api_gateway_models"  [import-not-found]
+    from .api_gateway_models import (
+    ^
+src/bot/core/ARCHIVE/api_gateway_backup.py:45: error: Function is missing a
+return type annotation  [no-untyped-def]
+        def __init__(self):
+        ^~~~~~~~~~~~~~~~~~~
+src/bot/core/ARCHIVE/api_gateway_backup.py:45: note: Use "-> None" if function does not return a value
+src/bot/core/ARCHIVE/api_gateway_backup.py:61: error: Missing type parameters
+for generic type "Task"  [type-arg]
+            self._cleanup_task: Optional[asyncio.Task] = None
+                                         ^
+src/bot/core/ARCHIVE/api_gateway_backup.py:62: error: Missing type parameters
+for generic type "Task"  [type-arg]
+            self._circuit_check_task: Optional[asyncio.Task] = None
+                                               ^
+src/bot/core/ARCHIVE/api_gateway_backup.py:237: error: Returning Any from
+function declared to return "str | None"  [no-any-return]
+                return route.target_node
+                ^~~~~~~~~~~~~~~~~~~~~~~~

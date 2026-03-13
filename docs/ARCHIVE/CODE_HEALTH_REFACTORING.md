@@ -64,7 +64,7 @@
 #### 6. Complex Conditionals
 - **Before:** Multi-condition expressions
   ```python
-  if (user_dict.get("EQUAL_SPLITS", False) or 
+  if (user_dict.get("EQUAL_SPLITS", False) or
       "EQUAL_SPLITS" not in user_dict and Config.EQUAL_SPLITS):
       # Complex logic
   ```
@@ -77,7 +77,7 @@
 
 #### 7. Excess Function Arguments
 - **Before:** Functions with 8+ local variable setups
-- **After:** 
+- **After:**
   - Formatter classes encapsulate user_id and name
   - Handler functions use partial() for argument injection
 - **Benefit:** Reduced parameter passing, cleaner function signatures
@@ -103,7 +103,7 @@ class SettingsRetriever:
 ```python
 BaseSettingsFormatter (abstract)
 ├── LeechSettingsFormatter
-├── RcloneSettingsFormatter  
+├── RcloneSettingsFormatter
 ├── GdriveSettingsFormatter
 └── UploadSettingsFormatter
 ```
@@ -136,7 +136,7 @@ Handlers (small & focused):
 ### 1. Readability
 ```python
 # Before: Hard to understand at first glance
-if (user_dict.get("EQUAL_SPLITS", False) or 
+if (user_dict.get("EQUAL_SPLITS", False) or
     "EQUAL_SPLITS" not in user_dict and Config.EQUAL_SPLITS):
     buttons.data_button("Disable Equal Splits", ...)
     equal_splits = "Enabled"
@@ -168,7 +168,7 @@ async def _get_equal_splits_status(self) -> str:
 class NewSettingFormatter(BaseSettingsFormatter):
     async def build_buttons(self) -> None:
         # Add buttons
-    
+
     async def get_text(self) -> str:
         # Return formatted text
 

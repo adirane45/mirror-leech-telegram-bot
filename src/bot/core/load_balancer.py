@@ -4,12 +4,12 @@ Distribute requests across multiple bot instances
 """
 
 import asyncio
-import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from datetime import datetime
 import logging
+import time
+from datetime import datetime
+from typing import Any, Callable, Dict, Optional, Tuple
 
-from .load_balancer_models import LoadBalancingStrategy, BotInstance
+from .load_balancer_models import BotInstance, LoadBalancingStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -22,25 +22,25 @@ class LoadBalancer:
     _instance: Optional['LoadBalancer'] = None
     _lock = asyncio.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.instances: Dict[str, BotInstance] = {}
         self.strategy = LoadBalancingStrategy.ROUND_ROBIN
-        self.request_handler: Optional[Callable] = None
-        
+        self.request_handler: Optional[Callable[..., Any]] = None
+
         # Round-robin state
         self.current_index = 0
-        
+
         # Statistics
         self.total_requests = 0
         self.total_successful = 0
         self.total_failed = 0
-        
+
         # Health checking
         self.health_check_interval = 30  # seconds
         self.health_check_timeout = 5  # seconds
-        self.health_check_task: Optional[asyncio.Task] = None
-        
+        self.health_check_task: Optional[asyncio.Task[None]] = None
+
     @classmethod
     def get_instance(cls) -> 'LoadBalancer':
         """Get singleton instance"""
@@ -51,21 +51,21 @@ class LoadBalancer:
     async def enable(self, strategy: LoadBalancingStrategy = LoadBalancingStrategy.ROUND_ROBIN) -> bool:
         """
         Enable the Load Balancer
-        
+
         Args:
             strategy: Load balancing strategy to use
-            
+
         Returns:
             Success status
         """
         async with self._lock:
             self.enabled = True
             self.strategy = strategy
-            
+
             # Start health check task
             if self.health_check_task is None:
                 self.health_check_task = asyncio.create_task(self._health_check_loop())
-            
+
             logger.info(f"Load Balancer enabled (strategy: {strategy.value})")
             return True
 
@@ -73,12 +73,12 @@ class LoadBalancer:
         """Disable the Load Balancer"""
         async with self._lock:
             self.enabled = False
-            
+
             # Cancel health check task
             if self.health_check_task:
                 self.health_check_task.cancel()
                 self.health_check_task = None
-            
+
             logger.info("Load Balancer disabled")
             return True
 
@@ -91,13 +91,13 @@ class LoadBalancer:
     ) -> bool:
         """
         Add bot instance to load balancer
-        
+
         Args:
             instance_id: Unique instance identifier
             host: Instance hostname/IP
             port: Instance port
             weight: Load weighting (higher = faster)
-            
+
         Returns:
             Success status
         """
@@ -118,10 +118,10 @@ class LoadBalancer:
     async def remove_instance(self, instance_id: str) -> bool:
         """
         Remove bot instance from load balancer
-        
+
         Args:
             instance_id: Instance identifier
-            
+
         Returns:
             Success status
         """
@@ -139,7 +139,7 @@ class LoadBalancer:
         healthy = [i for i in self.instances.values() if i.is_healthy]
         if not healthy:
             return None
-        
+
         instance = healthy[self.current_index % len(healthy)]
         self.current_index += 1
         return instance
@@ -149,7 +149,7 @@ class LoadBalancer:
         healthy = [i for i in self.instances.values() if i.is_healthy]
         if not healthy:
             return None
-        
+
         # Prefer instance with lowest connection ratio considering weight
         return min(healthy, key=lambda i: i.connection_ratio)
 
@@ -158,22 +158,22 @@ class LoadBalancer:
         healthy = [i for i in self.instances.values() if i.is_healthy]
         if not healthy:
             return None
-        
+
         # Higher weight = higher chance of selection
         total_weight = sum(i.weight for i in healthy)
         if total_weight == 0:
             return healthy[0]
-        
+
         # Weighted random select
         import random
         pick = random.uniform(0, total_weight)
-        current = 0
-        
+        current = 0.0
+
         for instance in healthy:
             current += instance.weight
             if pick <= current:
                 return instance
-        
+
         return healthy[-1]
 
     def _select_next_instance(self) -> Optional[BotInstance]:
@@ -194,11 +194,11 @@ class LoadBalancer:
     ) -> Tuple[bool, Optional[Any], Optional[str]]:
         """
         Route request to appropriate instance
-        
+
         Args:
             request_data: Request data to process
             max_retries: Maximum retry attempts
-            
+
         Returns:
             Tuple of (success, result, instance_id)
         """
@@ -208,53 +208,53 @@ class LoadBalancer:
 
         self.total_requests += 1
         retries = 0
-        
+
         try:
             while retries < max_retries:
                 instance = self._select_next_instance()
-                
+
                 if instance is None:
                     logger.error("No healthy instances available")
                     self.total_failed += 1
                     return False, None, None
-                
+
                 try:
                     # Mark as active
                     instance.active_connections += 1
                     start_time = time.time()
-                    
+
                     # Call request handler
                     if self.request_handler:
                         result = await self.request_handler(instance, request_data)
                     else:
                         result = {"status": "ok"}
-                    
+
                     # Update statistics
                     elapsed = (time.time() - start_time) * 1000
                     instance.response_time_ms = elapsed
                     instance.total_requests += 1
                     instance.last_request_time = datetime.now()
                     instance.active_connections -= 1
-                    
+
                     self.total_successful += 1
                     logger.debug(f"Request routed to {instance.instance_id} ({elapsed:.0f}ms)")
-                    
+
                     return True, result, instance.instance_id
-                    
+
                 except Exception as e:
                     instance.active_connections -= 1
                     instance.failed_requests += 1
                     logger.warning(f"Request failed on {instance.instance_id}: {e}")
                     retries += 1
-                    
+
                     # Mark unhealthy after threshold
                     if instance.failed_requests > 5:
                         instance.is_healthy = False
                         logger.error(f"Instance {instance.instance_id} marked unhealthy")
-            
+
             self.total_failed += 1
             return False, None, None
-            
+
         except Exception as e:
             logger.error(f"Error routing request: {e}")
             self.total_failed += 1
@@ -276,18 +276,18 @@ class LoadBalancer:
                 try:
                     # Simple health check: verify heartbeat
                     elapsed_since_heartbeat = (datetime.now() - instance.last_heartbeat).total_seconds()
-                    
+
                     if elapsed_since_heartbeat > 60:  # 1 minute without heartbeat
                         instance.is_healthy = False
                         logger.warning(f"Instance {instance_id} health check failed (no heartbeat)")
                     else:
                         instance.is_healthy = True
                         instance.last_heartbeat = datetime.now()
-                        
+
                 except Exception as e:
                     logger.error(f"Health check error for {instance_id}: {e}")
                     instance.is_healthy = False
-                    
+
         except Exception as e:
             logger.error(f"Error performing health checks: {e}")
 
@@ -295,7 +295,7 @@ class LoadBalancer:
         """Get status of specific instance"""
         if instance_id not in self.instances:
             return None
-        
+
         instance = self.instances[instance_id]
         return {
             'instance_id': instance_id,
@@ -322,12 +322,12 @@ class LoadBalancer:
     async def get_statistics(self) -> Dict[str, Any]:
         """Get load balancer statistics"""
         healthy_count = sum(1 for i in self.instances.values() if i.is_healthy)
-        
+
         avg_response_time = (
             sum(i.response_time_ms for i in self.instances.values()) / len(self.instances)
             if self.instances else 0.0
         )
-        
+
         return {
             'enabled': self.enabled,
             'strategy': self.strategy.value,

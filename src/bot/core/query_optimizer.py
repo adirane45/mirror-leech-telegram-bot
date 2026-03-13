@@ -4,14 +4,12 @@ Performance optimization through query analysis, caching, and suggestions
 """
 
 import asyncio
-import time
-from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
-import json
 import hashlib
 import logging
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
-from .query_optimizer_models import QueryType, OptimizationResult, QueryStatistics
+from .query_optimizer_models import OptimizationResult, QueryStatistics, QueryType
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +22,7 @@ class QueryOptimizer:
     _instance: Optional['QueryOptimizer'] = None
     _lock = asyncio.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.query_cache: Dict[str, Tuple[Any, datetime]] = {}
         self.query_statistics: Dict[str, QueryStatistics] = {}
@@ -42,13 +40,13 @@ class QueryOptimizer:
     async def enable(self) -> bool:
         """
         Enable the Query Optimizer for performance analysis.
-        
+
         This activates query analysis, caching, N+1 detection, and
         performance recommendations.
-        
+
         Returns:
             bool: True if successfully enabled
-            
+
         Example:
             >>> optimizer = QueryOptimizer.get_instance()
             >>> await optimizer.enable()
@@ -62,10 +60,10 @@ class QueryOptimizer:
     async def disable(self) -> bool:
         """
         Disable the Query Optimizer and clear caches.
-        
+
         This stops all query analysis and clears the query cache.
         Statistics are preserved.
-        
+
         Returns:
             bool: True if successfully disabled
         """
@@ -93,10 +91,10 @@ class QueryOptimizer:
     def _generate_query_hash(self, query: str) -> str:
         """
         Generate MD5 hash for query caching and deduplication.
-        
+
         Args:
             query: SQL or GraphQL query string
-            
+
         Returns:
             32-character hex hash of the query
         """
@@ -105,10 +103,10 @@ class QueryOptimizer:
     async def analyze_query(self, query: str) -> OptimizationResult:
         """
         Analyze query for optimization opportunities
-        
+
         Args:
             query: SQL or GraphQL query string
-            
+
         Returns:
             OptimizationResult with analysis and recommendations
         """
@@ -143,20 +141,20 @@ class QueryOptimizer:
     async def _detect_n_plus_one(self, query: str, result: OptimizationResult) -> None:
         """
         Detect potential N+1 query anti-patterns.
-        
+
         N+1 queries occur when an initial query is followed by N additional
         queries in a loop. This causes severe performance degradation.
-        
+
         Args:
             query: Query to analyze
             result: OptimizationResult to update with findings
-            
+
         Example:
             Instead of:
                 users = SELECT * FROM users
                 for user in users:
                     posts = SELECT * FROM posts WHERE user_id = {user.id}  # N queries!
-            
+
             Use:
                 users = SELECT * FROM users
                 posts = SELECT * FROM posts WHERE user_id IN (user_ids)  # 1 query
@@ -177,10 +175,10 @@ class QueryOptimizer:
         # Simple heuristic: compare query structure
         q1_words = set(q1.upper().split())
         q2_words = set(q2.upper().split())
-        
+
         if not q1_words or not q2_words:
             return 0.0
-        
+
         intersection = len(q1_words & q2_words)
         union = len(q1_words | q2_words)
         return intersection / union if union > 0 else 0.0
@@ -188,28 +186,28 @@ class QueryOptimizer:
     async def _suggest_indexes(self, query: str, result: OptimizationResult) -> None:
         """
         Suggest database indexes based on query patterns.
-        
+
         Indexes dramatically improve query performance by allowing the
         database to locate rows without scanning the entire table.
-        
+
         Args:
             query: SQL query to analyze
             result: OptimizationResult to update with index suggestions
-            
+
         Note:
             These are heuristic suggestions. Actual index strategy should
             consider query frequency, table size, and write performance.
         """
         query_upper = query.upper()
-        
+
         # Suggest indexes for WHERE clauses
         if "WHERE" in query_upper:
             result.index_suggestions.append("Consider index on WHERE clause columns")
-        
+
         # Suggest indexes for JOIN conditions
         if "JOIN" in query_upper:
             result.index_suggestions.append("Consider index on JOIN columns")
-        
+
         # Suggest indexes for ORDER BY
         if "ORDER BY" in query_upper:
             result.index_suggestions.append("Consider index on ORDER BY columns")
@@ -217,12 +215,12 @@ class QueryOptimizer:
     async def _detect_inefficiencies(self, query: str, result: OptimizationResult) -> None:
         """Detect inefficient query patterns"""
         query_upper = query.upper()
-        
+
         # Detect SELECT * (usually inefficient)
         if "SELECT *" in query_upper:
             result.recommendations.append("Avoid SELECT * - specify needed columns")
             result.estimated_improvement_percent += 10.0
-        
+
         # Detect missing LIMIT in SELECT
         if "SELECT" in query_upper and "LIMIT" not in query_upper:
             if "ORDER BY" in query_upper:
@@ -236,12 +234,12 @@ class QueryOptimizer:
     ) -> bool:
         """
         Cache query result
-        
+
         Args:
             query: Query string
             result: Query result to cache
             ttl: Time to live in seconds (uses default if None)
-            
+
         Returns:
             Success status
         """
@@ -252,14 +250,14 @@ class QueryOptimizer:
             query_hash = self._generate_query_hash(query)
             expiry = datetime.now() + timedelta(seconds=ttl or self.cache_ttl)
             self.query_cache[query_hash] = (result, expiry)
-            
+
             # Update statistics
             if query_hash not in self.query_statistics:
                 self.query_statistics[query_hash] = QueryStatistics(
                     query_hash=query_hash,
                     query=query
                 )
-            
+
             return True
         except Exception as e:
             logger.error(f"Error caching query result: {e}")
@@ -268,10 +266,10 @@ class QueryOptimizer:
     async def get_cached_result(self, query: str) -> Optional[Any]:
         """
         Get cached query result if available and not expired
-        
+
         Args:
             query: Query string
-            
+
         Returns:
             Cached result if found and valid, None otherwise
         """
@@ -280,10 +278,10 @@ class QueryOptimizer:
 
         try:
             query_hash = self._generate_query_hash(query)
-            
+
             if query_hash in self.query_cache:
                 result, expiry = self.query_cache[query_hash]
-                
+
                 # Check if expired
                 if datetime.now() < expiry:
                     # Update statistics
@@ -293,11 +291,11 @@ class QueryOptimizer:
                 else:
                     # Remove expired entry
                     del self.query_cache[query_hash]
-            
+
             # Record cache miss
             if query_hash in self.query_statistics:
                 self.query_statistics[query_hash].cache_misses += 1
-            
+
             return None
         except Exception as e:
             logger.error(f"Error retrieving cached result: {e}")
@@ -312,13 +310,13 @@ class QueryOptimizer:
     ) -> bool:
         """
         Record query execution statistics
-        
+
         Args:
             query: Query string
             execution_time_ms: Execution time in milliseconds
             result_count: Number of results returned
             cache_hit: Whether this was served from cache
-            
+
         Returns:
             Success status
         """
@@ -327,13 +325,13 @@ class QueryOptimizer:
 
         try:
             query_hash = self._generate_query_hash(query)
-            
+
             if query_hash not in self.query_statistics:
                 self.query_statistics[query_hash] = QueryStatistics(
                     query_hash=query_hash,
                     query=query
                 )
-            
+
             stats = self.query_statistics[query_hash]
             stats.execution_count += 1
             stats.total_execution_time_ms += execution_time_ms
@@ -341,10 +339,10 @@ class QueryOptimizer:
             stats.min_execution_time_ms = min(stats.min_execution_time_ms, execution_time_ms)
             stats.max_execution_time_ms = max(stats.max_execution_time_ms, execution_time_ms)
             stats.last_executed = datetime.now()
-            
+
             if cache_hit:
                 stats.cache_hits += 1
-            
+
             return True
         except Exception as e:
             logger.error(f"Error recording execution: {e}")
@@ -353,15 +351,15 @@ class QueryOptimizer:
     async def get_slow_queries(self, threshold: Optional[float] = None) -> List[Dict[str, Any]]:
         """
         Get queries slower than threshold
-        
+
         Args:
             threshold: Threshold in seconds (uses default if None)
-            
+
         Returns:
             List of slow queries with statistics
         """
         threshold_ms = (threshold or self.slow_query_threshold) * 1000
-        
+
         slow = []
         for query_hash, stats in self.query_statistics.items():
             if stats.avg_execution_time_ms > threshold_ms:
@@ -375,7 +373,7 @@ class QueryOptimizer:
                         if (stats.cache_hits + stats.cache_misses) > 0 else 0.0
                     )
                 })
-        
+
         return sorted(slow, key=lambda x: x['avg_execution_time_ms'], reverse=True)
 
     async def get_statistics(self) -> Dict[str, Any]:
@@ -384,14 +382,14 @@ class QueryOptimizer:
         total_hits = sum(s.cache_hits for s in self.query_statistics.values())
         total_misses = sum(s.cache_misses for s in self.query_statistics.values())
         total_executions = sum(s.execution_count for s in self.query_statistics.values())
-        
+
         hit_rate = (total_hits / (total_hits + total_misses) * 100) if (total_hits + total_misses) > 0 else 0.0
-        
+
         avg_execution_time = (
             sum(s.avg_execution_time_ms for s in self.query_statistics.values()) / total_queries
             if total_queries > 0 else 0.0
         )
-        
+
         return {
             'enabled': self.enabled,
             'total_unique_queries': total_queries,

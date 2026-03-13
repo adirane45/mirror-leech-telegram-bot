@@ -6,11 +6,11 @@ The problem is that auth_chats and sudo_users are not being populated from AUTHO
 This script will manually fix this by directly updating the in-memory dictionaries.
 """
 
-import sys
 import subprocess
+import sys
 
 print("="*70)
-print("🔧 FIXING COMMAND AUTHORIZATION ISSUE")  
+print("🔧 FIXING COMMAND AUTHORIZATION ISSUE")
 print("="*70)
 print()
 
@@ -84,14 +84,14 @@ result = subprocess.run(
 
 if result.returncode == 0:
     print("✅ Script copied to container")
-    
+
     # Execute the fix
     result = subprocess.run(
         ['docker', 'exec', 'mltb-app', 'python3', '/app/fix_auth.py'],
         capture_output=True,
         text=True
     )
-    
+
     print("\n" + result.stdout)
     if result.stderr:
         print("Errors:", result.stderr)

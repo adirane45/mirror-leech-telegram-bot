@@ -11,7 +11,7 @@ Implements:
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Callable, List
+from typing import Dict, Any, Optional, Callable, List, Set
 from enum import Enum
 from dataclasses import dataclass, field
 
@@ -149,10 +149,10 @@ class FailoverManager:
 class GracefulDegradation:
     """Graceful degradation strategies"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.feature_flags: Dict[str, bool] = {}
-        self.degraded_features: set = set()
-        self.fallback_handlers: Dict[str, Callable] = {}
+        self.degraded_features: Set[str] = set()
+        self.fallback_handlers: Dict[str, Callable[..., Any]] = {}
     
     def register_feature(self, name: str, enabled: bool = True) -> None:
         """Register feature flag"""
@@ -161,7 +161,7 @@ class GracefulDegradation:
     def register_fallback(
         self,
         feature_name: str,
-        handler: Callable
+        handler: Callable[..., Any]
     ) -> None:
         """Register fallback handler"""
         self.fallback_handlers[feature_name] = handler
@@ -188,8 +188,8 @@ class GracefulDegradation:
     async def handle_degraded_request(
         self,
         feature_name: str,
-        *args,
-        **kwargs
+        *args: Any,
+        **kwargs: Any
     ) -> Any:
         """Handle request for degraded feature"""
         if feature_name in self.fallback_handlers:
@@ -309,14 +309,14 @@ class CanaryDeployment:
 class DataConsistencyManager:
     """Ensure data consistency across instances"""
     
-    def __init__(self):
-        self.consistency_checks: Dict[str, Callable] = {}
+    def __init__(self) -> None:
+        self.consistency_checks: Dict[str, Callable[..., Any]] = {}
         self.last_check: Dict[str, datetime] = {}
     
     def register_consistency_check(
         self,
         name: str,
-        check_func: Callable
+        check_func: Callable[..., Any]
     ) -> None:
         """Register consistency check"""
         self.consistency_checks[name] = check_func

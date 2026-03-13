@@ -1,7 +1,7 @@
 # Async I/O Hardening Documentation
 
-**Date:** 2026-02-28  
-**Status:** ✅ Completed  
+**Date:** 2026-02-28
+**Status:** ✅ Completed
 **Impact:** Event Loop Performance & Responsiveness
 
 ---
@@ -85,7 +85,7 @@ class ArchiveManager:
         return await asyncio.to_thread(
             self._compress_zip_sync, source, output
         )
-    
+
     def _compress_zip_sync(self, source: Path, output: Path):
         """Synchronous worker method"""
         with zipfile.ZipFile(output, 'w') as zf:
@@ -311,6 +311,6 @@ async def monitor_loop_lag(lags: list, stop_event: asyncio.Event):
 
 ---
 
-**Maintainer:** GitHub Copilot (AI Assistant)  
-**Review Status:** Validated via automated tests and benchmarks  
+**Maintainer:** GitHub Copilot (AI Assistant)
+**Review Status:** Validated via automated tests and benchmarks
 **Last Verification:** 2026-02-28

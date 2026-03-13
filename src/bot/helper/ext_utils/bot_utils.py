@@ -1,35 +1,59 @@
-from httpx import AsyncClient
+from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
-from functools import partial, wraps
 from concurrent.futures import ThreadPoolExecutor
-from asyncio import (
-    create_subprocess_exec,
-    create_subprocess_shell,
-    run_coroutine_threadsafe,
-    sleep,
-)
+from functools import partial, wraps
 
-from ... import user_data, bot_loop
+from httpx import AsyncClient
+
+from ... import bot_loop, user_data
 from ...core.config_manager import Config
 from ...core.telegram_manager import TgClient
 from ..telegram_helper.button_build import ButtonMaker
+from .help_messages import CLONE_HELP_DICT, MIRROR_HELP_DICT, YT_HELP_DICT
 from .telegraph_helper import telegraph
-from .help_messages import (
-    YT_HELP_DICT,
-    MIRROR_HELP_DICT,
-    CLONE_HELP_DICT,
-)
 
 COMMAND_USAGE = {}
+BOOL_ARG_SET = {
+    "-b",
+    "-e",
+    "-z",
+    "-s",
+    "-j",
+    "-d",
+    "-sv",
+    "-ss",
+    "-f",
+    "-fd",
+    "-fu",
+    "-sync",
+    "-hl",
+    "-doc",
+    "-med",
+    "-ut",
+    "-bt",
+}
+DIRECT_BOOL_ARGS = {
+    "-s",
+    "-j",
+    "-f",
+    "-fd",
+    "-fu",
+    "-sync",
+    "-hl",
+    "-doc",
+    "-med",
+    "-ut",
+    "-bt",
+}
 
 
 async def is_premium_user(user_id):
     """
     Check if user is a premium telegram user
-    
+
     Args:
         user_id: Telegram user ID
-    
+
     Returns:
         bool: True if user is premium, False otherwise
     """
@@ -119,44 +143,6 @@ def arg_parser(items, arg_base):
     i = 0
     total = len(items)
 
-    bool_arg_set = {
-        "-b",
-        "-e",
-        "-z",
-        "-s",
-        "-j",
-        "-d",
-        "-sv",
-        "-ss",
-        "-f",
-        "-fd",
-        "-fu",
-        "-sync",
-        "-hl",
-        "-doc",
-        "-med",
-        "-ut",
-        "-bt",
-    }
-
-    def _is_bool_arg(arg):
-        return arg in bool_arg_set
-
-    def _is_direct_bool(arg):
-        return arg in [
-            "-s",
-            "-j",
-            "-f",
-            "-fd",
-            "-fu",
-            "-sync",
-            "-hl",
-            "-doc",
-            "-med",
-            "-ut",
-            "-bt",
-        ]
-
     while i < total:
         part = items[i]
 
@@ -167,48 +153,72 @@ def arg_parser(items, arg_base):
         if arg_start == -1:
             arg_start = i
 
-        if (i + 1 == total and _is_bool_arg(part)) or _is_direct_bool(part):
+        if _is_true_flag_without_value(part, i, total):
             arg_base[part] = True
             i += 1
             continue
 
-        sub_list = []
-        for j in range(i + 1, total):
-            if items[j] in arg_base:
-                if part == "-c" and items[j] == "-c":
-                    sub_list.append(items[j])
-                    continue
-                if _is_bool_arg(part) and not sub_list:
-                    arg_base[part] = True
-                    break
-                if not sub_list:
-                    break
-                check = " ".join(sub_list).strip()
-                if part != "-ff":
-                    break
-                if check.startswith("[") and check.endswith("]"):
-                    break
-                if not check.startswith("["):
-                    break
-            sub_list.append(items[j])
-        if sub_list:
-            value = " ".join(sub_list)
-            if part == "-ff":
-                if not value.strip().startswith("["):
-                    arg_base[part].add(value)
-                else:
-                    try:
-                        arg_base[part].add(tuple(eval(value)))
-                    except:
-                        pass
-            else:
-                arg_base[part] = value
-            i += len(sub_list)
-        i += 1
-    if "link" in arg_base:
-        link_items = items[:arg_start] if arg_start != -1 else items
-        if link_items:
-            arg_base["link"] = " ".join(link_items)
+        consumed = _collect_and_assign_arg_values(items, i, part, arg_base)
+        i += consumed + 1
+
+    _assign_link_argument(items, arg_base, arg_start)
+
+
+def _is_true_flag_without_value(part, index, total):
+    return (index + 1 == total and part in BOOL_ARG_SET) or part in DIRECT_BOOL_ARGS
+
+
+def _collect_and_assign_arg_values(items, index, part, arg_base):
+    sub_list = []
+    total = len(items)
+
+    for j in range(index + 1, total):
+        token = items[j]
+        if token in arg_base and _should_stop_collecting(part, token, sub_list):
+            if part in BOOL_ARG_SET and not sub_list:
+                arg_base[part] = True
+            break
+        sub_list.append(token)
+
+    if sub_list:
+        _assign_parsed_value(arg_base, part, " ".join(sub_list))
+    return len(sub_list)
+
+
+def _should_stop_collecting(part, token, sub_list):
+    if part == "-c" and token == "-c":
+        return False
+    if not sub_list:
+        return True
+    if part != "-ff":
+        return True
+    joined = " ".join(sub_list).strip()
+    if joined.startswith("[") and joined.endswith("]"):
+        return True
+    if not joined.startswith("["):
+        return True
+    return False
+
+
+def _assign_parsed_value(arg_base, part, value):
+    if part != "-ff":
+        arg_base[part] = value
+        return
+    if not value.strip().startswith("["):
+        arg_base[part].add(value)
+        return
+    try:
+        arg_base[part].add(tuple(eval(value)))
+    except Exception:
+        pass
+
+
+def _assign_link_argument(items, arg_base, arg_start):
+    if "link" not in arg_base:
+        return
+    link_items = items[:arg_start] if arg_start != -1 else items
+    if link_items:
+        arg_base["link"] = " ".join(link_items)
 
 
 def get_size_bytes(size):

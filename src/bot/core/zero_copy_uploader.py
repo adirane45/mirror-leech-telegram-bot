@@ -9,7 +9,7 @@ import os
 import socket
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import IO, Optional
 
 
 @dataclass
@@ -98,7 +98,7 @@ class ZeroCopyUploader:
     def _fallback_send(
         self,
         out_socket: socket.socket,
-        handle,
+        handle: IO[bytes],
         offset: int,
         count: int,
     ) -> int:

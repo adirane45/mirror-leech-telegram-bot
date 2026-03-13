@@ -13,10 +13,11 @@ Date: February 8, 2026
 
 import json
 import logging
-from datetime import datetime
-from typing import Dict, List
 from asyncio import sleep
 from collections import deque
+from datetime import datetime
+from typing import Any, AsyncIterator, Deque, Dict, List
+
 from fastapi import WebSocket
 
 LOGGER = logging.getLogger(__name__)
@@ -25,57 +26,57 @@ LOGGER = logging.getLogger(__name__)
 class DashboardManager:
     """
     Manages web dashboard WebSocket connections and real-time updates
-    
+
     Features:
     - WebSocket connection management
     - Task status broadcasting
     - Real-time progress updates
     - Connection tracking and cleanup
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         """Initialize dashboard manager"""
         self.active_connections: List[WebSocket] = []
-        self.task_updates: deque = deque(maxlen=100)  # Store last 100 updates
+        self.task_updates: Deque[Dict[str, Any]] = deque(maxlen=100)  # Store last 100 updates
         self.connected_clients = 0
-    
-    async def connect(self, websocket: WebSocket):
+
+    async def connect(self, websocket: WebSocket) -> None:
         """
         Accept WebSocket connection from client
-        
+
         Args:
             websocket: WebSocket connection object
         """
         await websocket.accept()
         self.active_connections.append(websocket)
         self.connected_clients = len(self.active_connections)
-        
+
         LOGGER.info(f"Client connected. Total clients: {self.connected_clients}")
-        
+
         # Send connection confirmation
         await websocket.send_json({
             "type": "connected",
             "message": "Connected to dashboard",
             "timestamp": datetime.now().isoformat()
         })
-    
-    def disconnect(self, websocket: WebSocket):
+
+    def disconnect(self, websocket: WebSocket) -> None:
         """
         Disconnect WebSocket client
-        
+
         Args:
             websocket: WebSocket connection to remove
         """
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-        
+
         self.connected_clients = len(self.active_connections)
         LOGGER.info(f"Client disconnected. Total clients: {self.connected_clients}")
-    
-    async def broadcast_task_status(self, task_id: str, status: Dict):
+
+    async def broadcast_task_status(self, task_id: str, status: Dict[str, Any]) -> None:
         """
         Broadcast task status to all connected clients
-        
+
         Args:
             task_id: Task identifier
             status: Task status dictionary
@@ -86,7 +87,7 @@ class DashboardManager:
                 - current_size: bytes downloaded
                 - total_size: total bytes
                 - name: task name
-                
+
         Example:
             await dashboard.broadcast_task_status('task_123', {
                 'status': 'downloading',
@@ -103,26 +104,26 @@ class DashboardManager:
             "data": status,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         self.task_updates.append(update)
-        
+
         # Send to all connected clients
-        disconnected = []
+        disconnected: List[WebSocket] = []
         for websocket in self.active_connections:
             try:
                 await websocket.send_json(update)
             except Exception as e:
                 LOGGER.error(f"Error sending to client: {e}")
                 disconnected.append(websocket)
-        
+
         # Clean up disconnected clients
         for websocket in disconnected:
             self.disconnect(websocket)
-    
-    async def broadcast_message(self, message: str, msg_type: str = "info"):
+
+    async def broadcast_message(self, message: str, msg_type: str = "info") -> None:
         """
         Broadcast general message to all clients
-        
+
         Args:
             message: Message text
             msg_type: 'info' | 'warning' | 'error' | 'success'
@@ -133,17 +134,17 @@ class DashboardManager:
             "message": message,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         for websocket in self.active_connections:
             try:
                 await websocket.send_json(update)
             except Exception as e:
                 LOGGER.error(f"Broadcast error: {e}")
-    
-    async def send_dashboard_stats(self, stats: Dict):
+
+    async def send_dashboard_stats(self, stats: Dict[str, Any]) -> None:
         """
         Send dashboard statistics to all clients
-        
+
         Args:
             stats: Dictionary with:
                 - active_tasks: number
@@ -160,23 +161,23 @@ class DashboardManager:
             "data": stats,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         for websocket in self.active_connections:
             try:
                 await websocket.send_json(update)
             except Exception as e:
                 LOGGER.error(f"Stats broadcast error: {e}")
-    
-    async def server_sent_events(self, task_id: str):
+
+    async def server_sent_events(self, task_id: str) -> AsyncIterator[str]:
         """
         Generate server-sent events stream for task progress
-        
+
         Args:
             task_id: Task ID to monitor
-            
+
         Yields:
             SSE formatted strings
-            
+
         Example:
             # Frontend
             eventSource = new EventSource(`/api/stream/${taskId}`);
@@ -185,7 +186,7 @@ class DashboardManager:
                 updateProgressBar(data);
             };
         """
-        async def event_generator():
+        async def event_generator() -> AsyncIterator[str]:
             last_update = None
             while True:
                 # Find latest update for this task
@@ -194,12 +195,12 @@ class DashboardManager:
                     if update.get('task_id') == task_id:
                         current_update = update
                         break
-                
+
                 if current_update != last_update:
                     last_update = current_update
                     if current_update:
                         yield f"data: {json.dumps(current_update)}\n\n"
-                
+
                 await sleep(1)
-        
+
         return event_generator()

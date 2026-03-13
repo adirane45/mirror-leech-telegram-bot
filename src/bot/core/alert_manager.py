@@ -8,12 +8,12 @@ Date: February 5, 2026
 """
 
 import asyncio
-from datetime import datetime, timedelta, UTC
-from typing import Dict, List, Optional, Callable
+from datetime import UTC, datetime, timedelta
 from logging import getLogger
+from typing import Any, Callable, Dict, List, Optional, Union
 
+from .alert_manager_models import Alert, AlertSeverity, AlertType
 from .config_manager import Config
-from .alert_manager_models import AlertSeverity, AlertType, Alert
 
 LOGGER = getLogger(__name__)
 
@@ -24,28 +24,28 @@ class AlertManager:
     Can trigger notifications via multiple channels
     """
 
-    _instance = None
-    _enabled = False
+    _instance: Optional["AlertManager"] = None
+    _enabled: bool = False
     _alerts: List[Alert] = []
-    _subscribers: Dict[str, List[Callable]] = {}
-    _alert_handlers: List[Callable] = []
+    _subscribers: Dict[str, List[Callable[[Alert], None]]] = {}
+    _alert_handlers: List[Callable[[Alert], None]] = []
 
-    def __new__(cls):
+    def __new__(cls) -> "AlertManager":
         if cls._instance is None:
             cls._instance = super(AlertManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._alerts = []
             self._subscribers = {}
             self._alert_handlers = []
             self._initialized = True
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable alert system"""
         self._enabled = getattr(Config, "ENABLE_ALERT_SYSTEM", False)
-        
+
         if self._enabled:
             LOGGER.info("✅ Alert system enabled")
         else:
@@ -56,7 +56,7 @@ class AlertManager:
         """Check if alert system is enabled"""
         return self._enabled
 
-    def register_handler(self, handler: Callable):
+    def register_handler(self, handler: Callable[[Alert], None]) -> None:
         """
         Register a handler function to be called when alerts are triggered
 
@@ -67,7 +67,7 @@ class AlertManager:
             self._alert_handlers.append(handler)
             LOGGER.debug(f"Alert handler registered: {handler.__name__}")
 
-    def unregister_handler(self, handler: Callable):
+    def unregister_handler(self, handler: Callable[[Alert], None]) -> None:
         """Unregister an alert handler"""
         if handler in self._alert_handlers:
             self._alert_handlers.remove(handler)
@@ -79,8 +79,8 @@ class AlertManager:
         title: str,
         message: str,
         task_id: Optional[str] = None,
-        details: Optional[Dict] = None,
-    ) -> Alert:
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Alert]:
         """
         Trigger an alert
 
@@ -118,7 +118,7 @@ class AlertManager:
 
         return alert
 
-    async def _notify_subscribers(self, alert: Alert):
+    async def _notify_subscribers(self, alert: Alert) -> None:
         """Notify all subscribers about the alert"""
         alert_type_str = alert.alert_type.value
 
@@ -132,7 +132,7 @@ class AlertManager:
                 except Exception as e:
                     LOGGER.error(f"Error notifying subscriber: {e}")
 
-    def subscribe(self, alert_type: AlertType, callback: Callable):
+    def subscribe(self, alert_type: AlertType, callback: Callable[[Alert], None]) -> None:
         """
         Subscribe to alerts of a specific type
 
@@ -148,7 +148,7 @@ class AlertManager:
             self._subscribers[key].append(callback)
             LOGGER.debug(f"Subscribed to {key} alerts")
 
-    def unsubscribe(self, alert_type: AlertType, callback: Callable):
+    def unsubscribe(self, alert_type: AlertType, callback: Callable[[Alert], None]) -> None:
         """Unsubscribe from alerts"""
         key = alert_type.value
         if key in self._subscribers and callback in self._subscribers[key]:
@@ -159,7 +159,7 @@ class AlertManager:
         limit: int = 100,
         severity: Optional[AlertSeverity] = None,
         alert_type: Optional[AlertType] = None,
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Union[str, int, float]]]:
         """
         Get recent alerts
 
@@ -186,31 +186,32 @@ class AlertManager:
 
         return [a.to_dict() for a in reversed(alerts)]
 
-    def get_alert_summary(self) -> Dict:
+    def _count_alerts_by_severity(self) -> Dict[str, int]:
+        return {
+            "critical": len([a for a in self._alerts if a.severity == AlertSeverity.CRITICAL]),
+            "high": len([a for a in self._alerts if a.severity == AlertSeverity.HIGH]),
+            "medium": len([a for a in self._alerts if a.severity == AlertSeverity.MEDIUM]),
+            "low": len([a for a in self._alerts if a.severity == AlertSeverity.LOW]),
+        }
+
+    def _count_alerts_by_type(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for alert in self._alerts:
+            alert_type = alert.alert_type.value
+            counts[alert_type] = counts.get(alert_type, 0) + 1
+        return counts
+
+    def get_alert_summary(self) -> Dict[str, Union[bool, int, Dict[str, int]]]:
         """Get summary of alerts"""
         if not self._enabled:
             return {"enabled": False}
 
-        summary = {
+        return {
             "enabled": True,
             "total_alerts": len(self._alerts),
-            "by_severity": {
-                "critical": len([a for a in self._alerts if a.severity == AlertSeverity.CRITICAL]),
-                "high": len([a for a in self._alerts if a.severity == AlertSeverity.HIGH]),
-                "medium": len([a for a in self._alerts if a.severity == AlertSeverity.MEDIUM]),
-                "low": len([a for a in self._alerts if a.severity == AlertSeverity.LOW]),
-            },
-            "by_type": {},
+            "by_severity": self._count_alerts_by_severity(),
+            "by_type": self._count_alerts_by_type(),
         }
-
-        # Count by type
-        for alert in self._alerts:
-            alert_type = alert.alert_type.value
-            if alert_type not in summary["by_type"]:
-                summary["by_type"][alert_type] = 0
-            summary["by_type"][alert_type] += 1
-
-        return summary
 
     def clear_old_alerts(self, hours: int = 24) -> int:
         """

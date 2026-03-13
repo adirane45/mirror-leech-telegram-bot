@@ -11,7 +11,7 @@ Implements:
 import asyncio
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Dict, Any, Callable, List
 from dataclasses import dataclass, field
 
 from .. import LOGGER
@@ -76,7 +76,7 @@ class FailureAnalyzer:
     """Analyze failures and classify them"""
     
     @staticmethod
-    def classify_error(error: Exception, error_message: str = None) -> FailureType:
+    def classify_error(error: Exception, error_message: Optional[str] = None) -> FailureType:
         """Classify error type"""
         msg = (error_message or str(error)).lower()
         
@@ -129,7 +129,7 @@ class FailureAnalyzer:
 class DLQHandler:
     """Dead-Letter Queue handler and retry manager"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = True
         self.max_dlq_size = 10000
         self.dlq_storage: Dict[str, FailedTask] = {}  # In-memory backup
@@ -215,7 +215,7 @@ class DLQHandler:
         
         return now + timedelta(seconds=delay)
     
-    async def get_ready_for_retry(self) -> list:
+    async def get_ready_for_retry(self) -> List[FailedTask]:
         """Get tasks ready for retry"""
         now = datetime.now(timezone.utc)
         ready = []
@@ -235,7 +235,7 @@ class DLQHandler:
     async def retry_task(
         self,
         task_id: str,
-        execute_func: Callable,
+        execute_func: Callable[..., Any],
     ) -> bool:
         """Retry a failed task"""
         if task_id not in self.dlq_storage:
@@ -300,8 +300,7 @@ class DLQHandler:
     async def get_dlq_status(self) -> Dict[str, Any]:
         """Get DLQ status"""
         ready_count = len(await self.get_ready_for_retry())
-        
-        failure_types = {}
+        failure_types: Dict[str, int] = {}
         for task in self.dlq_storage.values():
             ft = task.failure_type.value
             failure_types[ft] = failure_types.get(ft, 0) + 1

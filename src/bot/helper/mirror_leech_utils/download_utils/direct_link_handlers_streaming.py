@@ -7,17 +7,16 @@ Handles direct link generation for streaming video services:
 - StreamVid, StreamHub (quality variants)
 """
 
-from cloudscraper import create_scraper
-from lxml.etree import HTML
 from re import findall, search
-from requests import get
 from time import sleep
 from urllib.parse import urlparse
 
+from cloudscraper import create_scraper
+from lxml.etree import HTML
+from requests import get
+
 from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
-from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
-from ...ext_utils.status_utils import speed_string_to_bytes
 
 user_agent = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
@@ -73,6 +72,17 @@ def filelions_and_streamwish(url):
     parsed_url = urlparse(url)
     hostname = parsed_url.hostname
     scheme = parsed_url.scheme
+    
+    apiKey, apiUrl = _get_api_config(hostname, scheme)
+    file_code, quality = _parse_file_code(url)
+    
+    url = f"{scheme}://{hostname}/{file_code}"
+    result = _fetch_file_info(apiUrl, apiKey, file_code)
+    
+    return _get_quality_url(result, quality)
+
+
+def _get_api_config(hostname, scheme):
     if any(
         x in hostname
         for x in [
@@ -99,17 +109,28 @@ def filelions_and_streamwish(url):
     ):
         apiKey = Config.STREAMWISH_API
         apiUrl = "https://api.streamwish.com"
+    else:
+        apiKey = None
+        apiUrl = None
+    
     if not apiKey:
         raise DirectDownloadLinkException(
             f"ERROR: API is not provided get it from {scheme}://{hostname}"
         )
+    return apiKey, apiUrl
+
+
+def _parse_file_code(url):
     file_code = url.split("/")[-1]
     quality = ""
     if bool(file_code.strip().endswith(("_o", "_h", "_n", "_l"))):
         spited_file_code = file_code.rsplit("_", 1)
         quality = spited_file_code[1]
         file_code = spited_file_code[0]
-    url = f"{scheme}://{hostname}/{file_code}"
+    return file_code, quality
+
+
+def _fetch_file_info(apiUrl, apiKey, file_code):
     try:
         _res = get(
             f"{apiUrl}/api/file/direct_link",
@@ -119,7 +140,10 @@ def filelions_and_streamwish(url):
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
     if _res["status"] != 200:
         raise DirectDownloadLinkException(f"ERROR: {_res['msg']}")
-    result = _res["result"]
+    return _res["result"]
+
+
+def _get_quality_url(result, quality):
     if not result["versions"]:
         raise DirectDownloadLinkException("ERROR: File Not Found")
     error = "\nProvide a quality to download the video\nAvailable Quality:"
@@ -128,7 +152,6 @@ def filelions_and_streamwish(url):
             return version["url"]
         elif version["name"] == "l":
             error += "\nLow"
-        elif version["name"] == "n":
             error += "\nNormal"
         elif version["name"] == "o":
             error += "\nOriginal"
@@ -139,55 +162,67 @@ def filelions_and_streamwish(url):
 
 
 def streamvid(url: str):
-    file_code = url.split("/")[-1]
-    parsed_url = urlparse(url)
-    url = f"{parsed_url.scheme}://{parsed_url.hostname}/d/{file_code}"
-    quality_defined = bool(url.strip().endswith(("_o", "_h", "_n", "_l")))
+    url = _parse_streamvid_url(url)
     with create_scraper() as session:
         try:
             html = HTML(session.get(url).text)
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+        quality_defined = bool(url.strip().endswith(("_o", "_h", "_n", "_l")))
         if quality_defined:
-            data = {}
-            if not (inputs := html.xpath('//form[@id="F1"]//input')):
-                raise DirectDownloadLinkException("ERROR: No inputs found")
-            for i in inputs:
-                if key := i.get("name"):
-                    data[key] = i.get("value")
-            try:
-                html = HTML(session.post(url, data=data).text)
-            except Exception as e:
-                raise DirectDownloadLinkException(
-                    f"ERROR: {e.__class__.__name__}"
-                ) from e
-            if not (
-                script := html.xpath(
-                    '//script[contains(text(),"document.location.href")]/text()'
-                )
-            ):
-                if error := html.xpath(
-                    '//div[@class="alert alert-danger"][1]/text()[2]'
-                ):
-                    raise DirectDownloadLinkException(f"ERROR: {error[0]}")
-                raise DirectDownloadLinkException(
-                    "ERROR: direct link script not found!"
-                )
-            if directLink := findall(r'document\.location\.href="(.*)"', script[0]):
-                return directLink[0]
-            raise DirectDownloadLinkException(
-                "ERROR: direct link not found! in the script"
-            )
-        elif (qualities_urls := html.xpath('//div[@id="dl_versions"]/a/@href')) and (
-            qualities := html.xpath('//div[@id="dl_versions"]/a/text()[2]')
-        ):
-            error = "\nProvide a quality to download the video\nAvailable Quality:"
-            for quality_url, quality in zip(qualities_urls, qualities):
-                error += f"\n{quality.strip()} <code>{quality_url}</code>"
-            raise DirectDownloadLinkException(f"ERROR: {error}")
-        elif error := html.xpath('//div[@class="not-found-text"]/text()'):
+            return _streamvid_handle_with_quality(session, url, html)
+        return _streamvid_handle_quality_options(html)
+
+
+def _parse_streamvid_url(url: str) -> str:
+    file_code = url.split("/")[-1]
+    parsed_url = urlparse(url)
+    return f"{parsed_url.scheme}://{parsed_url.hostname}/d/{file_code}"
+
+
+def _streamvid_handle_with_quality(session, url: str, html):
+    data = _streamvid_extract_form_data(html)
+    try:
+        html = HTML(session.post(url, data=data).text)
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+    return _streamvid_extract_direct_link(html)
+
+
+def _streamvid_extract_form_data(html):
+    data = {}
+    if not (inputs := html.xpath('//form[@id="F1"]//input')):
+        raise DirectDownloadLinkException("ERROR: No inputs found")
+    for i in inputs:
+        if key := i.get("name"):
+            data[key] = i.get("value")
+    return data
+
+
+def _streamvid_extract_direct_link(html):
+    script = html.xpath('//script[contains(text(),"document.location.href")]/text()')
+    if not script:
+        if error := html.xpath('//div[@class="alert alert-danger"][1]/text()[2]'):
             raise DirectDownloadLinkException(f"ERROR: {error[0]}")
-        raise DirectDownloadLinkException("ERROR: Something went wrong")
+        raise DirectDownloadLinkException("ERROR: direct link script not found!")
+    directLink = findall(r'document\.location\.href="(.*)"', script[0])
+    if directLink:
+        return directLink[0]
+    raise DirectDownloadLinkException("ERROR: direct link not found! in the script")
+
+
+def _streamvid_handle_quality_options(html):
+    qualities_urls = html.xpath('//div[@id="dl_versions"]/a/@href')
+    qualities = html.xpath('//div[@id="dl_versions"]/a/text()[2]')
+    if qualities_urls and qualities:
+        error = "\nProvide a quality to download the video\nAvailable Quality:"
+        for quality_url, quality in zip(qualities_urls, qualities):
+            error += f"\n{quality.strip()} <code>{quality_url}</code>"
+        raise DirectDownloadLinkException(f"ERROR: {error}")
+    error = html.xpath('//div[@class="not-found-text"]/text()')
+    if error:
+        raise DirectDownloadLinkException(f"ERROR: {error[0]}")
+    raise DirectDownloadLinkException("ERROR: Something went wrong")
 
 
 def streamhub(url):

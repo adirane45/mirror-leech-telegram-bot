@@ -1,0 +1,16 @@
+  44467 total
+    820 src/bot/core/handlers.py
+    644 src/bot/core/ml_anomaly_detection.py
+    617 src/bot/core/memory_mapped_files.py
+    616 src/bot/core/stream_weaver.py
+    596 src/bot/core/zombie_reaper.py
+    594 src/bot/core/drive_quota_bypass.py
+    584 src/bot/core/edge_workers.py
+    584 src/bot/core/ARCHIVE/replication_manager_backup.py
+    574 src/bot/core/cross_seed_farming.py
+    568 src/bot/core/web3_ipfs_storage.py
+    561 src/bot/core/advanced_analytics.py
+    552 src/bot/core/lazy_imports.py
+    543 src/bot/core/smart_notifications.py
+    531 src/bot/core/ARCHIVE/failover_manager_backup.py
+    513 src/bot/core/captcha_solver.py

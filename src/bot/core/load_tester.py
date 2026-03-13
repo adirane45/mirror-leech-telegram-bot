@@ -104,12 +104,12 @@ class LoadTester:
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
             
             # Aggregate results
-            for result in batch_results:
-                if isinstance(result, Exception):
+            for batch_result in batch_results:
+                if isinstance(batch_result, BaseException):
                     failed += 1
-                    errors.append(str(result))
+                    errors.append(str(batch_result))
                 else:
-                    batch_times, batch_success, batch_failed, batch_errors = result
+                    batch_times, batch_success, batch_failed, batch_errors = batch_result
                     response_times.extend(batch_times)
                     successful += batch_success
                     failed += batch_failed
@@ -122,7 +122,7 @@ class LoadTester:
             sorted_times = sorted(response_times)
             n = len(sorted_times)
             
-            result = LoadTestResult(
+            load_result = LoadTestResult(
                 test_name=test_name,
                 total_requests=num_requests,
                 successful_requests=successful,
@@ -138,7 +138,7 @@ class LoadTester:
                 errors=errors[:10]  # Keep only first 10 errors
             )
         else:
-            result = LoadTestResult(
+            load_result = LoadTestResult(
                 test_name=test_name,
                 total_requests=num_requests,
                 successful_requests=0,
@@ -154,15 +154,15 @@ class LoadTester:
                 errors=errors[:10]
             )
         
-        self.results.append(result)
+        self.results.append(load_result)
         
         logger.info(
             f"Load test '{test_name}' complete: {successful}/{num_requests} successful, "
-            f"{result.requests_per_second:.2f} req/s, "
-            f"avg={result.avg_response_time_ms:.2f}ms"
+            f"{load_result.requests_per_second:.2f} req/s, "
+            f"avg={load_result.avg_response_time_ms:.2f}ms"
         )
         
-        return result
+        return load_result
     
     async def _run_batch(
         self,

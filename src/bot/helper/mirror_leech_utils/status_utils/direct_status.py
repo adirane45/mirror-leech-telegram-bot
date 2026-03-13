@@ -1,8 +1,4 @@
-from ...ext_utils.status_utils import (
-    MirrorStatus,
-    get_readable_file_size,
-    get_readable_time,
-)
+from ...ext_utils.status_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 
 class DirectStatus:

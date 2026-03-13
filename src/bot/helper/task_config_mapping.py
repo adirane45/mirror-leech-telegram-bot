@@ -30,6 +30,43 @@ class TaskConfigMapping:
                 task_config.up_dest = Config.UPLOAD_PATHS[task_config.up_dest]
 
     @staticmethod
+    @staticmethod
+    def _get_ffmpeg_dict(task_config):
+        """Get the appropriate ffmpeg dictionary"""
+        if task_config.user_dict.get("FFMPEG_CMDS", None):
+            return deepcopy(task_config.user_dict["FFMPEG_CMDS"])
+        elif (
+            "FFMPEG_CMDS" not in task_config.user_dict
+            or not task_config.user_dict["FFMPEG_CMDS"]
+        ) and Config.FFMPEG_CMDS:
+            return deepcopy(Config.FFMPEG_CMDS)
+        return None
+    
+    @staticmethod
+    def _process_ffmpeg_key(task_config, key, ffmpeg_dict):
+        """Process a single ffmpeg key and return commands"""
+        cmds = []
+        if isinstance(key, tuple):
+            cmds.extend(list(key))
+            return cmds
+        
+        if ffmpeg_dict is None or key not in ffmpeg_dict.keys():
+            return cmds
+        
+        for ind, vl in enumerate(ffmpeg_dict[key]):
+            if variables := set(findall(r"\{(.*?)\}", vl)):
+                ff_values = (
+                    task_config.user_dict.get("FFMPEG_VARIABLES", {})
+                    .get(key, {})
+                    .get(str(ind), {})
+                )
+                if Counter(list(variables)) == Counter(list(ff_values.keys())):
+                    cmds.append(vl.format(**ff_values))
+            else:
+                cmds.append(vl)
+        return cmds
+    
+    @staticmethod
     def apply_ffmpeg_cmds(task_config):
         """
         Apply FFmpeg command templates with variable substitution
@@ -38,42 +75,8 @@ class TaskConfigMapping:
         if not task_config.ffmpeg_cmds:
             return
 
-        # Get FFmpeg command dictionary
-        if task_config.user_dict.get("FFMPEG_CMDS", None):
-            ffmpeg_dict = deepcopy(task_config.user_dict["FFMPEG_CMDS"])
-        elif (
-            "FFMPEG_CMDS" not in task_config.user_dict
-            or not task_config.user_dict["FFMPEG_CMDS"]
-        ) and Config.FFMPEG_CMDS:
-            ffmpeg_dict = deepcopy(Config.FFMPEG_CMDS)
-        else:
-            ffmpeg_dict = None
-
+        ffmpeg_dict = TaskConfigMapping._get_ffmpeg_dict(task_config)
         cmds = []
         for key in list(task_config.ffmpeg_cmds):
-            # Handle tuple keys
-            if isinstance(key, tuple):
-                cmds.extend(list(key))
-                continue
-
-            # Skip if key not in dictionary
-            if ffmpeg_dict is None or key not in ffmpeg_dict.keys():
-                continue
-
-            # Process each command template
-            for ind, vl in enumerate(ffmpeg_dict[key]):
-                # Check for variables to substitute
-                if variables := set(findall(r"\{(.*?)\}", vl)):
-                    ff_values = (
-                        task_config.user_dict.get("FFMPEG_VARIABLES", {})
-                        .get(key, {})
-                        .get(str(ind), {})
-                    )
-                    # Only substitute if all variables are provided
-                    if Counter(list(variables)) == Counter(list(ff_values.keys())):
-                        cmds.append(vl.format(**ff_values))
-                else:
-                    # No variables, use as-is
-                    cmds.append(vl)
-
+            cmds.extend(TaskConfigMapping._process_ffmpeg_key(task_config, key, ffmpeg_dict))
         task_config.ffmpeg_cmds = cmds

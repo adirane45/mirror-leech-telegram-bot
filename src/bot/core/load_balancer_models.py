@@ -4,8 +4,8 @@ Data structures for load balancing and bot instance management
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 
@@ -31,7 +31,7 @@ class BotInstance:
     last_heartbeat: datetime = field(default_factory=datetime.now)
     last_request_time: Optional[datetime] = None
     response_time_ms: float = 0.0
-    
+
     @property
     def connection_ratio(self) -> float:
         """Get relative connection load"""

@@ -8,22 +8,25 @@ Date: February 5, 2026
 """
 
 import asyncio
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime, UTC
-import json
 import hashlib
+from datetime import UTC, datetime
 from logging import getLogger
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from .config_manager import Config
 
 LOGGER = getLogger(__name__)
 
+IntegrityDetails = Dict[str, Any]
+RecoveryEntry = Dict[str, Any]
+RecoveryReport = Dict[str, Any]
+
 
 class IntegrityCheck:
     """Represents a data integrity check result"""
 
-    def __init__(self, path: str, is_valid: bool, details: Optional[Dict] = None):
+    def __init__(self, path: str, is_valid: bool, details: Optional[IntegrityDetails] = None) -> None:
         self.path = path
         self.is_valid = is_valid
         self.details = details or {}
@@ -36,24 +39,24 @@ class RecoveryManager:
     Handles validation, corruption detection, and auto-recovery
     """
 
-    _instance = None
+    _instance: Optional['RecoveryManager'] = None
     _enabled = False
     _integrity_checks: List[IntegrityCheck] = []
 
-    def __new__(cls):
+    def __new__(cls) -> 'RecoveryManager':
         if cls._instance is None:
             cls._instance = super(RecoveryManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._integrity_checks = []
             self._initialized = True
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable recovery manager"""
         self._enabled = getattr(Config, "ENABLE_RECOVERY_MANAGER", False)
-        
+
         if self._enabled:
             LOGGER.info("✅ Recovery manager enabled")
         else:
@@ -69,7 +72,7 @@ class RecoveryManager:
         path: str,
         check_hash: bool = True,
         check_structure: bool = True,
-    ) -> Tuple[bool, Dict]:
+    ) -> Tuple[bool, IntegrityDetails]:
         """
         Verify data integrity of a path
 
@@ -84,16 +87,17 @@ class RecoveryManager:
         if not self._enabled:
             return True, {}
 
-        details = {
+        errors: List[str] = []
+        details: IntegrityDetails = {
             "hash_valid": True,
             "structure_valid": True,
-            "errors": [],
+            "errors": errors,
         }
 
         p = Path(path)
 
         if not p.exists():
-            details["errors"].append(f"Path does not exist: {path}")
+            errors.append(f"Path does not exist: {path}")
             return False, details
 
         # Check hash if file
@@ -102,7 +106,7 @@ class RecoveryManager:
                 file_hash = self._calculate_hash(p)
                 details["file_hash"] = file_hash
             except Exception as e:
-                details["errors"].append(f"Hash calculation failed: {e}")
+                errors.append(f"Hash calculation failed: {e}")
                 details["hash_valid"] = False
 
         # Check structure if directory
@@ -110,9 +114,9 @@ class RecoveryManager:
             structure_errors = self._verify_directory_structure(p)
             if structure_errors:
                 details["structure_valid"] = False
-                details["errors"].extend(structure_errors)
+                errors.extend(structure_errors)
 
-        is_valid = len(details["errors"]) == 0
+        is_valid = len(errors) == 0
         check = IntegrityCheck(path, is_valid, details)
         self._integrity_checks.append(check)
 
@@ -211,7 +215,7 @@ class RecoveryManager:
         self,
         critical_paths: List[str],
         backup_dir: Optional[str] = None,
-    ) -> Dict:
+    ) -> RecoveryReport:
         """
         Perform automatic recovery for critical paths
 
@@ -225,13 +229,14 @@ class RecoveryManager:
         if not self._enabled:
             return {"enabled": False}
 
-        report = {
+        report_details: List[RecoveryEntry] = []
+        report: RecoveryReport = {
             "timestamp": datetime.now(UTC).isoformat(),
             "total_paths": len(critical_paths),
             "valid_paths": 0,
             "repaired_paths": 0,
             "failed_paths": 0,
-            "details": [],
+            "details": report_details,
         }
 
         for path in critical_paths:
@@ -239,8 +244,8 @@ class RecoveryManager:
                 is_valid, details = await self.verify_integrity(path)
 
                 if is_valid:
-                    report["valid_paths"] += 1
-                    report["details"].append({
+                    report["valid_paths"] = int(report["valid_paths"]) + 1
+                    report_details.append({
                         "path": path,
                         "status": "valid",
                     })
@@ -253,22 +258,22 @@ class RecoveryManager:
                     repaired = await self.repair_corrupted_data(path, backup_path)
 
                     if repaired:
-                        report["repaired_paths"] += 1
-                        report["details"].append({
+                        report["repaired_paths"] = int(report["repaired_paths"]) + 1
+                        report_details.append({
                             "path": path,
                             "status": "repaired",
                         })
                     else:
-                        report["failed_paths"] += 1
-                        report["details"].append({
+                        report["failed_paths"] = int(report["failed_paths"]) + 1
+                        report_details.append({
                             "path": path,
                             "status": "failed",
                             "errors": details.get("errors", []),
                         })
 
             except Exception as e:
-                report["failed_paths"] += 1
-                report["details"].append({
+                report["failed_paths"] = int(report["failed_paths"]) + 1
+                report_details.append({
                     "path": path,
                     "status": "failed",
                     "error": str(e),
@@ -281,7 +286,7 @@ class RecoveryManager:
 
         return report
 
-    def get_integrity_history(self, limit: int = 50) -> List[Dict]:
+    def get_integrity_history(self, limit: int = 50) -> List[RecoveryEntry]:
         """Get recent integrity check history"""
         if not self._enabled:
             return []
@@ -297,7 +302,7 @@ class RecoveryManager:
             for check in reversed(checks)
         ]
 
-    def get_recovery_status(self) -> Dict:
+    def get_recovery_status(self) -> Dict[str, Any]:
         """Get recovery manager status"""
         if not self._enabled:
             return {"enabled": False}

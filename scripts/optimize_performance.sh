@@ -30,28 +30,28 @@ sys.path.insert(0, '/app/src')
 
 try:
     from pymongo import MongoClient, ASCENDING, DESCENDING
-    
+
     client = MongoClient()
     db = client['bot_db']
-    
+
     print("   Creating MongoDB indexes...")
-    
+
     # Downloads collection
     if 'downloads' in db.list_collection_names():
         db.downloads.create_index([('user_id', ASCENDING)])
         db.downloads.create_index([('timestamp', DESCENDING)])
         db.downloads.create_index([('status', ASCENDING)])
         print("   ✅ Downloads indexes created")
-    
+
     # Users collection
     if 'users' in db.list_collection_names():
         db.users.create_index([('user_id', ASCENDING)])
         db.users.create_index([('last_active', DESCENDING)])
         print("   ✅ Users indexes created")
-    
+
     client.close()
     print("   ✅ Database optimization complete")
-    
+
 except Exception as e:
     print(f"   ⚠️  MongoDB not available or error: {e}")
 PYEOF

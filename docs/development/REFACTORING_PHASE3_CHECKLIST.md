@@ -27,7 +27,7 @@
 - [ ] `@handle_api_errors` decorator
   - [ ] Catch KeyError → Missing field
   - [ ] Catch ConnectionError → Network issue
-  - [ ] Catch JSONDecodeError → Invalid response  
+  - [ ] Catch JSONDecodeError → Invalid response
   - [ ] Add execution context to error message
 - [ ] `@validate_response(required_keys)` decorator
   - [ ] Check required fields present
@@ -58,7 +58,7 @@
 
 ### Critical Hotspot Refactorings
 
-#### [x] Stage 2.1: Refactor `mediafireFolder()` 
+#### [x] Stage 2.1: Refactor `mediafireFolder()`
 **File:** `src/bot/helper/mirror_leech_utils/download_utils/direct_link_handlers_cloud.py`
 **Priority:** CRITICAL (164 LOC, 18 changes, highest burden)
 

@@ -34,7 +34,6 @@ import io
 import os
 import re
 import socket
-import socks
 import ssl
 import sys
 import tempfile
@@ -42,6 +41,8 @@ import urllib.error
 import urllib.request
 from collections.abc import Mapping
 from typing import Any, Optional
+
+import socks
 
 
 def getBrowserUserAgent() -> str:

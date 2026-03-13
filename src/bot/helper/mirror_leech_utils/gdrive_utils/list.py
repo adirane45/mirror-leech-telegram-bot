@@ -1,24 +1,21 @@
-from aiofiles.os import path as aiopath
-from asyncio import wait_for, Event, gather
+from asyncio import Event, gather, wait_for
 from functools import partial
 from logging import getLogger
+from time import time
+
+from aiofiles.os import path as aiopath
 from natsort import natsorted
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
 from tenacity import RetryError
-from time import time
 
 from ....core.config_manager import Config
-from ...ext_utils.bot_utils import update_user_ldata, new_task
+from ...ext_utils.bot_utils import new_task, update_user_ldata
 from ...ext_utils.db_handler import database
 from ...ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ...mirror_leech_utils.gdrive_utils.helper import GoogleDriveHelper
 from ...telegram_helper.button_build import ButtonMaker
-from ...telegram_helper.message_utils import (
-    send_message,
-    edit_message,
-    delete_message,
-)
+from ...telegram_helper.message_utils import delete_message, edit_message, send_message
 
 LOGGER = getLogger(__name__)
 
@@ -39,78 +36,106 @@ async def id_updates(_, query, obj):
     if obj.query_proc:
         return
     obj.query_proc = True
-    if data[1] == "pre":
-        obj.iter_start -= LIST_LIMIT * obj.page_step
-        await obj.get_items_buttons()
-    elif data[1] == "nex":
-        obj.iter_start += LIST_LIMIT * obj.page_step
-        await obj.get_items_buttons()
-    elif data[1] == "back":
-        if data[2] == "dr":
-            await obj.choose_token()
-        else:
-            await obj.get_pevious_id()
-    elif data[1] == "dr":
-        index = int(data[2])
-        i = obj.drives[index]
-        obj.id = i["id"]
-        obj.parents = [{"id": i["id"], "name": i["name"]}]
-        await obj.get_items()
-    elif data[1] == "pa":
-        index = int(data[3])
-        i = obj.items_list[index]
-        obj.id = i["id"]
-        if data[2] == "fo":
-            obj.parents.append({"id": i["id"], "name": i["name"]})
-            await obj.get_items()
-        else:
-            await delete_message(message)
-            obj.event.set()
-    elif data[1] == "ps":
-        if obj.page_step == int(data[2]):
+    action = data[1]
+    handlers = {
+        "pre": partial(_handle_page_navigation, obj, -1),
+        "nex": partial(_handle_page_navigation, obj, 1),
+        "back": partial(_handle_back_navigation, obj, data),
+        "dr": partial(_handle_drive_select, obj, data),
+        "pa": partial(_handle_parent_action, obj, data, message),
+        "ps": partial(_handle_page_step, obj, data),
+        "root": partial(_handle_root_navigation, obj),
+        "itype": partial(_handle_item_type, obj, data),
+        "cur": partial(_handle_current_select, obj, message),
+        "def": partial(_handle_default_set, obj),
+        "owner": partial(_handle_token_switch, obj, "token.pickle", False),
+        "user": partial(_handle_token_switch, obj, obj.user_token_path, False),
+        "sa": partial(_handle_token_switch, obj, "accounts", True),
+    }
+    handler = handlers.get(action)
+    if handler:
+        should_continue = await handler()
+        if should_continue is False:
             obj.query_proc = False
             return
-        obj.page_step = int(data[2])
-        await obj.get_items_buttons()
-    elif data[1] == "root":
-        obj.id = obj.parents[0]["id"]
-        obj.parents = [obj.parents[0]]
+    obj.query_proc = False
+
+
+async def _handle_page_navigation(obj, direction):
+    obj.iter_start += direction * LIST_LIMIT * obj.page_step
+    await obj.get_items_buttons()
+
+
+async def _handle_back_navigation(obj, data):
+    if data[2] == "dr":
+        await obj.choose_token()
+    else:
+        await obj.get_pevious_id()
+
+
+async def _handle_drive_select(obj, data):
+    index = int(data[2])
+    drive = obj.drives[index]
+    obj.id = drive["id"]
+    obj.parents = [{"id": drive["id"], "name": drive["name"]}]
+    await obj.get_items()
+
+
+async def _handle_parent_action(obj, data, message):
+    index = int(data[3])
+    item = obj.items_list[index]
+    obj.id = item["id"]
+    if data[2] == "fo":
+        obj.parents.append({"id": item["id"], "name": item["name"]})
         await obj.get_items()
-    elif data[1] == "itype":
-        obj.item_type = data[2]
-        await obj.get_items()
-    elif data[1] == "cur":
+    else:
         await delete_message(message)
         obj.event.set()
-    elif data[1] == "def":
-        if obj.token_path != obj.user_token_path:
-            id_ = f"sa:{obj.id}" if obj.use_sa else f"tp:{obj.id}"
-        else:
-            id_ = f"mtp:{obj.id}"
-        if id_ != obj.listener.user_dict.get("GDRIVE_ID"):
-            update_user_ldata(obj.listener.user_id, "GDRIVE_ID", id_)
-            await obj.get_items_buttons()
-            if Config.DATABASE_URL:
-                await database.update_user_data(obj.listener.user_id)
-    elif data[1] == "owner":
-        obj.token_path = "token.pickle"
-        obj.use_sa = False
-        obj.id = ""
-        obj.parents = []
-        await obj.list_drives()
-    elif data[1] == "user":
-        obj.token_path = obj.user_token_path
-        obj.use_sa = False
-        obj.id = ""
-        obj.parents = []
-        await obj.list_drives()
-    elif data[1] == "sa":
-        obj.token_path = "accounts"
-        obj.use_sa = True
-        obj.id = ""
-        obj.parents = []
-        await obj.list_drives()
-    obj.query_proc = False
+
+
+async def _handle_page_step(obj, data):
+    page_step = int(data[2])
+    if obj.page_step == page_step:
+        return False
+    obj.page_step = page_step
+    await obj.get_items_buttons()
+    return True
+
+
+async def _handle_root_navigation(obj):
+    obj.id = obj.parents[0]["id"]
+    obj.parents = [obj.parents[0]]
+    await obj.get_items()
+
+
+async def _handle_item_type(obj, data):
+    obj.item_type = data[2]
+    await obj.get_items()
+
+
+async def _handle_current_select(obj, message):
+    await delete_message(message)
+    obj.event.set()
+
+
+async def _handle_default_set(obj):
+    if obj.token_path != obj.user_token_path:
+        id_ = f"sa:{obj.id}" if obj.use_sa else f"tp:{obj.id}"
+    else:
+        id_ = f"mtp:{obj.id}"
+    if id_ != obj.listener.user_dict.get("GDRIVE_ID"):
+        update_user_ldata(obj.listener.user_id, "GDRIVE_ID", id_)
+        await obj.get_items_buttons()
+        if Config.DATABASE_URL:
+            await database.update_user_data(obj.listener.user_id)
+
+
+async def _handle_token_switch(obj, token_path, use_sa):
+    obj.token_path = token_path
+    obj.use_sa = use_sa
+    obj.id = ""
+    obj.parents = []
+    await obj.list_drives()
 
 
 class GoogleDriveList(GoogleDriveHelper):
@@ -159,37 +184,46 @@ class GoogleDriveList(GoogleDriveHelper):
             else:
                 await edit_message(self._reply_to, msg, button)
 
-    async def get_items_buttons(self):
-        items_no = len(self.items_list)
-        pages = (items_no + LIST_LIMIT - 1) // LIST_LIMIT
+    def _normalize_iteration_start(self, items_no, pages):
         if items_no <= self.iter_start:
             self.iter_start = 0
         elif self.iter_start < 0 or self.iter_start > items_no:
             self.iter_start = LIST_LIMIT * (pages - 1)
-        page = (self.iter_start / LIST_LIMIT) + 1 if self.iter_start != 0 else 1
-        buttons = ButtonMaker()
-        for index, item in enumerate(
-            self.items_list[self.iter_start : LIST_LIMIT + self.iter_start]
-        ):
-            orig_index = index + self.iter_start
-            if item["mimeType"] == self.G_DRIVE_DIR_MIME_TYPE:
-                ptype = "fo"
-                name = item["name"]
-            else:
-                ptype = "fi"
-                name = f"[{get_readable_file_size(float(item['size']))}] {item['name']}"
-            buttons.data_button(name, f"gdq pa {ptype} {orig_index}")
-        if items_no > LIST_LIMIT:
-            for i in [1, 2, 4, 6, 10, 30, 50, 100]:
-                buttons.data_button(i, f"gdq ps {i}", position="header")
-            buttons.data_button("Previous", "gdq pre", position="footer")
-            buttons.data_button("Next", "gdq nex", position="footer")
-        if self.list_status == "gdd":
-            if self.item_type == "folders":
-                buttons.data_button("Files", "gdq itype files", position="footer")
-            else:
-                buttons.data_button("Folders", "gdq itype folders", position="footer")
-        if self.list_status == "gdu" or len(self.items_list) > 0:
+
+    def _build_item_button(self, item, index):
+        orig_index = index + self.iter_start
+        if item["mimeType"] == self.G_DRIVE_DIR_MIME_TYPE:
+            ptype = "fo"
+            name = item["name"]
+        else:
+            ptype = "fi"
+            name = f"[{get_readable_file_size(float(item['size']))}] {item['name']}"
+        return name, f"gdq pa {ptype} {orig_index}"
+
+    def _add_item_buttons(self, buttons):
+        visible_items = self.items_list[self.iter_start : LIST_LIMIT + self.iter_start]
+        for index, item in enumerate(visible_items):
+            name, callback_data = self._build_item_button(item, index)
+            buttons.data_button(name, callback_data)
+
+    def _add_pagination_buttons(self, buttons, items_no):
+        if items_no <= LIST_LIMIT:
+            return
+        for page_step in [1, 2, 4, 6, 10, 30, 50, 100]:
+            buttons.data_button(page_step, f"gdq ps {page_step}", position="header")
+        buttons.data_button("Previous", "gdq pre", position="footer")
+        buttons.data_button("Next", "gdq nex", position="footer")
+
+    def _add_item_type_toggle(self, buttons):
+        if self.list_status != "gdd":
+            return
+        if self.item_type == "folders":
+            buttons.data_button("Files", "gdq itype files", position="footer")
+        else:
+            buttons.data_button("Folders", "gdq itype folders", position="footer")
+
+    def _add_footer_action_buttons(self, buttons, items_no):
+        if self.list_status == "gdu" or items_no > 0:
             buttons.data_button("Choose Current Path", "gdq cur", position="footer")
         if self.list_status == "gdu":
             buttons.data_button("Set as Default Path", "gdq def", position="footer")
@@ -203,7 +237,8 @@ class GoogleDriveList(GoogleDriveHelper):
         if len(self.parents) > 1:
             buttons.data_button("Back To Root", "gdq root", position="footer")
         buttons.data_button("Cancel", "gdq cancel", position="footer")
-        button = buttons.build_menu(f_cols=2)
+
+    def _build_items_message(self, items_no, page, pages):
         msg = "Choose Path:" + (
             "\nTransfer Type: <i>Download</i>"
             if self.list_status == "gdd"
@@ -219,6 +254,20 @@ class GoogleDriveList(GoogleDriveHelper):
         msg += f"\n\nCurrent ID: <code>{self.id}</code>"
         msg += f"\nCurrent Path: <code>{('/').join(i['name'] for i in self.parents)}</code>"
         msg += f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
+        return msg
+
+    async def get_items_buttons(self):
+        items_no = len(self.items_list)
+        pages = (items_no + LIST_LIMIT - 1) // LIST_LIMIT
+        self._normalize_iteration_start(items_no, pages)
+        page = (self.iter_start / LIST_LIMIT) + 1 if self.iter_start != 0 else 1
+        buttons = ButtonMaker()
+        self._add_item_buttons(buttons)
+        self._add_pagination_buttons(buttons, items_no)
+        self._add_item_type_toggle(buttons)
+        self._add_footer_action_buttons(buttons, items_no)
+        button = buttons.build_menu(f_cols=2)
+        msg = self._build_items_message(items_no, page, pages)
         await self._send_list_message(msg, button)
 
     async def get_items(self, itype=""):
@@ -246,6 +295,59 @@ class GoogleDriveList(GoogleDriveHelper):
             self.iter_start = 0
             await self.get_items_buttons()
 
+    async def _handle_no_drives(self):
+        """Handle case when no drives are accessible"""
+        if not self.use_sa:
+            self.drives = [{"id": "root", "name": "root"}]
+            self.parents = [{"id": "root", "name": "root"}]
+            self.id = "root"
+            await self.get_items()
+            return True
+        
+        msg = "Service accounts Doesn't have access to any drive!"
+        buttons = ButtonMaker()
+        if self._token_user and self._token_owner:
+            buttons.data_button("Back", "gdq back dr", position="footer")
+        buttons.data_button("Cancel", "gdq cancel", position="footer")
+        button = buttons.build_menu(2)
+        await self._send_list_message(msg, button)
+        return True
+    
+    async def _handle_single_drive(self, drives):
+        """Handle case when only one drive is available"""
+        self.id = drives[0]["id"]
+        self.drives = [{"id": self.id, "name": drives[0]["name"]}]
+        self.parents = [{"id": self.id, "name": drives[0]["name"]}]
+        await self.get_items()
+        return True
+    
+    async def _show_drive_list(self, drives):
+        """Display list of drives for user to choose"""
+        msg = "Choose Drive:" + (
+            "\nTransfer Type: <i>Download</i>"
+            if self.list_status == "gdd"
+            else "\nTransfer Type: <i>Upload</i>"
+        )
+        msg += f"\nToken Path: {self.token_path}"
+        msg += (
+            f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
+        )
+        buttons = ButtonMaker()
+        self.drives.clear()
+        self.parents.clear()
+        if not self.use_sa:
+            buttons.data_button("root", "gdq dr 0")
+            self.drives = [{"id": "root", "name": "root"}]
+        for index, item in enumerate(drives, start=1):
+            self.drives.append({"id": item["id"], "name": item["name"]})
+            buttons.data_button(item["name"], f"gdq dr {index}")
+        if self._token_user and self._token_owner:
+            buttons.data_button("Back", "gdq back dr", position="footer")
+        buttons.data_button("Cancel", "gdq cancel", position="footer")
+        button = buttons.build_menu(2)
+        await self._send_list_message(msg, button)
+        return True
+    
     async def list_drives(self):
         self.service = self.authorize()
         try:
@@ -254,88 +356,62 @@ class GoogleDriveList(GoogleDriveHelper):
             self.id = str(e)
             self.event.set()
             return
+        
         drives = result["drives"]
-        if len(drives) == 0 and not self.use_sa:
-            self.drives = [{"id": "root", "name": "root"}]
-            self.parents = [{"id": "root", "name": "root"}]
-            self.id = "root"
-            await self.get_items()
-        elif len(drives) == 0:
-            msg = "Service accounts Doesn't have access to any drive!"
-            buttons = ButtonMaker()
-            if self._token_user and self._token_owner:
-                buttons.data_button("Back", "gdq back dr", position="footer")
-            buttons.data_button("Cancel", "gdq cancel", position="footer")
-            button = buttons.build_menu(2)
-            await self._send_list_message(msg, button)
+        
+        if len(drives) == 0:
+            await self._handle_no_drives()
         elif self.use_sa and len(drives) == 1:
-            self.id = drives[0]["id"]
-            self.drives = [{"id": self.id, "name": drives[0]["name"]}]
-            self.parents = [{"id": self.id, "name": drives[0]["name"]}]
-            await self.get_items()
+            await self._handle_single_drive(drives)
         else:
-            msg = "Choose Drive:" + (
-                "\nTransfer Type: <i>Download</i>"
-                if self.list_status == "gdd"
-                else "\nTransfer Type: <i>Upload</i>"
-            )
-            msg += f"\nToken Path: {self.token_path}"
-            msg += (
-                f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
-            )
-            buttons = ButtonMaker()
-            self.drives.clear()
-            self.parents.clear()
-            if not self.use_sa:
-                buttons.data_button("root", "gdq dr 0")
-                self.drives = [{"id": "root", "name": "root"}]
-            for index, item in enumerate(drives, start=1):
-                self.drives.append({"id": item["id"], "name": item["name"]})
-                buttons.data_button(item["name"], f"gdq dr {index}")
-            if self._token_user and self._token_owner:
-                buttons.data_button("Back", "gdq back dr", position="footer")
-            buttons.data_button("Cancel", "gdq cancel", position="footer")
-            button = buttons.build_menu(2)
-            await self._send_list_message(msg, button)
+            await self._show_drive_list(drives)
+
+    def _has_multiple_token_options(self):
+        return (
+            (self._token_user and self._token_owner)
+            or (self._sa_owner and self._token_owner)
+            or (self._sa_owner and self._token_user)
+        )
+
+    async def _show_token_choices(self):
+        msg = "Choose Token:" + (
+            "\nTransfer Type: Download"
+            if self.list_status == "gdd"
+            else "\nTransfer Type: Upload"
+        )
+        msg += (
+            f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
+        )
+        buttons = ButtonMaker()
+        if self._token_owner:
+            buttons.data_button("Owner Token", "gdq owner")
+        if self._sa_owner:
+            buttons.data_button("Service Accounts", "gdq sa")
+        if self._token_user:
+            buttons.data_button("My Token", "gdq user")
+        buttons.data_button("Cancel", "gdq cancel")
+        button = buttons.build_menu(2)
+        await self._send_list_message(msg, button)
+
+    def _select_default_token(self):
+        if self._token_owner:
+            self.token_path = "token.pickle"
+            self.use_sa = False
+            return
+        if self._token_user:
+            self.token_path = self.user_token_path
+            self.use_sa = False
+            return
+        self.token_path = "accounts"
+        self.use_sa = True
 
     async def choose_token(self):
-        if (
-            self._token_user
-            and self._token_owner
-            or self._sa_owner
-            and self._token_owner
-            or self._sa_owner
-            and self._token_user
-        ):
-            msg = "Choose Token:" + (
-                "\nTransfer Type: Download"
-                if self.list_status == "gdd"
-                else "\nTransfer Type: Upload"
-            )
-            msg += (
-                f"\nTimeout: {get_readable_time(self._timeout - (time() - self._time))}"
-            )
-            buttons = ButtonMaker()
-            if self._token_owner:
-                buttons.data_button("Owner Token", "gdq owner")
-            if self._sa_owner:
-                buttons.data_button("Service Accounts", "gdq sa")
-            if self._token_user:
-                buttons.data_button("My Token", "gdq user")
-            buttons.data_button("Cancel", "gdq cancel")
-            button = buttons.build_menu(2)
-            await self._send_list_message(msg, button)
-        else:
-            if self._token_owner:
-                self.token_path = "token.pickle"
-                self.use_sa = False
-            elif self._token_user:
-                self.token_path = self.user_token_path
-                self.use_sa = False
-            else:
-                self.token_path = "accounts"
-                self.use_sa = True
-            await self.list_drives()
+        if self._has_multiple_token_options():
+            await self._show_token_choices()
+            return
+
+        self._select_default_token()
+        await self.list_drives()
 
     async def get_pevious_id(self):
         if self.parents:

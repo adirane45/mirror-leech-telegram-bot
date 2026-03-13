@@ -1,14 +1,9 @@
-from googleapiclient.errors import HttpError
 from logging import getLogger
 from os import path as ospath
-from tenacity import (
-    retry,
-    wait_exponential,
-    stop_after_attempt,
-    retry_if_exception_type,
-    RetryError,
-)
 from time import time
+
+from googleapiclient.errors import HttpError
+from tenacity import RetryError, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ...ext_utils.bot_utils import async_to_sync
 from ...mirror_leech_utils.gdrive_utils.helper import GoogleDriveHelper
@@ -40,10 +35,59 @@ class GoogleDriveClone(GoogleDriveHelper):
             self.listener.up_dest = self.listener.up_dest.replace("sa:", "", 1)
             self.use_sa = True
 
-    def clone(self):
+    def _resolve_clone_file_id(self):
         try:
-            file_id = self.get_id_from_url(self.listener.link)
+            return self.get_id_from_url(self.listener.link)
         except (KeyError, IndexError):
+            return None
+
+    def _clone_directory_meta(self, meta):
+        dir_id = self.create_directory(meta.get("name"), self.listener.up_dest)
+        self._clone_folder(meta.get("name"), meta.get("id"), dir_id)
+        durl = self.G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
+        if self.listener.is_cancelled:
+            LOGGER.info("Deleting cloned data from Drive...")
+            self.service.files().delete(
+                fileId=dir_id, supportsAllDrives=True
+            ).execute()
+            return None, None, None, None, None
+        self.listener.size = self.proc_bytes
+        return (
+            durl,
+            "Folder",
+            self.total_files,
+            self.total_folders,
+            self.get_id_from_url(durl),
+        )
+
+    def _clone_file_meta(self, meta, mime_type):
+        file = self._copy_file(meta.get("id"), self.listener.up_dest)
+        durl = self.G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
+        resolved_mime_type = mime_type if mime_type is not None else "File"
+        self.listener.size = int(meta.get("size", 0))
+        return (
+            durl,
+            resolved_mime_type,
+            self.total_files,
+            self.total_folders,
+            self.get_id_from_url(durl),
+        )
+
+    def _translate_clone_error(self, err):
+        if "User rate limit exceeded" in err:
+            return "User rate limit exceeded.", False
+        if "File not found" in err:
+            if not self.alt_auth and self.use_sa:
+                self.alt_auth = True
+                self.use_sa = False
+                LOGGER.error("File not found. Trying with token.pickle...")
+                return "", True
+            return "File not found.", False
+        return f"Error.\n{err}", False
+
+    def clone(self):
+        file_id = self._resolve_clone_file_id()
+        if file_id is None:
             return (
                 "Google Drive ID could not be found in the provided link",
                 None,
@@ -51,54 +95,23 @@ class GoogleDriveClone(GoogleDriveHelper):
                 None,
                 None,
             )
+
         self.service = self.authorize()
-        msg = ""
         LOGGER.info(f"File ID: {file_id}")
         try:
             meta = self.get_file_metadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.create_directory(meta.get("name"), self.listener.up_dest)
-                self._clone_folder(meta.get("name"), meta.get("id"), dir_id)
-                durl = self.G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
-                if self.listener.is_cancelled:
-                    LOGGER.info("Deleting cloned data from Drive...")
-                    self.service.files().delete(
-                        fileId=dir_id, supportsAllDrives=True
-                    ).execute()
-                    return None, None, None, None, None
-                mime_type = "Folder"
-                self.listener.size = self.proc_bytes
-            else:
-                file = self._copy_file(meta.get("id"), self.listener.up_dest)
-                msg += f'<b>Name: </b><code>{file.get("name")}</code>'
-                durl = self.G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
-                if mime_type is None:
-                    mime_type = "File"
-                self.listener.size = int(meta.get("size", 0))
-            return (
-                durl,
-                mime_type,
-                self.total_files,
-                self.total_folders,
-                self.get_id_from_url(durl),
-            )
+                return self._clone_directory_meta(meta)
+            return self._clone_file_meta(meta, mime_type)
         except Exception as err:
             if isinstance(err, RetryError):
                 LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
                 err = err.last_attempt.exception()
             err = str(err).replace(">", "").replace("<", "")
-            if "User rate limit exceeded" in err:
-                msg = "User rate limit exceeded."
-            elif "File not found" in err:
-                if not self.alt_auth and self.use_sa:
-                    self.alt_auth = True
-                    self.use_sa = False
-                    LOGGER.error("File not found. Trying with token.pickle...")
-                    return self.clone()
-                msg = "File not found."
-            else:
-                msg = f"Error.\n{err}"
+            msg, should_retry = self._translate_clone_error(err)
+            if should_retry:
+                return self.clone()
             async_to_sync(self.listener.on_upload_error, msg)
             return None, None, None, None, None
 

@@ -9923,4 +9923,3 @@ Analyzing 176 Python files...
    5. bot/helper/mirror_leech_utils/download_utils/direct_link_generator.py:1083 - gofile()
       Complexity: 23 (Very High)
       → High priority: Refactor to reduce complexity
-

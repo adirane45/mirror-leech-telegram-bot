@@ -3,7 +3,8 @@ Core settings management - Handles user preference retrieval and validation
 Cohesive module: Single responsibility for getting and validating settings
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 from aiofiles.os import path as aiopath
 
 from .. import user_data

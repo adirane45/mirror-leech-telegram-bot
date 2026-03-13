@@ -1,25 +1,28 @@
-from aiofiles.os import path as aiopath, remove, makedirs
-from aiofiles import open as aiopen
-from aioshutil import rmtree
 from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
 from importlib import import_module
 from os import environ
 
+from aiofiles import open as aiopen
+from aiofiles.os import makedirs
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove
+from aioshutil import rmtree
+
 from .. import (
+    LOGGER,
     aria2_options,
-    qbit_options,
-    nzb_options,
+    auth_chats,
     drives_ids,
     drives_names,
-    index_urls,
-    user_data,
     excluded_extensions,
     included_extensions,
-    LOGGER,
+    index_urls,
+    nzb_options,
+    qbit_options,
     rss_dict,
     sabnzbd_client,
-    auth_chats,
     sudo_users,
+    user_data,
 )
 from ..helper.ext_utils.db_handler import database
 from .config_manager import Config
@@ -62,7 +65,8 @@ async def update_aria2_options():
 
 async def update_nzb_options():
     LOGGER.info("Get SABnzbd options from server")
-    from asyncio import wait_for, TimeoutError as AsyncioTimeoutError
+    from asyncio import TimeoutError as AsyncioTimeoutError
+    from asyncio import wait_for
     try:
         for _ in range(10):
             try:
@@ -79,165 +83,212 @@ async def update_nzb_options():
     LOGGER.warning("SABnzbd options skipped: service unavailable")
 
 
-async def load_settings():
-    # Skip MongoDB if DATABASE_URL is empty or points to non-existent local service
-    LOGGER.info(f"🔍 DEBUG: DATABASE_URL is {'EMPTY' if not Config.DATABASE_URL else f'SET to {str(Config.DATABASE_URL)[:50]}'}")
-    if not Config.DATABASE_URL or not Config.DATABASE_URL.strip():
-        LOGGER.info("📊 MongoDB disabled - using local config only")
-        return
+def _is_database_configured():
+    return bool(Config.DATABASE_URL and Config.DATABASE_URL.strip())
+
+
+async def _cleanup_user_artifacts():
     for p in ["thumbnails", "tokens", "rclone"]:
         if await aiopath.exists(p):
             await rmtree(p, ignore_errors=True)
-    
-    # Try to connect to MongoDB with timeout to avoid hanging bot startup
+
+
+async def _connect_database_with_timeout():
     LOGGER.info("🔌 Attempting MongoDB connection with 10-second timeout...")
     try:
-        from asyncio import wait_for, TimeoutError as AsyncTimeoutError
+        from asyncio import TimeoutError as AsyncTimeoutError
+        from asyncio import wait_for
+
         LOGGER.info("⏳ Starting wait_for(database.connect(), timeout=10.0)...")
         await wait_for(database.connect(), timeout=10.0)
         LOGGER.info("✅ MongoDB connected successfully")
+        return True
     except (AsyncTimeoutError, Exception) as e:
-        LOGGER.warning(f"⏱️  MongoDB connection timeout/failed ({type(e).__name__}: {str(e)[:40]}). Continuing without database...")
+        LOGGER.warning(
+            f"⏱️  MongoDB connection timeout/failed ({type(e).__name__}: {str(e)[:40]}). Continuing without database..."
+        )
+        return False
+
+
+def _get_config_file_dict():
+    settings = import_module("config")
+    return {
+        key: value.strip() if isinstance(value, str) else value
+        for key, value in vars(settings).items()
+        if not key.startswith("__")
+    }
+
+
+async def _load_deploy_config_with_timeout(bot_id):
+    from asyncio import TimeoutError as AsyncTimeoutError
+    from asyncio import wait_for
+
+    try:
+        LOGGER.info("🔍 START: Querying deployConfig (5s timeout)...")
+        old_config = await wait_for(
+            database.db.settings.deployConfig.find_one({"_id": bot_id}, {"_id": 0}),
+            timeout=5.0,
+        )
+        LOGGER.info("🔍 END: deployConfig query complete")
+        return old_config, False
+    except AsyncTimeoutError:
+        LOGGER.warning("⏱️  deployConfig query timed out (5s) - disabling database usage")
+        database.db = None
+        database._return = True
+        return None, True
+    except Exception as e:
+        LOGGER.warning(
+            f"MongoDB query compatibility issue (expected on MongoDB 4.4): {str(e)[:50]}"
+        )
+        return None, False
+
+
+async def _sync_config_records(bot_id, old_config, config_file):
+    if old_config is None:
+        try:
+            await database.db.settings.deployConfig.replace_one(
+                {"_id": bot_id}, config_file, upsert=True
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not save config to MongoDB: {str(e)[:50]}")
         return
-    
+
+    if old_config != config_file:
+        LOGGER.info("Replacing existing deploy config in Database")
+        try:
+            await database.db.settings.deployConfig.replace_one(
+                {"_id": bot_id}, config_file, upsert=True
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not update config in MongoDB: {str(e)[:50]}")
+        return
+
+    try:
+        config_dict = await database.db.settings.config.find_one({"_id": bot_id}, {"_id": 0})
+        if config_dict:
+            Config.load_dict(config_dict)
+    except Exception as e:
+        LOGGER.warning(f"Could not load config from MongoDB: {str(e)[:50]}")
+
+
+async def _load_config_files(bot_id):
+    try:
+        if pf_dict := await database.db.settings.files.find_one({"_id": bot_id}, {"_id": 0}):
+            for key, value in pf_dict.items():
+                if value:
+                    file_ = key.replace("__", ".")
+                    async with aiopen(file_, "wb+") as f:
+                        await f.write(value)
+    except Exception as e:
+        LOGGER.debug(f"No files config in MongoDB: {str(e)[:50]}")
+
+
+async def _load_aria2_options(bot_id):
+    try:
+        if a2c_options_data := await database.db.settings.aria2c.find_one(
+            {"_id": bot_id}, {"_id": 0}
+        ):
+            aria2_options.update(a2c_options_data)
+    except Exception as e:
+        LOGGER.debug(f"No aria2c config in MongoDB: {str(e)[:50]}")
+
+
+async def _load_qbit_options(bot_id):
+    try:
+        if qbit_opt := await database.db.settings.qbittorrent.find_one(
+            {"_id": bot_id}, {"_id": 0}
+        ):
+            qbit_options.update(qbit_opt)
+    except Exception as e:
+        LOGGER.debug(f"No qbittorrent config in MongoDB: {str(e)[:50]}")
+
+
+async def _load_nzb_options(bot_id):
+    try:
+        if nzb_opt := await database.db.settings.nzb.find_one({"_id": bot_id}, {"_id": 0}):
+            if await aiopath.exists("sabnzbd/SABnzbd.ini.bak"):
+                await remove("sabnzbd/SABnzbd.ini.bak")
+            ((key, value),) = nzb_opt.items()
+            file_ = key.replace("__", ".")
+            async with aiopen(f"sabnzbd/{file_}", "wb+") as f:
+                await f.write(value)
+    except Exception as e:
+        LOGGER.debug(f"No nzb config in MongoDB: {str(e)[:50]}")
+
+
+async def _load_users_data():
+    try:
+        if await database.db.users.find_one():
+            for p in ["thumbnails", "tokens", "rclone"]:
+                if not await aiopath.exists(p):
+                    await makedirs(p)
+            rows = database.db.users.find({})
+            async for row in rows:
+                uid = row["_id"]
+                del row["_id"]
+                thumb_path = f"thumbnails/{uid}.jpg"
+                rclone_config_path = f"rclone/{uid}.conf"
+                token_path = f"tokens/{uid}.pickle"
+                if row.get("THUMBNAIL"):
+                    async with aiopen(thumb_path, "wb+") as f:
+                        await f.write(row["THUMBNAIL"])
+                    row["THUMBNAIL"] = thumb_path
+                if row.get("RCLONE_CONFIG"):
+                    async with aiopen(rclone_config_path, "wb+") as f:
+                        await f.write(row["RCLONE_CONFIG"])
+                    row["RCLONE_CONFIG"] = rclone_config_path
+                if row.get("TOKEN_PICKLE"):
+                    async with aiopen(token_path, "wb+") as f:
+                        await f.write(row["TOKEN_PICKLE"])
+                    row["TOKEN_PICKLE"] = token_path
+                user_data[uid] = row
+            LOGGER.info("Users data has been imported from Database")
+    except Exception as e:
+        LOGGER.debug(f"No user data in MongoDB: {str(e)[:50]}")
+
+
+async def _load_rss_data(bot_id):
+    try:
+        if await database.db.rss[bot_id].find_one():
+            rows = database.db.rss[bot_id].find({})
+            async for row in rows:
+                user_id = row["_id"]
+                del row["_id"]
+                rss_dict[user_id] = row
+            LOGGER.info("Rss data has been imported from Database.")
+    except Exception as e:
+        LOGGER.debug(f"No rss data in MongoDB: {str(e)[:50]}")
+
+
+async def load_settings():
+    LOGGER.info(
+        f"🔍 DEBUG: DATABASE_URL is {'EMPTY' if not Config.DATABASE_URL else f'SET to {str(Config.DATABASE_URL)[:50]}'}"
+    )
+    if not _is_database_configured():
+        LOGGER.info("📊 MongoDB disabled - using local config only")
+        return
+
+    await _cleanup_user_artifacts()
+
+    if not await _connect_database_with_timeout():
+        return
+
     if database.db is not None:
         LOGGER.info("📌 Entering database query block...")
-        BOT_ID = Config.BOT_TOKEN.split(":", 1)[0]
-        settings = import_module("config")
-        config_file = {
-            key: value.strip() if isinstance(value, str) else value
-            for key, value in vars(settings).items()
-            if not key.startswith("__")
-        }
-        
-        # Wrap all MongoDB queries with timeouts to prevent hanging
-        from asyncio import wait_for, TimeoutError as AsyncTimeoutError
-        
-        try:
-            LOGGER.info("🔍 START: Querying deployConfig (5s timeout)...")
-            old_config = await wait_for(
-                database.db.settings.deployConfig.find_one(
-                    {"_id": BOT_ID}, {"_id": 0}
-                ),
-                timeout=5.0
-            )
-            LOGGER.info("🔍 END: deployConfig query complete")
-        except AsyncTimeoutError:
-            LOGGER.warning("⏱️  deployConfig query timed out (5s) - disabling database usage")
-            database.db = None
-            database._return = True
+        bot_id = Config.BOT_TOKEN.split(":", 1)[0]
+        config_file = _get_config_file_dict()
+
+        old_config, should_exit = await _load_deploy_config_with_timeout(bot_id)
+        if should_exit:
             return
-        except Exception as e:
-            # Handle MongoDB 4.4 compatibility with newer pymongo versions
-            # Fallback: Assume no existing config and proceed
-            LOGGER.warning(f"MongoDB query compatibility issue (expected on MongoDB 4.4): {str(e)[:50]}")
-            old_config = None
-        
-        if old_config is None:
-            try:
-                await database.db.settings.deployConfig.replace_one(
-                    {"_id": BOT_ID}, config_file, upsert=True
-                )
-            except Exception as e:
-                LOGGER.warning(f"Could not save config to MongoDB: {str(e)[:50]}")
-        if old_config and old_config != config_file:
-            LOGGER.info("Replacing existing deploy config in Database")
-            try:
-                await database.db.settings.deployConfig.replace_one(
-                    {"_id": BOT_ID}, config_file, upsert=True
-                )
-            except Exception as e:
-                LOGGER.warning(f"Could not update config in MongoDB: {str(e)[:50]}")
-        else:
-            try:
-                config_dict = await database.db.settings.config.find_one(
-                    {"_id": BOT_ID}, {"_id": 0}
-                )
-                if config_dict:
-                    Config.load_dict(config_dict)
-            except Exception as e:
-                LOGGER.warning(f"Could not load config from MongoDB: {str(e)[:50]}")
 
-        try:
-            if pf_dict := await database.db.settings.files.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
-            ):
-                for key, value in pf_dict.items():
-                    if value:
-                        file_ = key.replace("__", ".")
-                        async with aiopen(file_, "wb+") as f:
-                            await f.write(value)
-        except Exception as e:
-            LOGGER.debug(f"No files config in MongoDB: {str(e)[:50]}")
-
-        try:
-            if a2c_options_data := await database.db.settings.aria2c.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
-            ):
-                aria2_options.update(a2c_options_data)
-        except Exception as e:
-            LOGGER.debug(f"No aria2c config in MongoDB: {str(e)[:50]}")
-
-        try:
-            if qbit_opt := await database.db.settings.qbittorrent.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
-            ):
-                qbit_options.update(qbit_opt)
-        except Exception as e:
-            LOGGER.debug(f"No qbittorrent config in MongoDB: {str(e)[:50]}")
-
-        try:
-            if nzb_opt := await database.db.settings.nzb.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
-            ):
-                if await aiopath.exists("sabnzbd/SABnzbd.ini.bak"):
-                    await remove("sabnzbd/SABnzbd.ini.bak")
-                ((key, value),) = nzb_opt.items()
-                file_ = key.replace("__", ".")
-                async with aiopen(f"sabnzbd/{file_}", "wb+") as f:
-                    await f.write(value)
-        except Exception as e:
-            LOGGER.debug(f"No nzb config in MongoDB: {str(e)[:50]}")
-
-        try:
-            if await database.db.users.find_one():
-                for p in ["thumbnails", "tokens", "rclone"]:
-                    if not await aiopath.exists(p):
-                        await makedirs(p)
-                rows = database.db.users.find({})
-                async for row in rows:
-                    uid = row["_id"]
-                    del row["_id"]
-                    thumb_path = f"thumbnails/{uid}.jpg"
-                    rclone_config_path = f"rclone/{uid}.conf"
-                    token_path = f"tokens/{uid}.pickle"
-                    if row.get("THUMBNAIL"):
-                        async with aiopen(thumb_path, "wb+") as f:
-                            await f.write(row["THUMBNAIL"])
-                        row["THUMBNAIL"] = thumb_path
-                    if row.get("RCLONE_CONFIG"):
-                        async with aiopen(rclone_config_path, "wb+") as f:
-                            await f.write(row["RCLONE_CONFIG"])
-                        row["RCLONE_CONFIG"] = rclone_config_path
-                    if row.get("TOKEN_PICKLE"):
-                        async with aiopen(token_path, "wb+") as f:
-                            await f.write(row["TOKEN_PICKLE"])
-                        row["TOKEN_PICKLE"] = token_path
-                    user_data[uid] = row
-                LOGGER.info("Users data has been imported from Database")
-        except Exception as e:
-            LOGGER.debug(f"No user data in MongoDB: {str(e)[:50]}")
-
-        try:
-            if await database.db.rss[BOT_ID].find_one():
-                rows = database.db.rss[BOT_ID].find({})
-                async for row in rows:
-                    user_id = row["_id"]
-                    del row["_id"]
-                    rss_dict[user_id] = row
-                LOGGER.info("Rss data has been imported from Database.")
-        except Exception as e:
-            LOGGER.debug(f"No rss data in MongoDB: {str(e)[:50]}")
+        await _sync_config_records(bot_id, old_config, config_file)
+        await _load_config_files(bot_id)
+        await _load_aria2_options(bot_id)
+        await _load_qbit_options(bot_id)
+        await _load_nzb_options(bot_id)
+        await _load_users_data()
+        await _load_rss_data(bot_id)
 
 
 async def save_settings():
@@ -261,7 +312,8 @@ async def save_settings():
         )
 
 
-async def update_variables():
+def _update_split_size():
+    """Update leech split size based on client limits."""
     if TgClient and hasattr(TgClient, 'MAX_SPLIT_SIZE'):
         if (
             Config.LEECH_SPLIT_SIZE > TgClient.MAX_SPLIT_SIZE
@@ -270,12 +322,16 @@ async def update_variables():
         ):
             Config.LEECH_SPLIT_SIZE = TgClient.MAX_SPLIT_SIZE
 
+
+def _update_premium_features():
+    """Update premium-dependent features."""
     is_premium = TgClient and hasattr(TgClient, 'IS_PREMIUM_USER') and TgClient.IS_PREMIUM_USER
     Config.HYBRID_LEECH = bool(Config.HYBRID_LEECH and is_premium)
-    Config.USER_TRANSMISSION = bool(
-        Config.USER_TRANSMISSION and is_premium
-    )
+    Config.USER_TRANSMISSION = bool(Config.USER_TRANSMISSION and is_premium)
 
+
+def _populate_auth_chats():
+    """Populate authorized chats from config."""
     LOGGER.info(f"🔍 Populating auth_chats from AUTHORIZED_CHATS: {Config.AUTHORIZED_CHATS}")
     if Config.AUTHORIZED_CHATS:
         aid = Config.AUTHORIZED_CHATS.replace(",", " ").split()
@@ -291,6 +347,9 @@ async def update_variables():
     else:
         LOGGER.warning("⚠️  AUTHORIZED_CHATS is empty or not set")
 
+
+def _populate_sudo_users():
+    """Populate sudo users from config."""
     LOGGER.info(f"🔍 Populating sudo_users from SUDO_USERS: {Config.SUDO_USERS}")
     if Config.SUDO_USERS:
         aid = Config.SUDO_USERS.replace(",", " ").split()
@@ -300,6 +359,9 @@ async def update_variables():
     else:
         LOGGER.warning("⚠️  SUDO_USERS is empty or not set")
 
+
+def _populate_extensions():
+    """Populate included and excluded extensions."""
     if Config.EXCLUDED_EXTENSIONS:
         fx = Config.EXCLUDED_EXTENSIONS.split()
         for x in fx:
@@ -312,11 +374,17 @@ async def update_variables():
             x = x.lstrip(".")
             included_extensions.append(x.strip().lower())
 
+
+def _populate_main_gdrive():
+    """Populate main Google Drive configuration."""
     if Config.GDRIVE_ID:
         drives_names.append("Main")
         drives_ids.append(Config.GDRIVE_ID)
         index_urls.append(Config.INDEX_URL)
 
+
+async def _populate_list_drives():
+    """Populate additional drives from list_drives.txt."""
     if await aiopath.exists("list_drives.txt"):
         async with aiopen("list_drives.txt", "r+") as f:
             lines = await f.readlines()
@@ -328,6 +396,17 @@ async def update_variables():
                     index_urls.append(temp[2])
                 else:
                     index_urls.append("")
+
+
+async def update_variables():
+    _update_split_size()
+    _update_premium_features()
+    _populate_auth_chats()
+    _populate_sudo_users()
+    _populate_extensions()
+    _populate_main_gdrive()
+    await _populate_list_drives()
+
 
 
 async def load_configurations():

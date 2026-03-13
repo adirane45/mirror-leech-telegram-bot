@@ -147,12 +147,12 @@ class VaultSecretsManager:
     def __init__(self, vault_url: str, role_id: str, secret_id: str):
         self.client = hvac.Client(url=vault_url)
         self.client.auth.approle.login(role_id=role_id, secret_id=secret_id)
-    
+
     def get_secret(self, path: str):
         """Fetch secret from Vault"""
         response = self.client.secrets.kv.v2.read_secret_version(path=path)
         return response['data']['data']
-    
+
     async def watch_secret(self, path: str, callback):
         """Watch for secret changes and trigger callback"""
         while True:
@@ -264,12 +264,12 @@ from pathlib import Path
 
 class SecretReader:
     """Read secrets from environment or Docker Secret files"""
-    
+
     @staticmethod
     def get_secret(env_var: str, file_var: str = None) -> str:
         """
         Get secret from environment or Docker Secret file.
-        
+
         Priority:
         1. environment variable ending with _FILE (file path)
         2. environment variable directly
@@ -282,17 +282,17 @@ class SecretReader:
             if Path(file_path).exists():
                 with open(file_path) as f:
                     return f.read().strip()
-        
+
         # Check direct environment variable
         if env_var in os.environ:
             return os.environ[env_var]
-        
+
         # Check Docker secret mount
         secret_file = Path(f"/run/secrets/{env_var.lower()}")
         if secret_file.exists():
             with open(secret_file) as f:
                 return f.read().strip()
-        
+
         raise ValueError(f"Secret {env_var} not found")
 
 # Usage
@@ -410,14 +410,14 @@ Kubernetes provides three rotation strategies via `rotate-secret.sh`:
 
 ### Production Features
 
-✅ **RBAC**: Pods can only read their required secrets  
-✅ **Health Checks**: Validates secrets on pod startup  
-✅ **Audit Logging**: All rotations logged with timestamp/user  
-✅ **Automatic Backup**: Creates backup before each rotation  
-✅ **Rollback**: Instant restore from backup if needed  
-✅ **Pod Anti-Affinity**: Spreads pods across nodes  
-✅ **HPA**: Auto-scales based on CPU/memory  
-✅ **Monitoring**: Integrates with Prometheus, tracks rotation age  
+✅ **RBAC**: Pods can only read their required secrets
+✅ **Health Checks**: Validates secrets on pod startup
+✅ **Audit Logging**: All rotations logged with timestamp/user
+✅ **Automatic Backup**: Creates backup before each rotation
+✅ **Rollback**: Instant restore from backup if needed
+✅ **Pod Anti-Affinity**: Spreads pods across nodes
+✅ **HPA**: Auto-scales based on CPU/memory
+✅ **Monitoring**: Integrates with Prometheus, tracks rotation age
 
 ### Key Differences from Docker Secrets
 
@@ -450,12 +450,12 @@ class VaultSecretsManager:
             secret_id=secret_id,
             mount_point='approle'
         )
-    
+
     def get_secret(self, path: str) -> Dict[str, Any]:
         """Fetch secret from Vault"""
         response = self.client.secrets.kv.v2.read_secret_version(path=path)
         return response['data']['data']
-    
+
     def list_secrets(self, path: str) -> list:
         """List secrets at path"""
         response = self.client.secrets.kv.v2.list_secrets(path=path)
@@ -530,11 +530,11 @@ config = {
    Critical (30 days):
    - BOT_TOKEN (if compromised, can't control bot)
    - DATABASE credentials
-   
+
    Important (90 days):
    - RCLONE keys
    - API keys
-   
+
    Standard (180 days):
    - Internal service passwords
    ```

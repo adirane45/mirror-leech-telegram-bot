@@ -1,25 +1,136 @@
-from aiofiles.os import remove, path as aiopath
 from asyncio import iscoroutinefunction
 
-from .. import (
-    task_dict,
-    task_dict_lock,
-    user_data,
-    LOGGER,
-    sabnzbd_client,
-)
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove
+
+from .. import LOGGER, sabnzbd_client, task_dict, task_dict_lock, user_data
 from ..core.config_manager import Config
 from ..core.torrent_manager import TorrentManager
-from ..helper.ext_utils.bot_utils import (
-    bt_selection_buttons,
-    new_task,
-)
-from ..helper.ext_utils.status_utils import get_task_by_gid, MirrorStatus
-from ..helper.telegram_helper.message_utils import (
-    send_message,
-    send_status_message,
-    delete_message,
-)
+from ..helper.ext_utils.bot_utils import bt_selection_buttons, new_task
+from ..helper.ext_utils.status_utils import MirrorStatus, get_task_by_gid
+from ..helper.telegram_helper.message_utils import delete_message, send_message, send_status_message
+
+
+def _build_select_usage_message():
+    return (
+        "Reply to an active /cmd which was used to start the download or add gid along with cmd\n\n"
+        + "This command mainly for selection incase you decided to select files from already added torrent/nzb. "
+        + "But you can always use /cmd with arg `s` to select files before download start."
+    )
+
+
+async def _resolve_select_task(message, msg):
+    if len(msg) > 1:
+        gid = msg[1]
+        task = await get_task_by_gid(gid)
+        if task is None:
+            return None, f"GID: <code>{gid}</code> Not Found."
+        return task, None
+
+    if len(msg) == 1:
+        if reply_to_id := message.reply_to_message_id:
+            async with task_dict_lock:
+                task = task_dict.get(reply_to_id)
+            if task is None:
+                return None, "This is not an active task!"
+            return task, None
+        return None, _build_select_usage_message()
+
+    return None, _build_select_usage_message()
+
+
+def _is_task_owner_or_sudo(task, user_id):
+    return (
+        Config.OWNER_ID == user_id
+        or task.listener.user_id == user_id
+        or (user_id in user_data and user_data[user_id].get("SUDO"))
+    )
+
+
+async def _validate_select_task(task, user_id):
+    if not _is_task_owner_or_sudo(task, user_id):
+        return "This task is not for you!"
+    if not iscoroutinefunction(task.status):
+        return "The task have finished the download stage!"
+    if await task.status() not in [
+        MirrorStatus.STATUS_DOWNLOAD,
+        MirrorStatus.STATUS_PAUSED,
+        MirrorStatus.STATUS_QUEUEDL,
+    ]:
+        return (
+            "Task should be in download or pause (incase message deleted by wrong) or queued status "
+            "(incase you have used torrent or nzb file)!"
+        )
+    if task.name().startswith("[METADATA]") or task.name().startswith("Trying"):
+        return "Try after downloading metadata finished!"
+    return None
+
+
+def _selection_task_id(task):
+    if task.listener.is_qbit:
+        return task.hash()
+    return task.gid()
+
+
+async def _pause_task_for_selection(task, id_):
+    if task.queued:
+        return
+    await task.update()
+    if task.listener.is_nzb:
+        await sabnzbd_client.pause_job(id_)
+    elif task.listener.is_qbit:
+        await TorrentManager.qbittorrent.torrents.stop([id_])
+    else:
+        try:
+            await TorrentManager.aria2.forcePause(id_)
+        except Exception as e:
+            LOGGER.error(f"{e} Error in pause, this mostly happens after abuse aria2")
+
+
+async def _remove_unselected_qbit_files(id_):
+    tor_info = (await TorrentManager.qbittorrent.torrents.info(hashes=[id_]))[0]
+    path = tor_info.content_path.rsplit("/", 1)[0]
+    res = await TorrentManager.qbittorrent.torrents.files(id_)
+    for file_info in res:
+        if file_info.priority == 0:
+            f_paths = [f"{path}/{file_info.name}", f"{path}/{file_info.name}.!qB"]
+            for f_path in f_paths:
+                if await aiopath.exists(f_path):
+                    try:
+                        await remove(f_path)
+                    except OSError as e:
+                        LOGGER.warning(f"Failed to remove {f_path}: {e}")
+
+
+async def _remove_unselected_aria2_files(id_):
+    res = await TorrentManager.aria2.getFiles(id_)
+    for file_info in res:
+        file_path = file_info["path"]
+        if file_info["selected"] == "false" and await aiopath.exists(file_path):
+            try:
+                await remove(file_path)
+            except OSError as e:
+                LOGGER.warning(f"Failed to remove {file_path}: {e}")
+
+
+async def _resume_download_after_selection(task, id_):
+    if hasattr(task, "seeding"):
+        if task.listener.is_qbit:
+            await _remove_unselected_qbit_files(id_)
+            if not task.queued:
+                await TorrentManager.qbittorrent.torrents.start([id_])
+            return
+        await _remove_unselected_aria2_files(id_)
+        if not task.queued:
+            try:
+                await TorrentManager.aria2.unpause(id_)
+            except Exception as e:
+                LOGGER.error(
+                    f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!"
+                )
+        return
+    if task.listener.is_nzb:
+        await sabnzbd_client.resume_job(id_)
 
 
 @new_task
@@ -29,68 +140,21 @@ async def select(_, message):
         return
     user_id = message.from_user.id
     msg = message.text.split()
-    if len(msg) > 1:
-        gid = msg[1]
-        task = await get_task_by_gid(gid)
-        if task is None:
-            await send_message(message, f"GID: <code>{gid}</code> Not Found.")
-            return
-    elif reply_to_id := message.reply_to_message_id:
-        async with task_dict_lock:
-            task = task_dict.get(reply_to_id)
-        if task is None:
-            await send_message(message, "This is not an active task!")
-            return
-    elif len(msg) == 1:
-        msg = (
-            "Reply to an active /cmd which was used to start the download or add gid along with cmd\n\n"
-            + "This command mainly for selection incase you decided to select files from already added torrent/nzb. "
-            + "But you can always use /cmd with arg `s` to select files before download start."
-        )
-        await send_message(message, msg)
+    task, error_message = await _resolve_select_task(message, msg)
+    if error_message is not None:
+        await send_message(message, error_message)
         return
-    if (
-        Config.OWNER_ID != user_id
-        and task.listener.user_id != user_id
-        and (user_id not in user_data or not user_data[user_id].get("SUDO"))
-    ):
-        await send_message(message, "This task is not for you!")
-        return
-    if not iscoroutinefunction(task.status):
-        await send_message(message, "The task have finished the download stage!")
-        return
-    if await task.status() not in [
-        MirrorStatus.STATUS_DOWNLOAD,
-        MirrorStatus.STATUS_PAUSED,
-        MirrorStatus.STATUS_QUEUEDL,
-    ]:
-        await send_message(
-            message,
-            "Task should be in download or pause (incase message deleted by wrong) or queued status (incase you have used torrent or nzb file)!",
-        )
-        return
-    if task.name().startswith("[METADATA]") or task.name().startswith("Trying"):
-        await send_message(message, "Try after downloading metadata finished!")
+
+    validation_error = await _validate_select_task(task, user_id)
+    if validation_error is not None:
+        await send_message(message, validation_error)
         return
 
     try:
-        if not task.queued:
-            await task.update()
-            id_ = task.gid()
-            if task.listener.is_nzb:
-                await sabnzbd_client.pause_job(id_)
-            elif task.listener.is_qbit:
-                id_ = task.hash()
-                await TorrentManager.qbittorrent.torrents.stop([id_])
-            else:
-                try:
-                    await TorrentManager.aria2.forcePause(id_)
-                except Exception as e:
-                    LOGGER.error(
-                        f"{e} Error in pause, this mostly happens after abuse aria2"
-                    )
+        id_ = _selection_task_id(task)
+        await _pause_task_for_selection(task, id_)
         task.listener.select = True
-    except:
+    except Exception:
         await send_message(message, "This is not a bittorrent or sabnzbd task!")
         return
 
@@ -111,48 +175,20 @@ async def confirm_selection(_, query):
         return
     if user_id != task.listener.user_id:
         await query.answer("This task is not for you!", show_alert=True)
-    elif data[1] == "pin":
+        return
+
+    action = data[1]
+    if action == "pin":
         await query.answer(data[3], show_alert=True)
-    elif data[1] == "done":
+        return
+
+    if action == "done":
         await query.answer()
         id_ = data[3]
-        if hasattr(task, "seeding"):
-            if task.listener.is_qbit:
-                tor_info = (
-                    await TorrentManager.qbittorrent.torrents.info(hashes=[id_])
-                )[0]
-                path = tor_info.content_path.rsplit("/", 1)[0]
-                res = await TorrentManager.qbittorrent.torrents.files(id_)
-                for f in res:
-                    if f.priority == 0:
-                        f_paths = [f"{path}/{f.name}", f"{path}/{f.name}.!qB"]
-                        for f_path in f_paths:
-                            if await aiopath.exists(f_path):
-                                try:
-                                    await remove(f_path)
-                                except OSError as e:
-                                    LOGGER.warning(f"Failed to remove {f_path}: {e}")
-                if not task.queued:
-                    await TorrentManager.qbittorrent.torrents.start([id_])
-            else:
-                res = await TorrentManager.aria2.getFiles(id_)
-                for f in res:
-                    if f["selected"] == "false" and await aiopath.exists(f["path"]):
-                        try:
-                            await remove(f["path"])
-                        except OSError as e:
-                            LOGGER.warning(f"Failed to remove {f['path']}: {e}")
-                if not task.queued:
-                    try:
-                        await TorrentManager.aria2.unpause(id_)
-                    except Exception as e:
-                        LOGGER.error(
-                            f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!"
-                        )
-        elif task.listener.is_nzb:
-            await sabnzbd_client.resume_job(id_)
+        await _resume_download_after_selection(task, id_)
         await send_status_message(message)
         await delete_message(message)
-    else:
-        await delete_message(message)
-        await task.cancel_task()
+        return
+
+    await delete_message(message)
+    await task.cancel_task()

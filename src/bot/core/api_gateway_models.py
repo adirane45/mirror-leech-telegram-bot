@@ -10,10 +10,9 @@ Includes:
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, Optional, Any
-
+from typing import Any, Dict, Optional
 
 # ============================================================================
 # ENUMS
@@ -49,7 +48,7 @@ class ApiRequest:
     body: Any = None
     client_id: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -70,7 +69,7 @@ class ApiResponse:
     body: Any = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     processing_time_ms: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -120,7 +119,7 @@ class GatewayMetrics:
     avg_response_time_ms: float = 0.0
     active_connections: int = 0
     last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -141,23 +140,19 @@ class GatewayMetrics:
 
 class ApiGatewayListener(ABC):
     """Abstract listener for gateway events"""
-    
+
     @abstractmethod
     async def on_request_received(self, request: ApiRequest) -> None:
         """Called when request received"""
-        pass
-    
+
     @abstractmethod
     async def on_request_routed(self, request: ApiRequest, target_node: str) -> None:
         """Called when request routed"""
-        pass
-    
+
     @abstractmethod
     async def on_response_sent(self, response: ApiResponse) -> None:
         """Called when response sent"""
-        pass
-    
+
     @abstractmethod
     async def on_rate_limit_exceeded(self, client_id: str) -> None:
         """Called when rate limit exceeded"""
-        pass

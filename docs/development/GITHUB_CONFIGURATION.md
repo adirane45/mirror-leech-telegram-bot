@@ -207,7 +207,7 @@ See: [docs/INDEX.md](../docs/INDEX.md) for all documentation.
 
 ---
 
-**Status**: ✅ Branch protection ready to configure  
-**Time to Configure**: ~5 minutes  
-**Impact**: High - Enforces code quality on master branch  
+**Status**: ✅ Branch protection ready to configure
+**Time to Configure**: ~5 minutes
+**Impact**: High - Enforces code quality on master branch
 **Date**: 2026-02-23

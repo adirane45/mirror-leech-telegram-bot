@@ -1,5 +1,5 @@
 # Code Refactoring Roadmap - Priority Analysis
-**Date:** February 8, 2026  
+**Date:** February 8, 2026
 **Status:** Ready for Implementation
 
 ---
@@ -31,7 +31,7 @@
 - Keep core as `dist_state_core.py` (200-300 lines)
 - Create `__init__.py` to expose unified API
 
-**Effort:** 2-3 days  
+**Effort:** 2-3 days
 **Complexity:** High (interconnected components)
 
 ---
@@ -48,7 +48,7 @@
 - Extract `LogCompaction` to `repl_compaction.py`
 - Reduce main file to 300-400 lines
 
-**Effort:** 2 days  
+**Effort:** 2 days
 **Complexity:** Medium
 
 ---
@@ -64,7 +64,7 @@
 - Extract node management to `node_manager.py`
 - Main file for orchestration only (~300 lines)
 
-**Effort:** 3 days  
+**Effort:** 3 days
 **Complexity:** High (state machine logic)
 
 ---
@@ -80,7 +80,7 @@
 - Extract operation state management
 - Reduce to ~350 lines for orchestration
 
-**Effort:** 2 days  
+**Effort:** 2 days
 **Complexity:** Medium-High
 
 ---
@@ -98,7 +98,7 @@
 - Create `dashboard_ui.py` for helper functions
 - Keep main as route handler (~400 lines)
 
-**Effort:** 2 days  
+**Effort:** 2 days
 **Complexity:** Medium
 
 ---
@@ -113,7 +113,7 @@
 - Extract metrics management to `perf_metrics.py`
 - Keep orchestration in main file
 
-**Effort:** 1.5 days  
+**Effort:** 1.5 days
 **Complexity:** Low
 
 ---
@@ -127,7 +127,7 @@
 - Separate HTML/static assets
 - Clean separation of concerns
 
-**Effort:** 1.5 days  
+**Effort:** 1.5 days
 **Complexity:** Low-Medium
 
 ---
@@ -304,7 +304,7 @@ If you want immediate improvements without full refactoring:
    - Effort: 1-2 days
    - Impact: Documentation + error prevention
 
-2. **Improve docstrings** 
+2. **Improve docstrings**
    - Effort: 1-2 days
    - Impact: Developer experience
 
@@ -333,6 +333,6 @@ If you want immediate improvements without full refactoring:
 
 ---
 
-**Status:** Ready for implementation  
-**Next Action:** Choose first module to refactor  
+**Status:** Ready for implementation
+**Next Action:** Choose first module to refactor
 **Expected Outcome:** Better maintainability, easier feature development

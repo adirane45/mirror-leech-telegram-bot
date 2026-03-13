@@ -36,7 +36,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
-      
+
       initContainers:
       # Validate secrets are available before starting
       - name: verify-secrets
@@ -78,7 +78,7 @@ spec:
       - name: mltb-app
         image: mirror-leech-telegram-bot:latest
         imagePullPolicy: Always
-        
+
         ports:
         - name: http
           containerPort: 8080
@@ -86,7 +86,7 @@ spec:
         - name: metrics
           containerPort: 9090
           protocol: TCP
-        
+
         # Method 1: Secrets as Environment Variables (recommended for small secrets)
         env:
         - name: BOT_TOKEN
@@ -124,7 +124,7 @@ spec:
             secretKeyRef:
               name: mltb-api-secrets
               key: API_SECRET_KEY
-        
+
         # Standard environment variables
         - name: LOG_LEVEL
           value: "INFO"
@@ -132,7 +132,7 @@ spec:
           value: "kubernetes"
         - name: ENABLE_METRICS
           value: "true"
-        
+
         # Method 2: Secrets as Volume Mounts (recommended for large/binary secrets)
         volumeMounts:
         - name: rclone-config
@@ -145,7 +145,7 @@ spec:
           mountPath: /tmp
         - name: cache
           mountPath: /cache
-        
+
         # Health Checks with secret validation
         livenessProbe:
           httpGet:
@@ -159,7 +159,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        
+
         readinessProbe:
           httpGet:
             path: /api/v1/ready
@@ -172,7 +172,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
-        
+
         # Resource limits
         resources:
           requests:
@@ -181,7 +181,7 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
-        
+
         # Security context
         securityContext:
           allowPrivilegeEscalation: false
@@ -189,7 +189,7 @@ spec:
           capabilities:
             drop:
             - ALL
-      
+
       # Volumes
       volumes:
       - name: rclone-config
@@ -206,7 +206,7 @@ spec:
       - name: cache
         emptyDir:
           sizeLimit: 5Gi
-      
+
       # Pod disruption budget for rolling updates
       affinity:
         podAntiAffinity:

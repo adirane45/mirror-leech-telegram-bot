@@ -8,7 +8,7 @@ import asyncio
 import os
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List
 
 
 @dataclass
@@ -31,7 +31,7 @@ class ParallelUploadResult:
 class MTProtoParallelUploader:
     """Upload file chunks in parallel with a Telegram client."""
 
-    def __init__(self, client):
+    def __init__(self, client: Any) -> None:
         self.client = client
 
     async def upload_file_parallel(
@@ -114,7 +114,7 @@ class MTProtoParallelUploader:
             photo=data,
             caption=f"Chunk {chunk_index + 1}",
         )
-        return response.photo.file_id
+        return str(response.photo.file_id)
 
     def _reassemble_chunks(self, results: List[ChunkUploadResult]) -> str:
         if not results:

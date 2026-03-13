@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Mirror/Leech/YT-DLP Command - FINAL TEST & VERIFICATION
-# 
+#
 
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║     MIRROR LEECH YTDL - COMMAND FIX & VERIFICATION        ║"
@@ -48,7 +48,7 @@ echo "  /mirror https://speed.hetzner.de/10MB.bin  (Direct download)"
 echo "  /m https://example.com/file.zip            (Shortcut)"
 echo ""
 echo "  ⬆️ LEECH COMMANDS:"
-echo "  /leech https://speed.hetzner.de/10MB.bin   (Upload to Telegram)"  
+echo "  /leech https://speed.hetzner.de/10MB.bin   (Upload to Telegram)"
 echo "  /l https://example.com/file.zip            (Shortcut)"
 echo ""
 echo "  ▶️ YOUTUBE COMMANDS:"

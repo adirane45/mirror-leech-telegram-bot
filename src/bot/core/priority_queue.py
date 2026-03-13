@@ -4,12 +4,13 @@ VIP users, emergency downloads, weighted scoring, dynamic queues
 """
 
 import asyncio
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Callable, Any
-from datetime import datetime, timedelta
-from logging import getLogger
 from bisect import insort
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from logging import getLogger
+from typing import Any, Optional
 
 LOGGER = getLogger(__name__)
 
@@ -48,26 +49,26 @@ class QueuedTask:
     queued_at: datetime = field(default_factory=datetime.utcnow)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    
+
     # Metadata
     file_name: Optional[str] = None
     file_size: Optional[int] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
+    metadata: dict[str, Any] = field(default_factory=dict)
+
     # Callbacks
-    execute_callback: Optional[Callable] = None
-    progress_callback: Optional[Callable] = None
-    
+    execute_callback: Optional[Callable[..., Any]] = None
+    progress_callback: Optional[Callable[..., Any]] = None
+
     def calculate_score(self) -> float:
         """
         Calculate task score for priority queue
         Higher score = Higher priority = Execute sooner
-        
+
         Formula: base_priority * user_weight + time_bonus + size_bonus
         """
         # Base priority weight
         base_score = self.priority.value
-        
+
         # User tier weight (multiplier)
         tier_weights = {
             UserTier.STANDARD: 1.0,
@@ -75,31 +76,31 @@ class QueuedTask:
             UserTier.ADMIN: 5.0,
         }
         tier_weight = tier_weights.get(self.user_tier, 1.0)
-        
+
         # Time-based boost (age in queue)
         age_seconds = (datetime.utcnow() - self.queued_at).total_seconds()
         time_bonus = age_seconds / 60.0  # +1 point per minute waiting
-        
+
         # Size-based adjustment (smaller files boost)
-        size_bonus = 0
+        size_bonus = 0.0
         if self.file_size and self.file_size < 100_000_000:  # < 100MB
             # Smaller files get slight boost
             size_bonus = 2.0
-        
+
         total_score = (base_score * tier_weight) + time_bonus + size_bonus
         return total_score
-    
+
     def duration_in_queue(self) -> timedelta:
         """Get time spent in queue"""
         end_time = self.started_at or datetime.utcnow()
         return end_time - self.queued_at
-    
+
     def total_duration(self) -> Optional[timedelta]:
         """Get total execution time"""
         if self.started_at and self.completed_at:
             return self.completed_at - self.started_at
         return None
-    
+
     def is_expired(self, max_queue_time_hours: int = 24) -> bool:
         """Check if task expired in queue"""
         return self.duration_in_queue() > timedelta(hours=max_queue_time_hours)
@@ -120,19 +121,19 @@ class QueueStats:
 
 class PriorityQueue:
     """Priority queue with weighted scoring"""
-    
+
     def __init__(self, name: str, max_concurrent: int = 3):
         self.name = name
         self.max_concurrent = max_concurrent
-        
-        self._pending: List[QueuedTask] = []  # Sorted by score
-        self._running: Dict[str, QueuedTask] = {}
-        self._completed: List[QueuedTask] = []
-        self._failed: Dict[str, QueuedTask] = {}
-        
+
+        self._pending: list[QueuedTask] = []  # Sorted by score
+        self._running: dict[str, QueuedTask] = {}
+        self._completed: list[QueuedTask] = []
+        self._failed: dict[str, QueuedTask] = {}
+
         self._lock = asyncio.Lock()
         self._dispatcher_running = False
-    
+
     async def add(self, task: QueuedTask) -> str:
         """Add task to queue"""
         async with self._lock:
@@ -142,7 +143,7 @@ class PriorityQueue:
                 f"(priority={task.priority.name}, user_tier={task.user_tier.name})"
             )
         return task.task_id
-    
+
     async def get_next(self) -> Optional[QueuedTask]:
         """Get next task to execute"""
         async with self._lock:
@@ -150,47 +151,51 @@ class PriorityQueue:
                 task = self._pending.pop(0)
                 self._running[task.task_id] = task
                 task.started_at = datetime.utcnow()
-                
+
                 LOGGER.info(
                     f"▶️  Task '{task.task_id}' started from {self.name} queue "
                     f"(queued for {task.duration_in_queue().total_seconds():.1f}s)"
                 )
                 return task
             return None
-    
-    async def complete(self, task_id: str):
+
+    async def complete(self, task_id: str) -> None:
         """Mark task as completed"""
         async with self._lock:
             if task_id in self._running:
                 task = self._running.pop(task_id)
                 task.completed_at = datetime.utcnow()
                 self._completed.append(task)
-                
-                LOGGER.info(
-                    f"✅ Task '{task_id}' completed ({task.total_duration().total_seconds():.1f}s)"
-                )
-    
-    async def fail(self, task_id: str, reason: str = "Unknown"):
+
+                total_duration = task.total_duration()
+                duration_seconds = total_duration.total_seconds() if total_duration else 0.0
+                LOGGER.info(f"✅ Task '{task_id}' completed ({duration_seconds:.1f}s)")
+
+    async def fail(self, task_id: str, reason: str = "Unknown") -> None:
         """Mark task as failed"""
         async with self._lock:
             if task_id in self._running:
                 task = self._running.pop(task_id)
                 task.completed_at = datetime.utcnow()
                 self._failed[task_id] = task
-                
+
                 LOGGER.error(f"❌ Task '{task_id}' failed: {reason}")
-    
+
     async def get_stats(self) -> QueueStats:
         """Get queue statistics"""
         async with self._lock:
             total = len(self._pending) + len(self._running) + len(self._completed) + len(self._failed)
-            
+
             wait_times = [t.duration_in_queue().total_seconds() for t in self._completed if t.started_at]
             avg_wait = sum(wait_times) / len(wait_times) if wait_times else 0
-            
-            exec_times = [t.total_duration().total_seconds() for t in self._completed if t.total_duration()]
+
+            exec_times: list[float] = []
+            for completed_task in self._completed:
+                total_duration = completed_task.total_duration()
+                if total_duration is not None:
+                    exec_times.append(total_duration.total_seconds())
             avg_exec = sum(exec_times) / len(exec_times) if exec_times else 0
-            
+
             return QueueStats(
                 queue_name=self.name,
                 total_tasks=total,
@@ -201,20 +206,20 @@ class PriorityQueue:
                 average_wait_time=avg_wait,
                 average_execution_time=avg_exec,
             )
-    
-    async def list_pending(self, user_id: Optional[int] = None) -> List[QueuedTask]:
+
+    async def list_pending(self, user_id: Optional[int] = None) -> list[QueuedTask]:
         """List pending tasks"""
         async with self._lock:
             tasks = self._pending[:]
             if user_id:
                 tasks = [t for t in tasks if t.user_id == user_id]
             return tasks
-    
-    async def list_running(self) -> List[QueuedTask]:
+
+    async def list_running(self) -> list[QueuedTask]:
         """List running tasks"""
         async with self._lock:
             return list(self._running.values())
-    
+
     async def remove(self, task_id: str) -> bool:
         """Remove task from queue"""
         async with self._lock:
@@ -224,16 +229,16 @@ class PriorityQueue:
                     self._pending.pop(i)
                     LOGGER.info(f"🗑️  Task '{task_id}' removed from pending")
                     return True
-            
+
             # Try running
             if task_id in self._running:
                 del self._running[task_id]
                 LOGGER.warning(f"⚠️  Task '{task_id}' removed from running")
                 return True
-        
+
         return False
-    
-    async def requeue(self, task_id: str, new_priority: TaskPriority = None) -> bool:
+
+    async def requeue(self, task_id: str, new_priority: Optional[TaskPriority] = None) -> bool:
         """Move task back to queue with optional new priority"""
         async with self._lock:
             if task_id in self._failed:
@@ -246,24 +251,24 @@ class PriorityQueue:
                 insort(self._pending, task, key=lambda t: -t.calculate_score())
                 LOGGER.info(f"🔄 Task '{task_id}' requeued")
                 return True
-        
+
         return False
 
 
 class DynamicQueueManager:
     """Manages multiple named queues with load balancing"""
-    
-    def __init__(self):
-        self.queues: Dict[str, PriorityQueue] = {}
-        self._dispatcher_tasks: Dict[str, asyncio.Task] = {}
-        self._executors: Dict[str, Callable] = {}
-        self._stats_history: List[Dict[str, QueueStats]] = []
-    
-    def create_queue(self, name: str, max_concurrent: int = 3):
+
+    def __init__(self) -> None:
+        self.queues: dict[str, PriorityQueue] = {}
+        self._dispatcher_tasks: dict[str, asyncio.Task[None]] = {}
+        self._executors: dict[str, Callable[[QueuedTask], Any]] = {}
+        self._stats_history: list[dict[str, QueueStats]] = []
+
+    def create_queue(self, name: str, max_concurrent: int = 3) -> None:
         """Create a new named queue"""
         self.queues[name] = PriorityQueue(name, max_concurrent)
         LOGGER.info(f"📋 Queue '{name}' created (max_concurrent={max_concurrent})")
-    
+
     async def add_task(
         self,
         task_id: str,
@@ -274,13 +279,13 @@ class DynamicQueueManager:
         queue_name: str = "default",
         file_name: Optional[str] = None,
         file_size: Optional[int] = None,
-        execute_callback: Optional[Callable] = None,
+        execute_callback: Optional[Callable[..., Any]] = None,
     ) -> bool:
         """Add task to queue"""
         if queue_name not in self.queues:
             LOGGER.warning(f"⚠️  Queue '{queue_name}' doesn't exist, using default")
             queue_name = "default"
-        
+
         task = QueuedTask(
             task_id=task_id,
             user_id=user_id,
@@ -291,83 +296,82 @@ class DynamicQueueManager:
             file_size=file_size,
             execute_callback=execute_callback,
         )
-        
+
         await self.queues[queue_name].add(task)
         return True
-    
-    async def set_executor(self, queue_name: str, executor: Callable):
+
+    async def set_executor(self, queue_name: str, executor: Callable[[QueuedTask], Any]) -> None:
         """Set executor for queue"""
         self._executors[queue_name] = executor
         LOGGER.debug(f"Executor set for queue '{queue_name}'")
-    
-    async def start_dispatcher(self, queue_name: str):
+
+    async def start_dispatcher(self, queue_name: str) -> None:
         """Start dispatcher for a queue"""
         if queue_name in self._dispatcher_tasks:
             LOGGER.warning(f"⚠️  Dispatcher already running for '{queue_name}'")
             return
-        
+
         if queue_name not in self._executors:
             LOGGER.warning(f"⚠️  No executor set for queue '{queue_name}'")
             return
-        
+
         queue = self.queues[queue_name]
         executor = self._executors[queue_name]
-        
-        async def dispatch_loop():
+
+        async def dispatch_loop() -> None:
             LOGGER.info(f"🚀 Dispatcher started for queue '{queue_name}'")
             while True:
                 try:
                     # Get next task
                     task = await queue.get_next()
-                    
+
                     if task:
                         try:
                             # Execute task
-                            if asyncio.iscoroutinefunction(executor):
-                                await executor(task)
-                            else:
-                                executor(task)
-                            
+                            execution_result = executor(task)
+                            if asyncio.iscoroutine(execution_result):
+                                await execution_result
+
                             await queue.complete(task.task_id)
                         except Exception as e:
                             await queue.fail(task.task_id, str(e))
                     else:
                         await asyncio.sleep(0.5)  # Poll interval
-                
+
                 except Exception as e:
                     LOGGER.error(f"Dispatcher error: {e}", exc_info=True)
                     await asyncio.sleep(1)
-        
+
         task = asyncio.create_task(dispatch_loop())
         self._dispatcher_tasks[queue_name] = task
-    
-    async def get_all_stats(self) -> Dict[str, QueueStats]:
+
+    async def get_all_stats(self) -> dict[str, QueueStats]:
         """Get statistics for all queues"""
         stats = {}
         for name, queue in self.queues.items():
             stats[name] = await queue.get_stats()
         return stats
-    
+
     async def get_user_position(self, user_id: int, queue_name: str = "default") -> Optional[int]:
         """Get user's position in queue"""
         if queue_name not in self.queues:
             return None
-        
+
         tasks = await self.queues[queue_name].list_pending(user_id)
         return len(tasks)
-    
+
     async def cancel_task(self, task_id: str, queue_name: str = "default") -> bool:
         """Cancel a task"""
         if queue_name not in self.queues:
             return False
-        
+
         return await self.queues[queue_name].remove(task_id)
-    
+
     async def boost_task(self, task_id: str, queue_name: str = "default") -> bool:
         """Boost task priority"""
         if queue_name not in self.queues:
             return False
-        
+
         tasks = await self.queues[queue_name].list_pending()
         for task in tasks:
             if task.task_id == task_id:
@@ -375,13 +379,13 @@ class DynamicQueueManager:
                 task.priority = TaskPriority.HIGH
                 LOGGER.info(f"⬆️  Task '{task_id}' priority boosted")
                 return True
-        
+
         return False
-    
-    async def log_stats(self):
+
+    async def log_stats(self) -> None:
         """Log queue statistics"""
         stats = await self.get_all_stats()
-        
+
         for name, s in stats.items():
             LOGGER.info(
                 f"📊 {name} queue: "
@@ -389,7 +393,7 @@ class DynamicQueueManager:
                 f"completed={s.completed_tasks}, failed={s.failed_tasks}, "
                 f"avg_wait={s.average_wait_time:.1f}s, avg_exec={s.average_execution_time:.1f}s"
             )
-        
+
         self._stats_history.append(stats)
 
 
@@ -397,7 +401,7 @@ class DynamicQueueManager:
 queue_manager = DynamicQueueManager()
 
 # Create default queues
-async def initialize_queue_system():
+async def initialize_queue_system() -> None:
     """Initialize queue system"""
     queue_manager.create_queue(QueueName.DEFAULT.value, max_concurrent=3)
     queue_manager.create_queue(QueueName.VIP.value, max_concurrent=2)

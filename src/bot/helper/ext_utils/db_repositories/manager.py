@@ -6,30 +6,29 @@ Provides unified access to all repository types
 from typing import Optional
 
 from bot import LOGGER
-from bot.core.telegram_manager import TgClient
-from .base_repository import BaseDbRepository
-from .user_preferences_repository import UserPreferencesRepository
+
+from .bulk_operations_repository import BulkOperationsRepository
 from .download_tasks_repository import DownloadTasksRepository
+from .indexed_repository import IndexedRepository
 from .rss_repository import RssRepository
+from .user_preferences_repository import UserPreferencesRepository
 from .users_repository import UsersRepository
 from .variables_repository import VariablesRepository
-from .indexed_repository import IndexedRepository
-from .bulk_operations_repository import BulkOperationsRepository
 
 
 class DatabaseRepositoriesManager:
     """Central manager for all database repositories"""
-    
+
     def __init__(self, db):
         """
         Initialize repositories manager
-        
+
         Args:
             db: MongoDB database connection instance
         """
         self._db = db
         self._return = False
-        
+
         # Initialize all repositories
         self.user_preferences = UserPreferencesRepository(db)
         self.download_tasks = DownloadTasksRepository(db)
@@ -38,9 +37,9 @@ class DatabaseRepositoriesManager:
         self.variables = VariablesRepository(db)
         self.indexed = IndexedRepository(db)
         self.bulk = BulkOperationsRepository(db)
-        
+
         LOGGER.info("Database repositories manager initialized")
-    
+
     def set_return(self, return_value: bool):
         """Set return flag for all repositories"""
         self._return = return_value
@@ -51,16 +50,16 @@ class DatabaseRepositoriesManager:
         self.variables._return = return_value
         self.indexed._return = return_value
         self.bulk._return = return_value
-    
+
     @property
     def return_value(self) -> bool:
         """Get current return flag value"""
         return self._return
-    
+
     async def health_check(self) -> dict:
         """
         Perform health checks on all repositories
-        
+
         Returns:
             Dictionary with health status of each repository
         """
@@ -68,7 +67,7 @@ class DatabaseRepositoriesManager:
             "manager": "healthy",
             "repositories": {}
         }
-        
+
         try:
             # Check database connection
             await self._db.command("ping")
@@ -77,7 +76,7 @@ class DatabaseRepositoriesManager:
             LOGGER.error(f"Database health check failed: {e}")
             health_status["database"] = "unhealthy"
             return health_status
-        
+
         # Check individual repositories
         repositories = {
             "user_preferences": self.user_preferences,
@@ -88,7 +87,7 @@ class DatabaseRepositoriesManager:
             "indexed": self.indexed,
             "bulk": self.bulk,
         }
-        
+
         for name, repo in repositories.items():
             try:
                 # Simple health check - can be extended
@@ -96,9 +95,9 @@ class DatabaseRepositoriesManager:
             except Exception as e:
                 LOGGER.warning(f"Repository {name} health check warning: {e}")
                 health_status["repositories"][name] = "warning"
-        
+
         return health_status
-    
+
     async def close(self):
         """Close all repositories"""
         try:
@@ -121,10 +120,10 @@ _repositories_manager: Optional[DatabaseRepositoriesManager] = None
 def initialize_repositories(db) -> DatabaseRepositoriesManager:
     """
     Initialize and return the global repositories manager
-    
+
     Args:
         db: MongoDB database connection
-    
+
     Returns:
         DatabaseRepositoriesManager instance
     """

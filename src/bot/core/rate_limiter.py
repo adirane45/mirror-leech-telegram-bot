@@ -1,14 +1,12 @@
 """
-Phase 4: Rate Limiter  
+Phase 4: Rate Limiter
 Token bucket-based rate limiting to protect against abuse
 """
 
 import asyncio
+import logging
 import time
 from typing import Any, Dict, Optional, Tuple
-from datetime import datetime, timedelta
-from collections import defaultdict
-import logging
 
 from .rate_limiter_models import RateLimitConfig, RateLimitStatus
 
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class TokenBucket:
     """Token bucket for rate limiting"""
-    
+
     def __init__(
         self,
         client_id: str,
@@ -36,16 +34,16 @@ class TokenBucket:
     def _refill(self) -> None:
         """
         Refill token bucket based on elapsed time (Token Bucket Algorithm).
-        
+
         Tokens regenerate at a constant rate (requests_per_second).
         The bucket has a maximum capacity (burst_size) to allow short bursts.
-        
+
         Example:
             If rps=10 and 2 seconds elapsed, add 20 tokens (up to max)
         """
         now = time.time()
         elapsed = now - self.last_refill
-        
+
         # Add tokens based on request rate
         new_tokens = elapsed * self.rps
         self.tokens = min(self.max_tokens, self.tokens + new_tokens)
@@ -54,20 +52,20 @@ class TokenBucket:
     def is_allowed(self, tokens_required: int = 1) -> Tuple[bool, float]:
         """
         Check if request is allowed
-        
+
         Args:
             tokens_required: Tokens needed for this request
-            
+
         Returns:
             Tuple of (allowed, retry_after_seconds)
         """
         self._refill()
-        
+
         if self.tokens >= tokens_required:
             self.tokens -= tokens_required
             self.request_count += 1
             return True, 0.0
-        
+
         # Calculate when we'll have enough tokens
         needed = tokens_required - self.tokens
         retry_after = needed / self.rps if self.rps > 0 else 0.0
@@ -77,7 +75,7 @@ class TokenBucket:
     def get_status(self) -> Dict[str, Any]:
         """
         Get comprehensive bucket status for monitoring.
-        
+
         Returns:
             Dictionary containing:
                 - client_id: Client identifier
@@ -110,7 +108,7 @@ class RateLimiter:
     _instance: Optional['RateLimiter'] = None
     _lock = asyncio.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.buckets: Dict[str, TokenBucket] = {}
         self.default_config = RateLimitConfig()
@@ -131,13 +129,13 @@ class RateLimiter:
     async def enable(self) -> bool:
         """
         Enable the Rate Limiter to protect against abuse.
-        
+
         Once enabled, all requests are subject to rate limiting based
         on client_id and tier configuration.
-        
+
         Returns:
             bool: True if successfully enabled
-            
+
         Example:
             >>> limiter = RateLimiter.get_instance()
             >>> await limiter.enable()
@@ -159,11 +157,11 @@ class RateLimiter:
     def set_tier_limit(self, tier_name: str, config: RateLimitConfig) -> bool:
         """
         Set rate limit config for tier
-        
+
         Args:
             tier_name: Tier identifier
             config: Rate limit configuration
-            
+
         Returns:
             Success status
         """
@@ -183,12 +181,12 @@ class RateLimiter:
     ) -> Tuple[bool, RateLimitStatus]:
         """
         Check if request from client is allowed
-        
+
         Args:
-            client_id: Client identifier  
+            client_id: Client identifier
             config: Rate limit config (uses default if None)
             tokens_required: Tokens needed for this request
-            
+
         Returns:
             Tuple of (allowed, RateLimitStatus)
         """
@@ -204,7 +202,7 @@ class RateLimiter:
         try:
             # Use provided config or default
             limit_config = config or self.default_config
-            
+
             # Get or create bucket
             if client_id not in self.buckets:
                 self.buckets[client_id] = TokenBucket(
@@ -212,35 +210,35 @@ class RateLimiter:
                     limit_config.requests_per_second,
                     limit_config.burst_size
                 )
-            
+
             bucket = self.buckets[client_id]
-            
+
             # Check limit
             allowed, retry_after = bucket.is_allowed(tokens_required)
-            
+
             # Update statistics
             if allowed:
                 self.total_allowed += 1
             else:
                 self.total_blocked += 1
-            
+
             status = RateLimitStatus(
                 allowed=allowed,
                 remaining_tokens=bucket.tokens,
                 retry_after=retry_after,
                 requests_in_window=bucket.request_count
             )
-            
+
             # Log if blocked
             if not allowed:
                 logger.warning(f"Rate limit blocked for client {client_id} (retry after {retry_after:.1f}s)")
-            
+
             # Cleanup inactive buckets if needed
             if time.time() - self.last_cleanup > self.cleanup_interval:
                 await self._cleanup_inactive_buckets()
-            
+
             return allowed, status
-            
+
         except Exception as e:
             logger.error(f"Error checking rate limit: {e}")
             # Allow on error
@@ -257,20 +255,20 @@ class RateLimiter:
         try:
             current_time = time.time()
             buckets_to_remove = []
-            
+
             for client_id, bucket in self.buckets.items():
                 last_request_time = bucket.last_refill
                 inactivity = current_time - last_request_time
-                
+
                 if inactivity > self.max_inactive_seconds and bucket.request_count == 0:
                     buckets_to_remove.append(client_id)
-            
+
             for client_id in buckets_to_remove:
                 del self.buckets[client_id]
-            
+
             if buckets_to_remove:
                 logger.info(f"Cleaned up {len(buckets_to_remove)} inactive rate limit buckets")
-            
+
             self.last_cleanup = current_time
         except Exception as e:
             logger.error(f"Error cleaning up buckets: {e}")
@@ -278,10 +276,10 @@ class RateLimiter:
     async def reset_client(self, client_id: str) -> bool:
         """
         Reset rate limit for specific client
-        
+
         Args:
             client_id: Client identifier
-            
+
         Returns:
             Success status
         """
@@ -307,7 +305,7 @@ class RateLimiter:
             self.total_blocked / total_requests * 100
             if total_requests > 0 else 0.0
         )
-        
+
         return {
             'enabled': self.enabled,
             'active_clients': len(self.buckets),

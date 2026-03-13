@@ -4,22 +4,22 @@ Command Debug Script for Mirror Leech Telegram Bot
 This script helps diagnose why mirror, leech, ytdl commands are not working
 """
 
-import sys
 import os
+import sys
 
 # Add src/bot to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 async def diagnose():
+    from bot import auth_chats, sudo_users, user_data
     from bot.core.config_manager import Config
     from bot.helper.telegram_helper.bot_commands import BotCommands
-    from bot import user_data, auth_chats, sudo_users
-    
+
     print("="*60)
     print("🔍 MIRROR LEECH TELEGRAM BOT - COMMAND DIAGNOSTIC")
     print("="*60)
     print()
-    
+
     # 1. Check Config
     print("1️⃣  CONFIGURATION:")
     print(f"   BOT_TOKEN: {'✅ Set' if Config.BOT_TOKEN else '❌ Missing'}")
@@ -28,7 +28,7 @@ async def diagnose():
     print(f"   AUTHORIZED_CHATS: {Config.AUTHORIZED_CHATS}")
     print(f"   SUDO_USERS: {Config.SUDO_USERS}")
     print()
-    
+
     # 2. Check Commands
     print("2️⃣  COMMAND DEFINITIONS:")
     print(f"   mirror: {BotCommands.MirrorCommand}")
@@ -36,14 +36,14 @@ async def diagnose():
     print(f"   ytdl: {BotCommands.YtdlCommand}")
     print(f"   ytdlleech: {BotCommands.YtdlLeechCommand}")
     print()
-    
+
     # 3. Check Authorization Status
     print("3️⃣  AUTHORIZATION STATUS:")
     print(f"   auth_chats: {auth_chats if auth_chats else 'Empty dict/set'}")
     print(f"   sudo_users: {sudo_users if sudo_users else 'Empty set'}")
     print(f"   user_data entries: {len(user_data)}")
     print()
-    
+
     # 4. Check if bot is reachable
     print("4️⃣  TELEGRAM CONNECTION:")
     try:
@@ -56,15 +56,15 @@ async def diagnose():
     except Exception as e:
         print(f"   Error: {e}")
     print()
-    
+
     # 5. Recommendations
     print("5️⃣  DIAGNOSIS & SOLUTIONS:")
     print()
-    
+
     # Check if user needs to be authorized
     owner_id = Config.OWNER_ID
-    auth_list = Config.AUTHORIZED_CHATS.split() if hasattr(Config, 'AUTHORIZED_CHATS') and Config.AUTHORIZED_CHATS else []
-    
+    Config.AUTHORIZED_CHATS.split() if hasattr(Config, 'AUTHORIZED_CHATS') and Config.AUTHORIZED_CHATS else []
+
     print("   ISSUE: Commands not responding")
     print("   MOST LIKELY CAUSE: User not authorized")
     print()
@@ -96,7 +96,7 @@ async def diagnose():
     print("   5. Copy the text file content")
     print("   6. Paste it to BotFather")
     print()
-    
+
     # 6. Test command generation
     print("6️⃣  COMMAND EXAMPLES (copy and try these):")
     suffix = Config.CMD_SUFFIX
@@ -106,7 +106,7 @@ async def diagnose():
     print(f"   /status{suffix}")
     print(f"   /help{suffix}")
     print()
-    
+
     print("="*60)
     print("💡 TIP: If commands still don't work:")
     print("   - Check bot logs: docker logs mltb-app --tail 50")

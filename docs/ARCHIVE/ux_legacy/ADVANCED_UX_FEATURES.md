@@ -74,11 +74,11 @@ Intelligent error handling with helpful suggestions. Catches typos, suggests cor
 User: /serch Breaking Bad
 Bot: ❌ Unknown command: `/serch`
      💡 Did you mean: `/search`?
-     
+
      📝 Search: Search for torrents
      Usage: `/search <query>`
      Example: `/search Breaking Bad 1080p`
-     
+
      [✅ Use /search] [❌ No, show help]
 ```
 
@@ -116,15 +116,15 @@ Context-aware download suggestions with automatic quality detection and template
 ```
 User: [Sends torrent link]
 Bot: 🤖 Analyzing link...
-     
+
      📦 Direct Download Detected
      File: Movie.2024.2160p.mkv
      Size: ~8 GB
-     
+
      💡 Recommendations:
      • File is large (8GB) - Recommend Mirror instead of Leech
      • Apply 'Movie 4K' preset?
-     
+
      [☁️ Mirror] [📱 Leech] [⚙️ Configure]
 ```
 
@@ -161,25 +161,25 @@ Automatically track TV series and get notified when new episodes are available.
 ```
 User: /track The Mandalorian
 Bot: ✅ Now Tracking: The Mandalorian
-     
+
      📡 I'll check for new episodes every 6 hours
      🔔 You'll be notified when episodes are available
-     
+
      Settings:
      • Auto-download: ❌ (notify only)
      • Quality: 1080p
      • Status: ✅ Enabled
-     
+
      [⚙️ Configure] [🔕 Disable]
 
 [6 hours later]
 Bot: 🆕 New Episode Available!
-     
+
      Series: The Mandalorian
      Episode: S03E05
      Quality: 1080p
      Size: 1.5 GB
-     
+
      Download this episode?
      [✅ Download] [❌ Skip] [🔕 Disable Tracking]
 ```
@@ -216,22 +216,22 @@ Automatically detect and process links without needing commands. Just paste a li
 ```
 User: https://example.com/file.torrent
 Bot: 📦 Torrent File Detected
-     
+
      Link: `https://example.com/file.torrent`
-     
+
      What would you like to do?
      • Mirror - Download and upload to cloud
      • Leech - Download and send to Telegram
-     
+
      [☁️ Mirror] [📱 Leech] [❌ Ignore]
 
 ---
 
 User: https://youtu.be/dQw4w9WgXcQ
 Bot: ▶️ YouTube Detected
-     
+
      Select quality to download:
-     
+
      [🎥 2160p] [🎥 1080p] [🎥 720p]
      [🎵 Audio Only] [❌ Ignore]
 ```
@@ -303,9 +303,9 @@ No emojis, accessibility-friendly
 ```
 User: /mobile
 Bot: 📱 Mobile Menu
-     
+
      Choose your preferred button layout:
-     
+
      [✅ Standard - Balanced layout for most devices]
      [Compact - Minimal layout for small screens]
      [Large - Big buttons for easy tapping]
@@ -313,10 +313,10 @@ Bot: 📱 Mobile Menu
 
 User: [Selects "Large"]
 Bot: ✅ Layout Set: Large
-     
+
      Your mobile menu is now active!
      Tap any button below to use it.
-     
+
 [Persistent keyboard appears with large buttons]
 User: [Taps "📋 Queue" button]
 Bot: [Shows queue instantly]
@@ -389,13 +389,13 @@ User: [Sends voice: "Search for Breaking Bad 1080p"]
 Bot: 🎤 Processing voice command...
      ⏳ Transcribing audio...
      📝 Converting speech to text...
-     
+
      ✅ Voice Command Recognized
-     
+
      You said: "Search for Breaking Bad 1080p"
      Understood as: `/search Breaking Bad 1080p`
      Confidence: 95%
-     
+
      Execute this command?
      [✅ Execute] [❌ Cancel]
 
@@ -526,9 +526,9 @@ These features were designed based on user requests. Got suggestions? Open an is
 
 ## Credits
 
-**Developed by:** justadi  
-**Version:** 1.0.0  
-**Date:** February 2026  
+**Developed by:** justadi
+**Version:** 1.0.0
+**Date:** February 2026
 **License:** Same as parent project
 
 ---

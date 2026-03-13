@@ -8,10 +8,9 @@ Includes:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
-
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 # ============================================================================
 # ENUMS & TYPES
@@ -71,7 +70,7 @@ class HealthCheck:
     check_id: str
     component_type: ComponentType
     component_name: str
-    check_fn: Callable
+    check_fn: Callable[[], Awaitable[HealthCheckResult]]
     interval_seconds: int = 30
     timeout_seconds: int = 5
     failure_threshold: int = 3

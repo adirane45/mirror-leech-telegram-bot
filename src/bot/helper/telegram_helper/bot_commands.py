@@ -1,6 +1,6 @@
 from ...core.config_manager import Config
 
-i = Config.CMD_SUFFIX
+i = str(getattr(Config, "CMD_SUFFIX", ""))
 
 class BotCommands:
     StartCommand = f"start{i}"

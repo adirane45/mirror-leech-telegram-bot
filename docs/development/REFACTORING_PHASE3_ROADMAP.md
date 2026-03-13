@@ -138,10 +138,10 @@ def mediafireFolder(url):
 class MediaFireFolderHandler:
     def __init__(self, session):
         self.session = session
-    
+
     def get_info(self, folderkey):
         ...
-    
+
     def _api_call(self, params):
         return self.session.post(...)
 ```
@@ -186,7 +186,7 @@ def __fetch_links(session, _id):
 class FolderHandler:
     def __init__(self):
         self.details = {"contents": [], "title": ""}
-    
+
     def fetch_links(self, session, _id):
         self.details["contents"].append(item)  # Explicit
 ```
@@ -224,11 +224,11 @@ class NestedHandler:
     def __init__(self, session=None):
         self.session = session or create_session_with_retries()
         self.details = {"contents": [], "title": "", "total_size": 0}
-    
+
     def _validate_response(self, response, error_key="status"):
         """Common validation logic"""
         ...
-    
+
     def _handle_error(self, error):
         """Common error handling"""
         ...
@@ -244,7 +244,7 @@ class TokenHandler(NestedHandler):
     def __init__(self, session=None):
         super().__init__(session)
         self._token_cache = {}
-    
+
     def get_or_create_token(self, key, token_func):
         """Cache tokens to reduce API calls"""
         ...
@@ -294,25 +294,25 @@ class APIRequestBuilder:
         self._json = None
         self._timeout = 30
         self._retries = 3
-    
+
     def get(self, url):
         self._method = "GET"
         self._url = url
         return self
-    
+
     def post(self, url):
         self._method = "POST"
         self._url = url
         return self
-    
+
     def with_json(self, data):
         self._json = data
         return self
-    
+
     def with_headers(self, headers):
         self._headers.update(headers)
         return self
-    
+
     def execute(self):
         """Execute request with error handling"""
         ...
@@ -330,15 +330,15 @@ class MediaFireFolderHandler(FolderHandler):
         self._fetch_folder_info(folder_key)
         self._traverse_folders(folder_key)
         return self._format_response()
-    
+
     def _fetch_folder_info(self, folder_key):
         """Extracted from __get_info"""
         ...
-    
+
     def _collect_folder_contents(self, folder_key, folder_path=""):
         """Extracted from __get_content"""
         ...
-    
+
     def _scrape_download_link(self, url):
         """Extracted from __scraper"""
         ...
@@ -360,11 +360,11 @@ class GoFileHandler(TokenHandler):
         token = self.get_or_create_token("gofile", self._fetch_token)
         self._collect_contents(file_id, token, password)
         return self._format_response()
-    
+
     def _fetch_token(self):
         """Extracted from __get_token"""
         ...
-    
+
     def _collect_contents(self, file_id, token, password=""):
         """Extracted from __fetch_links"""
         ...
@@ -395,15 +395,15 @@ class GoFileHandler(TokenHandler):
 class HandlerDispatcher:
     def __init__(self, registry):
         self.registry = registry
-    
+
     def validate_url(self, url):
         """Extract validation logic"""
         ...
-    
+
     def get_handler(self, url):
         """Extract handler lookup"""
         ...
-    
+
     def execute(self, url):
         """Main dispatch logic"""
         ...

@@ -500,4 +500,3 @@ Finding code smells...
    5. [High] bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py:24
       HACK: to fix changing extension
       Estimated effort: 6.0 hours
-

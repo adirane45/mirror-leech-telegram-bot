@@ -81,7 +81,7 @@ For queries with multiple WHERE conditions:
 
 ```javascript
 // Composite index for common query pattern
-db.downloads.createIndex({ 
+db.downloads.createIndex({
     "user_id": 1,      // Equality filter
     "status": 1,       // Equality filter
     "created_at": -1   // Sort column
@@ -102,7 +102,7 @@ user = await db.find_one("users", {"_id": user_id})
 **✅ Fast:**
 ```python
 user = await db.find_one(
-    "users", 
+    "users",
     {"_id": user_id},
     projection={"name": 1, "status": 1}  # Only 2 fields
 )
@@ -306,5 +306,5 @@ mltb_connection_pool_wait_time_seconds
 
 ---
 
-*Last updated: February 6, 2026*  
+*Last updated: February 6, 2026*
 *Tier 2.2 - Database Query Optimization*

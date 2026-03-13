@@ -3,11 +3,11 @@ Enhanced Feedback Module
 Provides real-time feedback, notifications, and progress tracking with visual indicators
 """
 
-from typing import Optional, Dict, List, Callable, Any
-from time import time
 import asyncio
+from time import time
+from typing import Any, Callable, Dict, List, Optional
 
-from .enhanced_feedback_models import FeedbackLevel, NotificationType, Notification
+from .enhanced_feedback_models import FeedbackLevel, Notification
 
 
 class NotificationCenter:
@@ -16,7 +16,9 @@ class NotificationCenter:
     def __init__(self, max_notifications: int = 100):
         self.notifications: List[Notification] = []
         self.max_notifications = max_notifications
-        self.subscribers: Dict[str, List[Callable]] = {}
+        self.subscribers: Dict[
+            str, List[Callable[[Notification], Any]]
+        ] = {}
         self._lock = asyncio.Lock()
 
     async def send(self, notification: Notification) -> None:
@@ -44,7 +46,11 @@ class NotificationCenter:
             except Exception as e:
                 print(f"Error in notification subscriber: {e}")
 
-    def subscribe(self, notification_type: str, callback: Callable) -> None:
+    def subscribe(
+        self,
+        notification_type: str,
+        callback: Callable[[Notification], Any],
+    ) -> None:
         """Subscribe to notifications of a specific type"""
         if notification_type not in self.subscribers:
             self.subscribers[notification_type] = []
@@ -79,11 +85,11 @@ class ProgressTracker:
         self.task_id = task_id
         self.task_name = task_name
         self.total = total
-        self.current = 0
+        self.current = 0.0
         self.start_time = time()
         self.last_update = self.start_time
         self.speed = 0.0
-        self.eta_seconds = 0
+        self.eta_seconds = 0.0
         self.status = "pending"
         self.substatus = ""
 
@@ -121,12 +127,12 @@ class ProgressTracker:
 
     def format_details(self) -> str:
         """Format detailed progress information"""
-        from ..helper.ext_utils.status_utils import get_readable_time, get_readable_file_size
+        from ..helper.ext_utils.status_utils import get_readable_file_size, get_readable_time
 
-        percentage = self.get_progress_percentage()
-        elapsed = get_readable_time(self.get_elapsed_time())
-        eta = get_readable_time(self.eta_seconds)
-        speed = get_readable_file_size(self.speed, "/s")
+        self.get_progress_percentage()
+        elapsed = get_readable_time(int(self.get_elapsed_time()))
+        eta = get_readable_time(int(self.eta_seconds))
+        speed = f"{get_readable_file_size(self.speed)}/s"
 
         text = f"<b>{self.task_name}</b>\n"
         text += f"Status: <code>{self.status}</code>"
@@ -143,7 +149,7 @@ class ProgressTracker:
         percentage = self.get_progress_percentage()
         from ..helper.ext_utils.status_utils import get_readable_time
 
-        eta = get_readable_time(self.eta_seconds)
+        eta = get_readable_time(int(self.eta_seconds))
         return f"{self.task_name}: {percentage:.0f}% | ETA: {eta}"
 
 
@@ -250,7 +256,7 @@ class FeedbackFormatter:
 class RealtimeFeedback:
     """Manage real-time feedback updates"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_feedbacks: Dict[str, Dict[str, Any]] = {}
         self.feedback_history: List[Dict[str, Any]] = []
         self._lock = asyncio.Lock()

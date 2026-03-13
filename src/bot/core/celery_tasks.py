@@ -7,20 +7,20 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
-from celery import Task
-from typing import Optional, Dict, Any
 import asyncio
 from datetime import datetime, timedelta
-import os
 from pathlib import Path
+from typing import Any, Dict, Optional
 
-from .celery_app import celery_app
+from celery import Task
+
 from .. import LOGGER
+from .celery_app import celery_app
 
 
 class AsyncTask(Task):
     """Base task class that supports async operations"""
-    
+
     def __call__(self, *args, **kwargs):
         """Execute task - handles async functions"""
         result = self.run(*args, **kwargs)
@@ -40,7 +40,7 @@ def process_download(self, download_url: str, options: Dict[str, Any]) -> Dict[s
     """
     try:
         LOGGER.info(f"🔽 Processing download: {download_url}")
-        
+
         # This would integrate with existing download logic
         # For now, it's a placeholder that shows the pattern
         result = {
@@ -50,10 +50,10 @@ def process_download(self, download_url: str, options: Dict[str, Any]) -> Dict[s
             "timestamp": datetime.now().isoformat(),
             "options": options
         }
-        
+
         LOGGER.info(f"✅ Download completed: {self.request.id}")
         return result
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Download failed: {e}")
         # Retry with exponential backoff
@@ -67,7 +67,7 @@ def process_upload(self, file_path: str, destination: str, options: Dict[str, An
     """
     try:
         LOGGER.info(f"🔼 Processing upload: {file_path} -> {destination}")
-        
+
         result = {
             "status": "completed",
             "file_path": file_path,
@@ -75,10 +75,10 @@ def process_upload(self, file_path: str, destination: str, options: Dict[str, An
             "task_id": self.request.id,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         LOGGER.info(f"✅ Upload completed: {self.request.id}")
         return result
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Upload failed: {e}")
         raise self.retry(exc=e, countdown=min(2 ** self.request.retries * 60, 3600))
@@ -94,16 +94,16 @@ def cleanup_old_files(max_age_hours: int = 24):
     """
     try:
         LOGGER.info("🧹 Starting file cleanup...")
-        
+
         downloads_dir = Path("downloads")
         if not downloads_dir.exists():
             LOGGER.info("Downloads directory doesn't exist, skipping cleanup")
             return {"status": "skipped", "reason": "directory_not_found"}
-        
+
         cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
         deleted_count = 0
         freed_space = 0
-        
+
         for file_path in downloads_dir.rglob("*"):
             if file_path.is_file():
                 file_modified = datetime.fromtimestamp(file_path.stat().st_mtime)
@@ -116,17 +116,17 @@ def cleanup_old_files(max_age_hours: int = 24):
                         LOGGER.debug(f"Deleted: {file_path.name}")
                     except Exception as e:
                         LOGGER.warning(f"Failed to delete {file_path}: {e}")
-        
+
         result = {
             "status": "completed",
             "deleted_files": deleted_count,
             "freed_space_mb": round(freed_space / (1024 * 1024), 2),
             "timestamp": datetime.now().isoformat()
         }
-        
+
         LOGGER.info(f"✅ Cleanup completed: {deleted_count} files deleted, {result['freed_space_mb']} MB freed")
         return result
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Cleanup failed: {e}")
         return {"status": "failed", "error": str(e)}
@@ -140,7 +140,7 @@ def generate_statistics():
     """
     try:
         LOGGER.info("📊 Generating daily statistics...")
-        
+
         # Placeholder for statistics generation
         # Would integrate with existing stats system
         stats = {
@@ -151,10 +151,10 @@ def generate_statistics():
             "storage_used": 0,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         LOGGER.info("✅ Statistics generated successfully")
         return stats
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Statistics generation failed: {e}")
         return {"status": "failed", "error": str(e)}
@@ -168,7 +168,7 @@ def health_check():
     """
     try:
         import psutil
-        
+
         health = {
             "status": "healthy",
             "cpu_percent": psutil.cpu_percent(interval=1),
@@ -176,7 +176,7 @@ def health_check():
             "disk_percent": psutil.disk_usage('/').percent,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         # Alert if resources are critical
         if health["cpu_percent"] > 90:
             LOGGER.warning(f"⚠️ High CPU usage: {health['cpu_percent']}%")
@@ -184,9 +184,9 @@ def health_check():
             LOGGER.warning(f"⚠️ High memory usage: {health['memory_percent']}%")
         if health["disk_percent"] > 90:
             LOGGER.warning(f"⚠️ High disk usage: {health['disk_percent']}%")
-        
+
         return health
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Health check failed: {e}")
         return {"status": "unhealthy", "error": str(e)}
@@ -202,7 +202,7 @@ def send_notification(self, user_id: int, message: str, notification_type: str =
     """
     try:
         LOGGER.info(f"📬 Sending {notification_type} notification to user {user_id}")
-        
+
         # Placeholder - would integrate with Telegram message sending
         result = {
             "status": "sent",
@@ -211,9 +211,9 @@ def send_notification(self, user_id: int, message: str, notification_type: str =
             "message": message,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         return result
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Notification failed: {e}")
         raise self.retry(exc=e, countdown=30, max_retries=3)
@@ -229,17 +229,17 @@ def process_archive(file_path: str, extract: bool = True, password: Optional[str
     """
     try:
         LOGGER.info(f"📦 Processing archive: {file_path}")
-        
+
         result = {
             "status": "completed",
             "file_path": file_path,
             "extracted": extract,
             "timestamp": datetime.now().isoformat()
         }
-        
+
         LOGGER.info("✅ Archive processing completed")
         return result
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Archive processing failed: {e}")
         return {"status": "failed", "error": str(e)}
@@ -253,7 +253,7 @@ def generate_media_info(file_path: str):
     """
     try:
         LOGGER.info(f"🎬 Generating media info: {file_path}")
-        
+
         # Placeholder - would use ffprobe/mediainfo
         info = {
             "file": file_path,
@@ -262,10 +262,10 @@ def generate_media_info(file_path: str):
             "codec": "unknown",
             "timestamp": datetime.now().isoformat()
         }
-        
+
         LOGGER.info("✅ Media info generated")
         return info
-        
+
     except Exception as e:
         LOGGER.error(f"❌ Media info generation failed: {e}")
         return {"status": "failed", "error": str(e)}

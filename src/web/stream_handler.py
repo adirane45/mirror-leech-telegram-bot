@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+from logging import getLogger
 from os import environ
 
 import aiohttp
-from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
-
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from logging import getLogger
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 
 from bot.core.config_manager import Config
 from bot.core.stream_proxy import stream_proxy
-
 
 router = APIRouter()
 LOGGER = getLogger(__name__)
@@ -67,7 +65,7 @@ async def _fetch_file_path(file_id: str) -> str:
                             LOGGER.info(f"Stream: Large file detected, using file_path={file_path[:50]}...")
                             return file_path
                     raise HTTPException(
-                        status_code=413, 
+                        status_code=413,
                         detail="File too large for streaming (>20MB). Telegram Bot API has a 20MB file size limit."
                     )
                 raise HTTPException(status_code=404, detail=f"Telegram error: {error_desc}")
@@ -102,7 +100,7 @@ async def _stream_file_pyrogram(file_id: str):
     """Placeholder for future Pyrogram-based streaming"""
     LOGGER.warning("Stream: Pyrogram streaming not yet implemented")
     raise HTTPException(
-        status_code=413, 
+        status_code=413,
         detail="File too large for streaming. Telegram Bot API has a 20MB file size limit. Please use a smaller file."
     )
 

@@ -22,7 +22,7 @@ Updated [bot/core/handlers.py](bot/core/handlers.py) callback patterns:
 # Quick Actions - Line 289
 CallbackQueryHandler(handle_quick_action, filters=regex("^qa_"))
 
-# Series Tracker - Line 304  
+# Series Tracker - Line 304
 CallbackQueryHandler(handle_tracker_callback, filters=regex("^tracker_"))
 
 # Mobile Buttons - Line 319
@@ -85,7 +85,7 @@ Test in Telegram **@adihere_bot**:
 
 - [ ] `/quick` - All 15+ buttons respond
 - [ ] `/track Breaking Bad` - Tracker buttons work
-- [ ] `/myshows` - Manage buttons work  
+- [ ] `/myshows` - Manage buttons work
 - [ ] `/mobile` - Layout buttons + context menus work
 - [ ] `/assistant` - Template/stats buttons work
 - [ ] Navigation buttons (Back, Close) in all menus
@@ -93,7 +93,7 @@ Test in Telegram **@adihere_bot**:
 
 ## 📊 Status
 
-- **Bot**: @adihere_bot  
+- **Bot**: @adihere_bot
 - **Started**: 19:31:53 (Feb 9, 2026)
 - **Container**: mltb-app (healthy)
 - **Issue**: Resolved ✅

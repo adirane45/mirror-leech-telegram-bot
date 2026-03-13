@@ -12,7 +12,7 @@ Implements:
 import hmac
 import hashlib
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional, Set
+from typing import List,  Dict, Any, Optional, Set
 from enum import Enum
 from dataclasses import dataclass, field
 import json
@@ -34,10 +34,10 @@ class Permission:
     resource: str
     action: str
     
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.resource, self.action))
     
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Permission):
             return False
         return self.resource == other.resource and self.action == other.action
@@ -75,7 +75,7 @@ GUEST_PERMISSIONS = {
 class TokenBucketRateLimiter:
     """Token bucket algorithm for rate limiting"""
     
-    def __init__(self, rate: int, bucket_size: int):
+    def __init__(self, rate: int, bucket_size: int) -> None:
         """
         Args:
             rate: Tokens per second
@@ -83,7 +83,7 @@ class TokenBucketRateLimiter:
         """
         self.rate = rate
         self.bucket_size = bucket_size
-        self.tokens = bucket_size
+        self.tokens: float = float(bucket_size)
         self.last_refill = datetime.now(timezone.utc)
     
     def allow_request(self, tokens: int = 1) -> bool:
@@ -93,7 +93,7 @@ class TokenBucketRateLimiter:
         
         # Refill tokens
         self.tokens = min(
-            self.bucket_size,
+            float(self.bucket_size),
             self.tokens + (elapsed * self.rate)
         )
         self.last_refill = now
@@ -214,7 +214,7 @@ class DataEncryptor:
 class RoleBasedAccessControl:
     """Role-based access control"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.role_permissions: Dict[UserRole, Set[Permission]] = {
             UserRole.ADMIN: ADMIN_PERMISSIONS,
             UserRole.MODERATOR: MODERATOR_PERMISSIONS,
@@ -288,11 +288,11 @@ class AuditTrail:
     """Tamper-proof audit trail"""
     
     def __init__(self, max_entries: int = 100000):
-        self.entries: list = []
+        self.entries: List[Any] = []
         self.max_entries = max_entries
-        self.checksums: list = []
+        self.checksums: List[Any] = []
     
-    def _compute_checksum(self, entry_dict: Dict) -> str:
+    def _compute_checksum(self, entry_dict: Dict[str, Any]) -> str:
         """Compute checksum for entry"""
         entry_str = json.dumps(entry_dict, sort_keys=True)
         return hashlib.sha256(entry_str.encode()).hexdigest()
@@ -349,7 +349,7 @@ class AuditTrail:
         user_id: Optional[str] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
-    ) -> list:
+    ) -> List[Any]:
         """Get audit entries"""
         filtered = self.entries
         

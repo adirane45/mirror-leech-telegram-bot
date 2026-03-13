@@ -5,7 +5,6 @@ Validates that config.py has all required settings for deployment
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add parent directory to path
@@ -15,12 +14,19 @@ def check_required_settings():
     """Check if all required config settings exist"""
     try:
         from config import (
-            BOT_TOKEN, OWNER_ID, TELEGRAM_API, TELEGRAM_HASH,
-            MONGODB_URL, REDIS_HOST, REDIS_PORT,
-            GRAPHQL_ENDPOINT, CELERY_BROKER_URL,
-            API_HOST, API_PORT, ENVIRONMENT
+            API_HOST,
+            API_PORT,
+            BOT_TOKEN,
+            CELERY_BROKER_URL,
+            ENVIRONMENT,
+            MONGODB_URL,
+            OWNER_ID,
+            REDIS_HOST,
+            REDIS_PORT,
+            TELEGRAM_API,
+            TELEGRAM_HASH,
         )
-        
+
         checks = {
             "BOT_TOKEN": BOT_TOKEN and len(BOT_TOKEN) > 10,
             "OWNER_ID": OWNER_ID and OWNER_ID > 0,
@@ -34,9 +40,9 @@ def check_required_settings():
             "CELERY_BROKER_URL": CELERY_BROKER_URL and "redis" in CELERY_BROKER_URL,
             "ENVIRONMENT": ENVIRONMENT in ["production", "development"],
         }
-        
+
         return checks
-        
+
     except ImportError as e:
         print(f"❌ Error importing config: {e}")
         return {}
@@ -44,20 +50,17 @@ def check_required_settings():
 def check_phase3_features():
     """Check if Phase 3 features are configured"""
     try:
-        from config import (
-            ENABLE_GRAPHQL_API, ENABLE_PLUGIN_SYSTEM,
-            ENABLE_ADVANCED_DASHBOARD, ENABLE_CELERY
-        )
-        
+        from config import ENABLE_ADVANCED_DASHBOARD, ENABLE_CELERY, ENABLE_GRAPHQL_API, ENABLE_PLUGIN_SYSTEM
+
         features = {
             "ENABLE_GRAPHQL_API": ENABLE_GRAPHQL_API,
             "ENABLE_PLUGIN_SYSTEM": ENABLE_PLUGIN_SYSTEM,
             "ENABLE_ADVANCED_DASHBOARD": ENABLE_ADVANCED_DASHBOARD,
             "ENABLE_CELERY": ENABLE_CELERY,
         }
-        
+
         return features
-        
+
     except ImportError:
         return {}
 
@@ -71,7 +74,7 @@ def print_results(checks, features, env_exists):
     print("\n" + "="*60)
     print("CONFIGURATION VERIFICATION REPORT")
     print("="*60 + "\n")
-    
+
     # Required Settings
     print("📋 REQUIRED SETTINGS:")
     print("-" * 60)
@@ -84,9 +87,9 @@ def print_results(checks, features, env_exists):
             passed += 1
         else:
             failed += 1
-    
+
     print(f"\n  Result: {passed}/{len(checks)} passed")
-    
+
     # Phase 3 Features
     print("\n\n🚀 PHASE 3 FEATURES:")
     print("-" * 60)
@@ -94,7 +97,7 @@ def print_results(checks, features, env_exists):
         status_icon = "✅" if enabled else "ℹ️"
         status_text = "ENABLED" if enabled else "disabled (optional)"
         print(f"  {status_icon} {feature}: {status_text}")
-    
+
     # Environment File
     print("\n\n📁 ENVIRONMENT FILE:")
     print("-" * 60)
@@ -102,7 +105,7 @@ def print_results(checks, features, env_exists):
         print("  ✅ .env.production exists")
     else:
         print("  ℹ️  .env.production not found (optional for Docker)")
-    
+
     # Summary
     print("\n" + "="*60)
     if failed == 0:
@@ -126,15 +129,15 @@ def print_results(checks, features, env_exists):
 def main():
     """Run all verification checks"""
     print("\n🔍 Verifying configuration.py...")
-    
+
     checks = check_required_settings()
     features = check_phase3_features()
     env_exists = check_env_file()
-    
+
     if not checks:
         print("❌ Failed to load config module")
         return 1
-    
+
     exit_code = print_results(checks, features, env_exists)
     return exit_code
 

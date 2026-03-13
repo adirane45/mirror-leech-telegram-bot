@@ -2,11 +2,7 @@ from time import time
 
 from .... import LOGGER
 from ....core.torrent_manager import TorrentManager, aria2_name
-from ...ext_utils.status_utils import (
-    MirrorStatus,
-    get_readable_time,
-    get_readable_file_size,
-)
+from ...ext_utils.status_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 
 async def get_download(gid, old_info=None):

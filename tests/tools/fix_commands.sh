@@ -34,10 +34,10 @@ if grep -q "AUTHORIZED_CHATS.*$USER_ID" config/main_config.py; then
     echo "✅ User ID already in AUTHORIZED_CHATS"
 else
     echo "📝 Adding to config..."
-    
+
     # Backup config
     cp config/main_config.py config/main_config.py.backup.$(date +%s)
-    
+
     # Add user to AUTHORIZED_CHATS if not already there
     current_auth=$(grep "AUTHORIZED_CHATS.*=" config/main_config.py | head -1 | cut -d'"' -f2)
     if [ -z "$current_auth" ]; then
@@ -45,7 +45,7 @@ else
     elif ! echo "$current_auth" | grep -q "$USER_ID"; then
         current_auth="$current_auth $USER_ID"
     fi
-    
+
     sed -i "s/AUTHORIZED_CHATS = .*/AUTHORIZED_CHATS = \"$current_auth\"/" config/main_config.py
     echo "✅ Added $USER_ID to AUTHORIZED_CHATS"
 fi

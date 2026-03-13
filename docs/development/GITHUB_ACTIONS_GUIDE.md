@@ -105,6 +105,6 @@ docker pull ghcr.io/adirane45/mirror-leech-telegram-bot:latest
 
 ---
 
-**Last Updated**: 2026-02-23  
-**Commits**: aecb8ca + v3.2.1 tag  
+**Last Updated**: 2026-02-23
+**Commits**: aecb8ca + v3.2.1 tag
 **Status**: ⏳ Awaiting GitHub Actions execution

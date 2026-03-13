@@ -1,32 +1,50 @@
-from ..telegram_helper.bot_commands import BotCommands
+from typing import TypedDict
+
 from ...core.telegram_manager import TgClient
+from ..telegram_helper.bot_commands import BotCommands
 
 
-def _cmd_list(cmd):
+CommandInput = str | list[str] | tuple[str, ...]
+
+
+class HelpItem(TypedDict, total=False):
+  name: str
+  cmd: CommandInput
+  desc: str
+  usage: str
+  example: str
+
+
+class HelpCategory(TypedDict):
+  title: str
+  items: list[HelpItem]
+
+
+def _cmd_list(cmd: CommandInput) -> list[str]:
   return list(cmd) if isinstance(cmd, (list, tuple)) else [cmd]
 
 
-def _cmd_primary(cmd):
+def _cmd_primary(cmd: CommandInput) -> str:
   return _cmd_list(cmd)[0]
 
 
-def _cmd_aliases(cmd):
+def _cmd_aliases(cmd: CommandInput) -> list[str]:
   return _cmd_list(cmd)[1:]
 
 
-def format_command(cmd):
+def format_command(cmd: CommandInput) -> str:
   primary = _cmd_primary(cmd)
   return f"/{primary}"
 
 
-def format_shortcuts(cmd):
+def format_shortcuts(cmd: CommandInput) -> str:
   aliases = _cmd_aliases(cmd)
   if not aliases:
     return ""
   return ", ".join(f"/{alias}" for alias in aliases)
 
 
-HELP_CATEGORIES = {
+HELP_CATEGORIES: dict[str, HelpCategory] = {
   "general": {
     "title": "General",
     "items": [
@@ -679,7 +697,7 @@ HELP_CATEGORY_ALIASES = {
 }
 
 
-def build_help_home_text():
+def build_help_home_text() -> str:
   return (
     "<b>📘 Command Center</b>\n"
     "Pick a category or search.\n\n"
@@ -691,12 +709,14 @@ def build_help_home_text():
   )
 
 
-def build_help_category_text(category_key):
+def build_help_category_text(category_key: str) -> str:
   cat = HELP_CATEGORIES.get(category_key)
   if not cat:
     return "❌ Category not found."
-  lines = [f"<b>📂 {cat['title']}</b>", "<i>Tap a command to copy, or use shortcuts.</i>"]
-  for item in cat["items"]:
+  title = str(cat["title"])
+  items = cat["items"]
+  lines = [f"<b>📂 {title}</b>", "<i>Tap a command to copy, or use shortcuts.</i>"]
+  for item in items:
     cmd_text = format_command(item["cmd"])
     extras = []
     usage = item.get("usage")
@@ -716,18 +736,19 @@ def build_help_category_text(category_key):
   return "\n".join(lines)
 
 
-def search_help(term):
+def search_help(term: str) -> str:
   needle = term.lower().strip()
   if not needle:
     return "❌ Please enter a search keyword."
-  matches = []
+  matches: list[tuple[str, HelpItem]] = []
   for cat_key in HELP_CATEGORY_ORDER:
     cat = HELP_CATEGORIES[cat_key]
+    title = str(cat["title"])
     for item in cat["items"]:
       cmd_text = " ".join(_cmd_list(item["cmd"])).lower()
       hay = f"{item['name']} {item['desc']} {cmd_text}".lower()
       if needle in hay:
-        matches.append((cat["title"], item))
+        matches.append((title, item))
   if not matches:
     return f"❌ No commands matched <code>{term}</code>."
   lines = [f"<b>🔎 Results for:</b> <code>{term}</code>"]
@@ -1092,7 +1113,7 @@ PASSWORD_ERROR_MESSAGE = """
 
 user_settings_text = {
     "LEECH_SPLIT_SIZE": f"Send Leech split size in bytes or use gb or mb. Example: 40000000 or 2.5gb or 1000mb. IS_PREMIUM_USER: {TgClient.IS_PREMIUM_USER}. Timeout: 60 sec",
-    "LEECH_DUMP_CHAT": """"Send leech destination ID/USERNAME/PM. 
+    "LEECH_DUMP_CHAT": """"Send leech destination ID/USERNAME/PM.
 * b:id/@username/pm (b: means leech by bot) (id or username of the chat or write pm means private message so bot will send the files in private to you) when you should use b:(leech by bot)? When your default settings is leech by user and you want to leech by bot for specific task.
 * u:id/@username(u: means leech by user) This incase OWNER added USER_STRING_SESSION.
 * h:id/@username(hybrid leech) h: to upload files by bot and user based on file size.
@@ -1268,4 +1289,3 @@ http://your-bot-domain:8000/dashboard
 Real-time progress updates without page refresh.
 Automatic reconnection on connection loss.
 """
-

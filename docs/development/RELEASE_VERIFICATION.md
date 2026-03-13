@@ -2,9 +2,9 @@
 
 ## What We Released
 
-**Version**: 3.2.1  
-**Release Type**: Patch (bug fixes + CI/CD improvements)  
-**Date**: 2026-02-23  
+**Version**: 3.2.1
+**Release Type**: Patch (bug fixes + CI/CD improvements)
+**Date**: 2026-02-23
 
 ### Release Contents
 
@@ -201,7 +201,7 @@ docker run ghcr.io/adirane45/mirror-leech-telegram-bot:v3.2.1 --version
    git tag -l | grep v3.2.1
    ```
 
-2. **Verify tag pushed**: 
+2. **Verify tag pushed**:
    ```bash
    git ls-remote origin refs/tags/v3.2.1
    ```
@@ -257,8 +257,8 @@ gh release download v3.2.0 \
 
 ---
 
-**Status**: ⏳ Awaiting GitHub to process release workflow  
-**Release URL**: https://github.com/adirane45/mirror-leech-telegram-bot/releases/tag/v3.2.1  
+**Status**: ⏳ Awaiting GitHub to process release workflow
+**Release URL**: https://github.com/adirane45/mirror-leech-telegram-bot/releases/tag/v3.2.1
 **Container Registry**: https://github.com/adirane45/mirror-leech-telegram-bot/pkgs/container
 
 ---

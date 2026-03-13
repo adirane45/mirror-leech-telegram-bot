@@ -10,37 +10,36 @@ from bot import intervals, multi_tags, task_dict_lock, user_data
 from bot.helper.ext_utils.bot_utils import new_task
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import (
-    send_message,
-    send_status_message,
-)
+from bot.helper.telegram_helper.message_utils import send_message, send_status_message
 
 
 class MultiTaskOperations:
     """Handles multi-task and bulk operations"""
 
     @staticmethod
-    async def get_tag(task_config, text: list):
-        """Parse and set user tag from message"""
-        if len(text) <= 1 or not text[1].startswith("Tag: "):
-            if task_config.user:
-                if username := task_config.user.username:
-                    task_config.tag = f"@{username}"
-                elif hasattr(task_config.user, "mention"):
-                    task_config.tag = task_config.user.mention
-                else:
-                    task_config.tag = task_config.user.title
+    def _set_tag_from_user(task_config):
+        if not task_config.user:
             return
+        if username := task_config.user.username:
+            task_config.tag = f"@{username}"
+        elif hasattr(task_config.user, "mention"):
+            task_config.tag = task_config.user.mention
+        else:
+            task_config.tag = task_config.user.title
 
-        task_config.is_rss = True
+    @staticmethod
+    def _parse_rss_tag_info(text: list, task_config):
         user_info = text[1].split("Tag: ")
         if len(user_info) >= 3:
-            id_ = user_info[-1]
             task_config.tag = " ".join(user_info[:-1])
-        else:
-            task_config.tag, id_ = text[1].split("Tag: ")[1].split()
+            return user_info[-1]
+        task_config.tag, id_ = text[1].split("Tag: ")[1].split()
+        return id_
+
+    @staticmethod
+    async def _load_rss_user(task_config, user_id):
         task_config.user = task_config.message.from_user = (
-            await task_config.client.get_users(int(id_))
+            await task_config.client.get_users(int(user_id))
         )
         task_config.user_id = task_config.user.id
         task_config.user_dict = user_data.get(task_config.user_id, {})
@@ -48,13 +47,18 @@ class MultiTaskOperations:
             await task_config.message.unpin()
         except:
             pass
-        if task_config.user:
-            if username := task_config.user.username:
-                task_config.tag = f"@{username}"
-            elif hasattr(task_config.user, "mention"):
-                task_config.tag = task_config.user.mention
-            else:
-                task_config.tag = task_config.user.title
+
+    @staticmethod
+    async def get_tag(task_config, text: list):
+        """Parse and set user tag from message"""
+        if len(text) <= 1 or not text[1].startswith("Tag: "):
+            MultiTaskOperations._set_tag_from_user(task_config)
+            return
+
+        task_config.is_rss = True
+        id_ = MultiTaskOperations._parse_rss_tag_info(text, task_config)
+        await MultiTaskOperations._load_rss_user(task_config, id_)
+        MultiTaskOperations._set_tag_from_user(task_config)
 
     @staticmethod
     def _setup_multi_tag(task_config):

@@ -3,23 +3,23 @@
 # Reduces manual configuration
 # Modified by: justadi
 
-from typing import Optional, Dict
-from datetime import datetime
 from asyncio import Lock
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from .. import LOGGER
 
 
 class DownloadTemplate:
     """Represents a download template/preset"""
-    
-    def __init__(self, name: str, description: str = "", **settings):
+
+    def __init__(self, name: str, description: str = "", **settings: Any) -> None:
         self.name = name
         self.description = description
         self.settings = settings
         self.created_at = datetime.now()
-    
-    def to_dict(self) -> dict:
+
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
@@ -32,7 +32,7 @@ class TemplateManager:
     """
     Manages download templates and presets
     """
-    
+
     # Default templates
     DEFAULT_TEMPLATES = {
         "movie_mirror": DownloadTemplate(
@@ -71,75 +71,75 @@ class TemplateManager:
             notify_completion=True
         ),
     }
-    
+
     templates: Dict[str, DownloadTemplate] = DEFAULT_TEMPLATES.copy()
     _lock = Lock()
-    
+
     @classmethod
     async def create_template(
         cls,
         name: str,
         description: str = "",
-        **settings
+        **settings: Any
     ) -> bool:
         """
         Create a new download template
-        
+
         Args:
             name: Template name
             description: Template description
             **settings: Template settings/configuration
-            
+
         Returns:
             True if created successfully
         """
         try:
             template_id = name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if template_id in cls.templates:
                     LOGGER.warning(f"Template '{name}' already exists")
                     return False
-                
+
                 cls.templates[template_id] = DownloadTemplate(name, description, **settings)
                 LOGGER.info(f"Template '{name}' created")
             return True
         except Exception as e:
             LOGGER.error(f"Error creating template: {e}")
             return False
-    
+
     @classmethod
     async def delete_template(cls, name: str) -> bool:
         """Delete a template"""
         try:
             template_id = name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if template_id not in cls.templates or template_id in cls.DEFAULT_TEMPLATES:
                     LOGGER.warning(f"Cannot delete default template '{name}'")
                     return False
-                
+
                 del cls.templates[template_id]
                 LOGGER.info(f"Template '{name}' deleted")
             return True
         except Exception as e:
             LOGGER.error(f"Error deleting template: {e}")
             return False
-    
+
     @classmethod
-    async def get_template(cls, name: str) -> Optional[dict]:
+    async def get_template(cls, name: str) -> Optional[Dict[str, Any]]:
         """
         Get a template's settings
-        
+
         Args:
             name: Template name
-            
+
         Returns:
             Template settings dict or None
         """
         try:
             template_id = name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if template_id in cls.templates:
                     template = cls.templates[template_id]
@@ -148,13 +148,13 @@ class TemplateManager:
         except Exception as e:
             LOGGER.error(f"Error getting template: {e}")
             return None
-    
+
     @classmethod
-    async def get_template_settings(cls, name: str) -> Optional[dict]:
+    async def get_template_settings(cls, name: str) -> Optional[Dict[str, Any]]:
         """Get only the settings from a template"""
         try:
             template_id = name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if template_id in cls.templates:
                     return cls.templates[template_id].settings.copy()
@@ -162,41 +162,41 @@ class TemplateManager:
         except Exception as e:
             LOGGER.error(f"Error getting template settings: {e}")
             return None
-    
+
     @classmethod
-    async def update_template(cls, name: str, **new_settings) -> bool:
+    async def update_template(cls, name: str, **new_settings: Any) -> bool:
         """Update template settings"""
         try:
             template_id = name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if template_id not in cls.templates:
                     LOGGER.warning(f"Template '{name}' not found")
                     return False
-                
+
                 cls.templates[template_id].settings.update(new_settings)
                 LOGGER.info(f"Template '{name}' updated")
             return True
         except Exception as e:
             LOGGER.error(f"Error updating template: {e}")
             return False
-    
+
     @classmethod
     async def duplicate_template(cls, source_name: str, new_name: str) -> bool:
         """Create a copy of an existing template"""
         try:
             source_id = source_name.lower().replace(" ", "_")
             new_id = new_name.lower().replace(" ", "_")
-            
+
             async with cls._lock:
                 if source_id not in cls.templates:
                     LOGGER.warning(f"Source template '{source_name}' not found")
                     return False
-                
+
                 if new_id in cls.templates:
                     LOGGER.warning(f"Template '{new_name}' already exists")
                     return False
-                
+
                 source_template = cls.templates[source_id]
                 new_template = DownloadTemplate(
                     new_name,
@@ -209,9 +209,9 @@ class TemplateManager:
         except Exception as e:
             LOGGER.error(f"Error duplicating template: {e}")
             return False
-    
+
     @classmethod
-    async def get_all_templates(cls) -> Dict[str, dict]:
+    async def get_all_templates(cls) -> Dict[str, Dict[str, Any]]:
         """Get all templates"""
         try:
             async with cls._lock:
@@ -222,9 +222,9 @@ class TemplateManager:
         except Exception as e:
             LOGGER.error(f"Error getting templates: {e}")
             return {}
-    
+
     @classmethod
-    async def get_templates_by_category(cls, category: str) -> Dict[str, dict]:
+    async def get_templates_by_category(cls, category: str) -> Dict[str, Dict[str, Any]]:
         """Get all templates for a specific category"""
         try:
             async with cls._lock:

@@ -16,35 +16,32 @@ New Architecture:
 - users_settings.py (this): Main orchestration and handlers
 """
 
-from typing import Tuple
-from aiofiles.os import remove, path as aiopath, makedirs
 from asyncio import sleep
 from functools import partial
 from io import BytesIO
 from os import getcwd
+from time import time
+from typing import Tuple
+
+from aiofiles.os import makedirs
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove
 from pyrogram.filters import create
 from pyrogram.handlers import MessageHandler
-from time import time
 
-from .. import user_data, auth_chats, sudo_users
-from ..core.config_manager import Config
+from .. import auth_chats, sudo_users, user_data
+from ..helper.ext_utils.bot_utils import get_size_bytes, new_task, update_user_ldata
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.media_utils import create_thumb
 from ..helper.telegram_helper.button_build import ButtonMaker
-from ..helper.ext_utils.bot_utils import update_user_ldata, new_task, get_size_bytes
-from ..helper.telegram_helper.message_utils import (
-    send_message,
-    edit_message,
-    send_file,
-    delete_message,
-)
+from ..helper.telegram_helper.message_utils import delete_message, edit_message, send_file, send_message
 
 # Import refactored modular components
 from .user_settings_core import SettingsRetriever
 from .user_settings_formatters import (
+    GdriveSettingsFormatter,
     LeechSettingsFormatter,
     RcloneSettingsFormatter,
-    GdriveSettingsFormatter,
     UploadSettingsFormatter,
 )
 
@@ -323,31 +320,11 @@ async def ffmpeg_variables(
     user_dict = user_data.get(user_id, {})
 
     if key is None:
-        msg = "Choose which key to fill/edit variables in:"
-        for k, v in ffc.items():
-            for cmd in v:
-                if _extract_variables(cmd):
-                    buttons.data_button(k, f"userset {user_id} ffvar {k}")
-                    break
+        msg = _build_ffmpeg_key_selection(buttons, user_id, ffc)
     elif value is None:
-        msg = f"Choose variable to fill/edit: <u>{key}</u>\n\nCMDS:\n{ffc[key]}"
-        for ind, cmd in enumerate(ffc[key]):
-            for var in _extract_variables(cmd):
-                buttons.data_button(var, f"userset {user_id} ffvar {key} {var} {ind}")
-        buttons.data_button("Reset", f"userset {user_id} ffvar {key} ffmpegvarreset")
+        msg = _build_ffmpeg_variable_selection(buttons, user_id, key, ffc)
     else:
-        old_value = (
-            user_dict.get("FFMPEG_VARIABLES", {})
-            .get(key, {})
-            .get(index, {})
-            .get(value, "")
-        )
-        msg = f"Edit FFmpeg Variable: <u>{key}</u>\n\nItem: {ffc[key][int(index)]}\n\nVariable: {value}"
-        if old_value:
-            msg += f"\n\nCurrent: {old_value}"
-        buttons.data_button("Back", f"userset {user_id} setevent")
-        pfunc = partial(set_ffmpeg_variable, key=key, value=value, index=index)
-        await event_handler(client, query, pfunc)
+        msg = await _build_ffmpeg_variable_editor(client, query, buttons, user_id, key, value, index, ffc, user_dict)
 
     buttons.data_button(
         "Back",
@@ -355,6 +332,41 @@ async def ffmpeg_variables(
     )
     buttons.data_button("Close", f"userset {user_id} close")
     await edit_message(message, msg, buttons.build_menu(2))
+
+
+def _build_ffmpeg_key_selection(buttons, user_id, ffc):
+    msg = "Choose which key to fill/edit variables in:"
+    for k, v in ffc.items():
+        for cmd in v:
+            if _extract_variables(cmd):
+                buttons.data_button(k, f"userset {user_id} ffvar {k}")
+                break
+    return msg
+
+
+def _build_ffmpeg_variable_selection(buttons, user_id, key, ffc):
+    msg = f"Choose variable to fill/edit: <u>{key}</u>\n\nCMDS:\n{ffc[key]}"
+    for ind, cmd in enumerate(ffc[key]):
+        for var in _extract_variables(cmd):
+            buttons.data_button(var, f"userset {user_id} ffvar {key} {var} {ind}")
+    buttons.data_button("Reset", f"userset {user_id} ffvar {key} ffmpegvarreset")
+    return msg
+
+
+async def _build_ffmpeg_variable_editor(client, query, buttons, user_id, key, value, index, ffc, user_dict):
+    old_value = (
+        user_dict.get("FFMPEG_VARIABLES", {})
+        .get(key, {})
+        .get(index, {})
+        .get(value, "")
+    )
+    msg = f"Edit FFmpeg Variable: <u>{key}</u>\n\nItem: {ffc[key][int(index)]}\n\nVariable: {value}"
+    if old_value:
+        msg += f"\n\nCurrent: {old_value}"
+    buttons.data_button("Back", f"userset {user_id} setevent")
+    pfunc = partial(set_ffmpeg_variable, key=key, value=value, index=index)
+    await event_handler(client, query, pfunc)
+    return msg
 
 
 @new_task
@@ -378,44 +390,117 @@ async def edit_user_settings(client, query):
     operation = data[2]
 
     try:
-        if operation == "setevent":
-            await query.answer()
-        elif operation in ["leech", "gdrive", "rclone"]:
-            await query.answer()
-            await update_user_settings(query, operation)
-        elif operation == "menu" and len(data) >= 4:
-            await query.answer()
-            await get_menu(data[3], message, user_id)
-        elif operation == "tog" and len(data) >= 4:
-            await _handle_toggle(user_id, data[3], data[4:], query)
-        elif operation == "file" and len(data) >= 4:
-            await _handle_file_upload(client, query, message, user_id, data[3])
-        elif operation == "ffvar":
-            await _handle_ffvar(client, query, message, user_id, data)
-        elif operation in ["set", "addone", "rmone"] and len(data) >= 4:
-            await _handle_option_edit(client, query, message, user_id, operation, data[3])
-        elif operation == "remove" and len(data) >= 4:
-            await _handle_remove(user_id, data[3])
-            await update_user_settings(query)
-            await database.update_user_data(user_id)
-        elif operation == "reset":
-            await _handle_reset(user_id, data[3:])
-            await update_user_settings(query)
-            await database.update_user_data(user_id)
-        elif operation == "view" and len(data) >= 4:
-            await query.answer()
-            await _handle_view(message, user_id, data[3])
-        elif operation in ["gd", "rc"]:
-            await _handle_upload_type(user_id, operation, query)
-        elif operation == "back":
-            await query.answer()
-            await update_user_settings(query)
-        elif operation == "close":
-            await query.answer()
-            await delete_message(message.reply_to_message)
-            await delete_message(message)
+        await _dispatch_user_settings_operation(
+            client,
+            query,
+            message,
+            user_id,
+            operation,
+            data,
+        )
     except Exception as e:
         await query.answer(f"Error: {str(e)}", show_alert=True)
+
+
+async def _dispatch_user_settings_operation(
+    client,
+    query,
+    message,
+    user_id: int,
+    operation: str,
+    data: list,
+):
+    handlers = {
+        "setevent": partial(_handle_setevent, query),
+        "leech": partial(_handle_update_user_settings, query, "leech"),
+        "gdrive": partial(_handle_update_user_settings, query, "gdrive"),
+        "rclone": partial(_handle_update_user_settings, query, "rclone"),
+        "menu": partial(_handle_menu_operation, query, message, user_id, data),
+        "tog": partial(_handle_toggle_operation, query, user_id, data),
+        "file": partial(_handle_file_operation, client, query, message, user_id, data),
+        "ffvar": partial(_handle_ffvar, client, query, message, user_id, data),
+        "set": partial(_handle_option_operation, client, query, message, user_id, data, "set"),
+        "addone": partial(_handle_option_operation, client, query, message, user_id, data, "addone"),
+        "rmone": partial(_handle_option_operation, client, query, message, user_id, data, "rmone"),
+        "remove": partial(_handle_remove_operation, query, user_id, data),
+        "reset": partial(_handle_reset_operation, query, user_id, data),
+        "view": partial(_handle_view_operation, query, message, user_id, data),
+        "gd": partial(_handle_upload_type, user_id, "gd", query),
+        "rc": partial(_handle_upload_type, user_id, "rc", query),
+        "back": partial(_handle_back_operation, query),
+        "close": partial(_handle_close_operation, query, message),
+    }
+    handler = handlers.get(operation)
+    if handler:
+        await handler()
+
+
+async def _handle_setevent(query):
+    await query.answer()
+
+
+async def _handle_update_user_settings(query, operation):
+    await query.answer()
+    await update_user_settings(query, operation)
+
+
+async def _handle_menu_operation(query, message, user_id: int, data: list):
+    if len(data) < 4:
+        return
+    await query.answer()
+    await get_menu(data[3], message, user_id)
+
+
+async def _handle_toggle_operation(query, user_id: int, data: list):
+    if len(data) < 4:
+        return
+    await _handle_toggle(user_id, data[3], data[4:], query)
+
+
+async def _handle_file_operation(client, query, message, user_id: int, data: list):
+    if len(data) < 4:
+        return
+    await _handle_file_upload(client, query, message, user_id, data[3])
+
+
+async def _handle_option_operation(
+    client, query, message, user_id: int, data: list, operation: str
+):
+    if len(data) < 4:
+        return
+    await _handle_option_edit(client, query, message, user_id, operation, data[3])
+
+
+async def _handle_remove_operation(query, user_id: int, data: list):
+    if len(data) < 4:
+        return
+    await _handle_remove(user_id, data[3])
+    await update_user_settings(query)
+    await database.update_user_data(user_id)
+
+
+async def _handle_reset_operation(query, user_id: int, data: list):
+    await _handle_reset(user_id, data[3:])
+    await update_user_settings(query)
+    await database.update_user_data(user_id)
+
+
+async def _handle_view_operation(query, message, user_id: int, data: list):
+    if len(data) < 4:
+        return
+    await query.answer()
+    await _handle_view(message, user_id, data[3])
+
+
+async def _handle_back_operation(query):
+    await query.answer()
+    await update_user_settings(query)
+
+
+async def _handle_close_operation(query, message):
+    await query.answer()
+    await delete_message(message.reply_to_message)
+    await delete_message(message)
 
 
 async def _handle_toggle(user_id: int, setting: str, values: list, query):
@@ -423,7 +508,7 @@ async def _handle_toggle(user_id: int, setting: str, values: list, query):
     await query.answer()
     toggle_value = values[0] == "t" if values else True
     update_user_ldata(user_id, setting, toggle_value)
-    
+
     # Determine which menu to return to
     back_to = _get_back_menu(setting)
     await update_user_settings(query, back_to)
@@ -434,17 +519,17 @@ async def _handle_file_upload(client, query, message, user_id: int, ftype: str):
     """Handle file upload request"""
     await query.answer()
     buttons = ButtonMaker()
-    
+
     prompts = {
         "THUMBNAIL": "Send a photo to save as custom thumbnail. Timeout: 60 sec",
         "RCLONE_CONFIG": "Send rclone.conf. Timeout: 60 sec",
         "TOKEN_PICKLE": "Send token.pickle. Timeout: 60 sec",
     }
-    
+
     text = prompts.get(ftype, "Send file. Timeout: 60 sec")
     buttons.data_button("Back", f"userset {user_id} setevent")
     buttons.data_button("Close", f"userset {user_id} close")
-    
+
     await edit_message(message, text, buttons.build_menu(1))
     pfunc = partial(add_file, ftype=ftype)
     await event_handler(
@@ -461,7 +546,7 @@ async def _handle_ffvar(client, query, message, user_id: int, data: list):
     """Handle FFmpeg variable operations"""
     await query.answer()
     user_dict = user_data.get(user_id, {})
-    
+
     key = data[3] if len(data) > 3 else None
     value = data[4] if len(data) > 4 else None
     index = data[5] if len(data) > 5 else None
@@ -578,6 +663,16 @@ async def _handle_upload_type(user_id: int, operation: str, query):
 @new_task
 async def get_users_settings(_, message):
     """Get all users settings (admin command)"""
+    msg = _build_users_settings_message()
+    
+    if not msg:
+        await send_message(message, "No users data!")
+        return
+
+    await _send_users_settings_response(message, msg)
+
+
+def _build_users_settings_message():
     msg_parts = []
 
     if auth_chats:
@@ -592,12 +687,10 @@ async def get_users_settings(_, message):
                 for key, value in settings.items():
                     msg_parts.append(f"{key}: <code>{value or None}</code>\n")
 
-    msg = "".join(msg_parts) if msg_parts else "No users data!"
+    return "".join(msg_parts)
 
-    if not msg_parts:
-        await send_message(message, msg)
-        return
 
+async def _send_users_settings_response(message, msg):
     msg_bytes = msg.encode()
     if len(msg_bytes) > 4000:
         with BytesIO(msg_bytes) as f:

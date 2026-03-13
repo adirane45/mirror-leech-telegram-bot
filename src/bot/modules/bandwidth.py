@@ -3,11 +3,11 @@
 # Prevents network saturation
 # Modified by: justadi
 
+from .. import task_dict, task_dict_lock
 from ..core.bandwidth_limiter import BandwidthLimiter
 from ..core.torrent_manager import TorrentManager
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.telegram_helper.message_utils import send_message
-from .. import task_dict, task_dict_lock
 
 
 def _parse_limit(value: str):
@@ -15,6 +15,34 @@ def _parse_limit(value: str):
     if value in {"off", "none", "0"}:
         return None
     return float(value)
+
+
+async def _find_task_by_gid(gid: str):
+    async with task_dict_lock:
+        for task in task_dict.values():
+            try:
+                if task.gid() == gid:
+                    return task
+            except Exception:
+                continue
+    return None
+
+
+async def _set_task_limit(gid: str, limit_type: str, limit_value):
+    if limit_type == "dl":
+        await BandwidthLimiter.set_task_limit(gid, download_limit=limit_value)
+        return True
+    if limit_type == "ul":
+        await BandwidthLimiter.set_task_limit(gid, upload_limit=limit_value)
+        return True
+    return False
+
+
+def _build_aria2_task_options(limit_type: str, limit_value):
+    byte_limit = str(int(limit_value * 1_000_000 / 8)) if limit_value else "0"
+    if limit_type == "dl":
+        return {"max-download-limit": byte_limit}
+    return {"max-upload-limit": byte_limit}
 
 
 async def _apply_global_limits():
@@ -51,16 +79,16 @@ async def _apply_global_limits():
 async def set_bandwidth(_, message):
     """
     Set global bandwidth limits (sudo only)
-    
+
     Usage:
         /limit dl <mbps|off>  - Set download limit
         /limit ul <mbps|off>  - Set upload limit
-    
+
     Examples:
         /limit dl 50    - Limit downloads to 50 Mbps
         /limit ul 10    - Limit uploads to 10 Mbps
         /limit dl off   - Remove download limit
-    
+
     Modified by: justadi
     """
     parts = message.text.split()
@@ -118,35 +146,19 @@ async def set_task_bandwidth(_, message):
         await send_message(message, "<b>❌ Invalid limit value.</b>")
         return
 
-    target = None
-    async with task_dict_lock:
-        for task in task_dict.values():
-            try:
-                if task.gid() == gid:
-                    target = task
-                    break
-            except Exception:
-                continue
+    target = await _find_task_by_gid(gid)
 
     if not target:
         await send_message(message, "<b>❌ Task not found.</b>")
         return
 
-    if limit_type == "dl":
-        await BandwidthLimiter.set_task_limit(gid, download_limit=limit_value)
-    elif limit_type == "ul":
-        await BandwidthLimiter.set_task_limit(gid, upload_limit=limit_value)
-    else:
+    if not await _set_task_limit(gid, limit_type, limit_value):
         await send_message(message, "<b>❌ Use dl or ul.</b>")
         return
 
     if getattr(target, "tool", "") == "aria2":
         try:
-            options = {}
-            if limit_type == "dl":
-                options["max-download-limit"] = str(int(limit_value * 1_000_000 / 8)) if limit_value else "0"
-            else:
-                options["max-upload-limit"] = str(int(limit_value * 1_000_000 / 8)) if limit_value else "0"
+            options = _build_aria2_task_options(limit_type, limit_value)
             await TorrentManager.aria2.changeOption(target.gid(), options)
         except Exception:
             pass

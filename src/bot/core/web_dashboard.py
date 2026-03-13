@@ -30,18 +30,19 @@ Date: February 8, 2026
 """
 
 from fastapi import FastAPI
+from typing import Optional
+
 from .dashboard_manager import DashboardManager
 from .dashboard_routes import DashboardEndpoints
 
-
 # Global dashboard manager singleton
-_dashboard_manager: DashboardManager = None
+_dashboard_manager: Optional[DashboardManager] = None
 
 
 def get_dashboard_manager() -> DashboardManager:
     """
     Get the global dashboard manager instance
-    
+
     Returns:
         DashboardManager singleton
     """
@@ -54,14 +55,14 @@ def get_dashboard_manager() -> DashboardManager:
 async def setup_dashboard(app: FastAPI) -> None:
     """
     Setup dashboard routes on FastAPI app
-    
+
     Args:
         app: FastAPI application instance
-        
+
     Example:
         from fastapi import FastAPI
         from bot.core.web_dashboard import setup_dashboard
-        
+
         app = FastAPI()
         await setup_dashboard(app)
     """

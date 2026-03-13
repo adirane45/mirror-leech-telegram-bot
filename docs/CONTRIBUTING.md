@@ -136,14 +136,14 @@ from typing import Optional
 async def download_file(url: str, max_retries: int = 3) -> Optional[str]:
     """
     Download a file from the given URL.
-    
+
     Args:
         url: The URL to download from
         max_retries: Maximum number of retry attempts
-        
+
     Returns:
         Path to downloaded file, or None if failed
-        
+
     Raises:
         ValueError: If URL is invalid
     """
@@ -189,11 +189,11 @@ from bot.core.circuit_breaker import CircuitBreaker
 async def test_circuit_breaker_opens_on_failures():
     """Test that circuit breaker opens after max failures."""
     breaker = CircuitBreaker(max_failures=3, timeout=60)
-    
+
     # Simulate failures
     for _ in range(3):
         await breaker.record_failure()
-    
+
     assert breaker.state == "OPEN"
 ```
 

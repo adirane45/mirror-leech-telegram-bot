@@ -106,23 +106,23 @@ async def _command_audit(_, message):
     try:
         from ..core.command_health_monitor import command_health_monitor, CommandStatus
         import time
-        
+
         text = getattr(message, "text", "") or ""
         if text.startswith("/"):
             from .. import LOGGER
             user_id = message.from_user.id if message.from_user else "unknown"
             start_time = time.time()
-            
+
             # Log command started
             LOGGER.info(f"🧪 CMD_AUDIT user={user_id} text={text}")
-            
+
             # Extract command name
             parts = text.split()
             command_name = parts[0].lstrip("/") if parts else ""
-            
+
             # Record in health monitor (will be updated on completion)
             # TODO: Track execution time and result in individual handlers
-            
+
     except Exception:
         pass
 ```
@@ -138,29 +138,29 @@ async def setup_command_monitoring():
     """Initialize command health monitoring and alerts"""
     from .core.command_health_monitor import command_health_monitor
     from .core.command_alert_system import command_alert_system
-    
+
     # 1. Enable monitoring
     command_health_monitor.enable()
     command_health_monitor.set_failure_threshold(3)  # Alert after 3 failures
-    
+
     # 2. Configure alerts
     command_alert_system.configure(
         owner_id=OWNER_ID,
         alert_chat_id=ALERT_CHAT_ID,  # From config
         enabled=True
     )
-    
+
     # 3. Register alerts for critical commands
     critical_commands = [
-        "start", "leech", "mirror", "list", 
+        "start", "leech", "mirror", "list",
         "stats", "help", "status", "queue"
     ]
-    
+
     await command_alert_system.register_alerts_for_all_commands(
         commands=critical_commands,
         tg_client=TgClient.bot
     )
-    
+
     LOGGER.info("✅ Command monitoring initialized")
 
 # Call during bot startup
@@ -180,7 +180,7 @@ async def some_command_handler(client, message):
     try:
         # Execute command logic
         result = await do_something()
-        
+
         # Record success
         await command_health_monitor.record_execution(
             command="somecmd",
@@ -188,7 +188,7 @@ async def some_command_handler(client, message):
             status=CommandStatus.SUCCESS,
             duration_ms=(time.time() - start_time) * 1000
         )
-        
+
     except TimeoutError as e:
         await command_health_monitor.record_execution(
             command="somecmd",
@@ -219,7 +219,7 @@ async def get_command_health():
     """Get command health status"""
     from .command_health_monitor import command_health_monitor
     from .command_alert_system import command_alert_system
-    
+
     return {
         "summary": command_health_monitor.get_health_summary(),
         "health_report": command_alert_system.get_health_report()
@@ -235,7 +235,7 @@ async def get_command_health():
 async def health_report(client, message):
     """Show command health report"""
     from ..core.command_alert_system import command_alert_system
-    
+
     report = command_alert_system.get_health_report()
     await message.reply_text(report, parse_mode="html")
 ```

@@ -3,35 +3,35 @@
 # Supports global and per-task limits
 # Modified by: justadi
 
-from typing import Optional, Dict
 from asyncio import Lock
+from typing import Any, Dict, Optional
 
-from .. import LOGGER, task_dict, task_dict_lock
+from .. import LOGGER
 
 
 class BandwidthLimiter:
     """
     Manages global and per-task bandwidth limits
     """
-    
+
     # Global limits in bytes per second
     global_download_limit: Optional[int] = None  # None = unlimited
     global_upload_limit: Optional[int] = None
-    
+
     # Per-task limits
-    task_limits: Dict[str, dict] = {}
-    
+    task_limits: Dict[str, Dict[str, int]] = {}
+
     # Lock for thread safety
     _lock = Lock()
-    
+
     @classmethod
     async def set_global_download_limit(cls, limit_mbps: Optional[float]) -> bool:
         """
         Set global download speed limit
-        
+
         Args:
             limit_mbps: Speed limit in Mbps (None = unlimited)
-            
+
         Returns:
             True if set successfully
         """
@@ -48,15 +48,15 @@ class BandwidthLimiter:
         except Exception as e:
             LOGGER.error(f"Error setting global download limit: {e}")
             return False
-    
+
     @classmethod
     async def set_global_upload_limit(cls, limit_mbps: Optional[float]) -> bool:
         """
         Set global upload speed limit
-        
+
         Args:
             limit_mbps: Speed limit in Mbps (None = unlimited)
-            
+
         Returns:
             True if set successfully
         """
@@ -73,7 +73,7 @@ class BandwidthLimiter:
         except Exception as e:
             LOGGER.error(f"Error setting global upload limit: {e}")
             return False
-    
+
     @classmethod
     async def set_task_limit(
         cls,
@@ -83,12 +83,12 @@ class BandwidthLimiter:
     ) -> bool:
         """
         Set speed limits for a specific task
-        
+
         Args:
             task_id: Task ID
             download_limit: Download speed in Mbps
             upload_limit: Upload speed in Mbps
-            
+
         Returns:
             True if set successfully
         """
@@ -96,19 +96,19 @@ class BandwidthLimiter:
             async with cls._lock:
                 if task_id not in cls.task_limits:
                     cls.task_limits[task_id] = {}
-                
+
                 if download_limit is not None:
                     cls.task_limits[task_id]["download"] = int(download_limit * 1_000_000 / 8)
-                
+
                 if upload_limit is not None:
                     cls.task_limits[task_id]["upload"] = int(upload_limit * 1_000_000 / 8)
-                
+
                 LOGGER.info(f"Limits set for task {task_id}: DL={download_limit}Mbps, UL={upload_limit}Mbps")
             return True
         except Exception as e:
             LOGGER.error(f"Error setting task limits: {e}")
             return False
-    
+
     @classmethod
     async def get_effective_limit(
         cls,
@@ -118,11 +118,11 @@ class BandwidthLimiter:
         """
         Get the effective speed limit for a task
         Considers both global and task-specific limits
-        
+
         Args:
             task_id: Task ID
             limit_type: 'download' or 'upload'
-            
+
         Returns:
             Speed limit in bytes per second, or None if unlimited
         """
@@ -133,11 +133,11 @@ class BandwidthLimiter:
                     if limit_type == "download"
                     else cls.global_upload_limit
                 )
-                
+
                 task_limit = None
                 if task_id in cls.task_limits:
                     task_limit = cls.task_limits[task_id].get(limit_type)
-                
+
                 # Return the most restrictive limit
                 if global_limit is None:
                     return task_limit
@@ -147,7 +147,7 @@ class BandwidthLimiter:
         except Exception as e:
             LOGGER.error(f"Error getting effective limit: {e}")
             return None
-    
+
     @classmethod
     async def remove_task_limit(cls, task_id: str) -> bool:
         """Remove speed limits for a task"""
@@ -160,9 +160,9 @@ class BandwidthLimiter:
         except Exception as e:
             LOGGER.error(f"Error removing task limits: {e}")
             return False
-    
+
     @classmethod
-    async def get_stats(cls) -> dict:
+    async def get_stats(cls) -> Dict[str, Any]:
         """Get current bandwidth limiting statistics"""
         try:
             async with cls._lock:

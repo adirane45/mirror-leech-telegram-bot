@@ -4,8 +4,8 @@ Data structures for batch processing
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
 from datetime import datetime
+from typing import Any, List, Optional
 
 
 @dataclass

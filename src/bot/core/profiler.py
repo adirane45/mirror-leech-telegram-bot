@@ -7,14 +7,12 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
-import time
-import asyncio
-from contextlib import asynccontextmanager, contextmanager
-from typing import Dict, Optional, List
-from datetime import datetime, timedelta, UTC
-from collections import defaultdict
 import statistics
+import time
+from contextlib import asynccontextmanager, contextmanager
+from datetime import UTC, datetime, timedelta
 from logging import getLogger
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple
 
 from .config_manager import Config
 
@@ -24,7 +22,7 @@ LOGGER = getLogger(__name__)
 class PerformanceMetric:
     """Represents a single performance metric"""
 
-    def __init__(self, operation: str, duration: float):
+    def __init__(self, operation: str, duration: float) -> None:
         self.operation = operation
         self.duration = duration
         self.timestamp = datetime.now(UTC)
@@ -33,19 +31,19 @@ class PerformanceMetric:
 class OperationStats:
     """Statistics for a specific operation"""
 
-    def __init__(self, operation: str):
+    def __init__(self, operation: str) -> None:
         self.operation = operation
         self.metrics: List[PerformanceMetric] = []
         self.call_count = 0
         self.total_duration = 0.0
 
-    def add_metric(self, duration: float):
+    def add_metric(self, duration: float) -> None:
         """Add a performance metric"""
         self.metrics.append(PerformanceMetric(self.operation, duration))
         self.call_count += 1
         self.total_duration += duration
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> Dict[str, Any]:
         """Get statistics for this operation"""
         if not self.metrics:
             return {}
@@ -70,26 +68,26 @@ class Profiler:
     Can identify slow operations and bottlenecks
     """
 
-    _instance = None
-    _enabled = False
+    _instance: Optional["Profiler"] = None
+    _enabled: bool = False
     _operation_stats: Dict[str, OperationStats] = {}
-    _context_stack: List[tuple] = []
+    _context_stack: List[Tuple[str, float]] = []
 
-    def __new__(cls):
+    def __new__(cls) -> "Profiler":
         if cls._instance is None:
             cls._instance = super(Profiler, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._operation_stats = {}
             self._context_stack = []
             self._initialized = True
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable profiler"""
         self._enabled = getattr(Config, "ENABLE_PROFILER", False)
-        
+
         if self._enabled:
             LOGGER.info("✅ Performance profiler enabled")
         else:
@@ -101,7 +99,7 @@ class Profiler:
         return self._enabled
 
     @contextmanager
-    def profile_sync(self, operation: str):
+    def profile_sync(self, operation: str) -> Iterator[None]:
         """
         Context manager for profiling synchronous operations
 
@@ -122,7 +120,7 @@ class Profiler:
             self._record_metric(operation, duration)
 
     @asynccontextmanager
-    async def profile_async(self, operation: str):
+    async def profile_async(self, operation: str) -> AsyncIterator[None]:
         """
         Context manager for profiling async operations
 
@@ -142,7 +140,7 @@ class Profiler:
             duration = time.time() - start_time
             self._record_metric(operation, duration)
 
-    def _record_metric(self, operation: str, duration: float):
+    def _record_metric(self, operation: str, duration: float) -> None:
         """Record a performance metric"""
         if operation not in self._operation_stats:
             self._operation_stats[operation] = OperationStats(operation)
@@ -156,7 +154,7 @@ class Profiler:
                 f"Slow operation detected: {operation} took {duration:.2f}s"
             )
 
-    def mark_operation(self, operation: str) -> "Timer":
+    def mark_operation(self, operation: str) -> "Timer | DummyTimer":
         """
         Create a timer for manual profiling
 
@@ -167,7 +165,7 @@ class Profiler:
         """
         return Timer(self, operation) if self._enabled else DummyTimer()
 
-    def get_stats(self, operation: Optional[str] = None) -> Dict:
+    def get_stats(self, operation: Optional[str] = None) -> Dict[str, Any]:
         """
         Get statistics
 
@@ -187,7 +185,7 @@ class Profiler:
             return {"enabled": True}
 
         # Return all stats
-        all_stats = {}
+        all_stats: Dict[str, Any] = {}
         for op, op_stats in self._operation_stats.items():
             stats = op_stats.get_stats()
             if stats:
@@ -195,7 +193,7 @@ class Profiler:
 
         return {"enabled": True, "operations": all_stats}
 
-    def get_slow_operations(self, threshold: float = 1.0, limit: int = 10) -> List[Dict]:
+    def get_slow_operations(self, threshold: float = 1.0, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get operations that exceeded time threshold
 
@@ -221,7 +219,7 @@ class Profiler:
 
         return slow_ops[:limit]
 
-    def reset(self, operation: Optional[str] = None):
+    def reset(self, operation: Optional[str] = None) -> None:
         """
         Reset statistics
 
@@ -273,7 +271,7 @@ class Profiler:
 class Timer:
     """Manual timer for profiling"""
 
-    def __init__(self, profiler: Profiler, operation: str):
+    def __init__(self, profiler: Profiler, operation: str) -> None:
         self.profiler = profiler
         self.operation = operation
         self.start_time = time.time()

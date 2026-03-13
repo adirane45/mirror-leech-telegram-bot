@@ -28,25 +28,25 @@ scrape_configs:
       - targets: ['app:9090']
     scrape_interval: 10s
     metrics_path: '/metrics'
-    
+
   # Redis metrics (if redis_exporter is added)
   - job_name: 'redis'
     static_configs:
       - targets: ['redis:6379']
     scrape_interval: 30s
-    
+
   # MongoDB metrics (if mongodb_exporter is added)
   - job_name: 'mongodb'
     static_configs:
       - targets: ['mongodb:27017']
     scrape_interval: 30s
-    
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
     scrape_interval: 30s
-    
+
   # System metrics (if node_exporter is added)
   - job_name: 'node'
     static_configs:

@@ -1,7 +1,7 @@
 # Feature Implementation Roadmap - Phase 6 & Beyond
 
-**Date:** February 19, 2026  
-**Version:** 1.0  
+**Date:** February 19, 2026
+**Version:** 1.0
 **Status:** Planning & Architecture
 
 ---
@@ -76,9 +76,9 @@ Phase 11: Optimization & Scaling         [Months 29+]    (5+ features)
 
 ## 6.1 Global Telegram File Cache (Instant Leeches)
 
-**Complexity:** 🟡 Medium (5-7 days)  
-**Priority:** ⭐⭐⭐⭐⭐ Critical User Feature  
-**Dependencies:** MongoDB, Redis, Task Tracking  
+**Complexity:** 🟡 Medium (5-7 days)
+**Priority:** ⭐⭐⭐⭐⭐ Critical User Feature
+**Dependencies:** MongoDB, Redis, Task Tracking
 
 **Status:** ✅ COMPLETE (Feb 20, 2026)
 
@@ -163,9 +163,9 @@ User Requests Same File Later
 
 ## 6.2 Telegram-to-HTTP Direct Link Generator
 
-**Complexity:** 🟡 Medium (4-6 days)  
-**Priority:** ⭐⭐⭐⭐ High User Value  
-**Dependencies:** FastAPI, Temporal URL generation, Telegram API  
+**Complexity:** 🟡 Medium (4-6 days)
+**Priority:** ⭐⭐⭐⭐ High User Value
+**Dependencies:** FastAPI, Temporal URL generation, Telegram API
 
 **Status:** 🟡 IN PROGRESS (Started Feb 20, 2026)
 
@@ -233,9 +233,9 @@ Share this link anywhere!
 
 ## 6.3 Real-Time Web Log Streamer (Admin Dashboard)
 
-**Complexity:** 🟡 Medium (5-7 days)  
-**Priority:** ⭐⭐⭐⭐ DevOps Value  
-**Dependencies:** WebSockets, xterm.js, Secure authentication  
+**Complexity:** 🟡 Medium (5-7 days)
+**Priority:** ⭐⭐⭐⭐ DevOps Value
+**Dependencies:** WebSockets, xterm.js, Secure authentication
 
 ### Architecture
 ```
@@ -281,7 +281,7 @@ Browser displays color-coded Python/Aria2 logs (xterm.js)
 <script>
   const term = new Terminal({theme: {background: '#000', foreground: '#0f0'}});
   term.open(document.getElementById('terminal'));
-  
+
   const ws = new WebSocket('wss://bot.example.com/ws/logs?token=...');
   ws.onmessage = (event) => term.write(event.data);
   ws.onerror = () => term.write('\r\nConnection lost!\r\n');
@@ -292,9 +292,9 @@ Browser displays color-coded Python/Aria2 logs (xterm.js)
 
 ## 6.4 Circuit Breaker Pattern for External APIs
 
-**Complexity:** 🟡 Medium (4-5 days)  
-**Priority:** ⭐⭐⭐⭐⭐ Reliability Critical  
-**Dependencies:** Telegram API, Google Drive API, Debrid services  
+**Complexity:** 🟡 Medium (4-5 days)
+**Priority:** ⭐⭐⭐⭐⭐ Reliability Critical
+**Dependencies:** Telegram API, Google Drive API, Debrid services
 
 ### Architecture
 ```
@@ -333,7 +333,7 @@ class CircuitBreaker:
     CLOSED = "healthy"           # Volume increase + failure rate
     OPEN = "failing"             # Fail new requests immediately
     HALF_OPEN = "testing"        # Allow single request to test
-    
+
     # Transitions:
     # CLOSED ──(threshold exceeded)──> OPEN
     # OPEN ──(timeout)──> HALF_OPEN
@@ -374,9 +374,9 @@ except CircuitBreakerOpen:
 
 ## 6.5 Dead-Letter Queue & Smart Retry Engine
 
-**Complexity:** 🟡 Medium (5-7 days)  
-**Priority:** ⭐⭐⭐⭐⭐ Critical for Reliability  
-**Dependencies:** Celery, Redis, Task analysis  
+**Complexity:** 🟡 Medium (5-7 days)
+**Priority:** ⭐⭐⭐⭐⭐ Critical for Reliability
+**Dependencies:** Celery, Redis, Task analysis
 
 ### Architecture
 ```
@@ -445,9 +445,9 @@ class FailureType(Enum):
 
 ## 6.6 Zero-Downtime Hot-Reloading Configuration
 
-**Complexity:** 🟡 Medium (4-6 days)  
-**Priority:** ⭐⭐⭐⭐ Production Critical  
-**Dependencies:** Watchdog, Redis pubsub, Config validation  
+**Complexity:** 🟡 Medium (4-6 days)
+**Priority:** ⭐⭐⭐⭐ Production Critical
+**Dependencies:** Watchdog, Redis pubsub, Config validation
 
 ### Architecture
 ```
@@ -559,9 +559,9 @@ The following 6 features complete Phase 6 (estimated 2-3 weeks total):
 
 ## 7.1 JIT Compilation (PyPy) or Cython Optimization
 
-**Complexity:** 🔴 Complex (2-3 weeks)  
-**Priority:** ⭐⭐⭐⭐ High Impact  
-**Dependencies:** Performance profiling, Cython, PyPy  
+**Complexity:** 🔴 Complex (2-3 weeks)
+**Priority:** ⭐⭐⭐⭐ High Impact
+**Dependencies:** Performance profiling, Cython, PyPy
 
 ### Architecture
 ```
@@ -619,7 +619,7 @@ def hash_file(filepath, chunk_size=65536):
 # After (Cython)
 # cimport cython
 # from libc.string cimport memcpy
-# 
+#
 # @cython.boundscheck(False)
 # def hash_file(str filepath, int chunk_size=65536):
 #     cdef bytes chunk
@@ -642,9 +642,9 @@ def hash_file(filepath, chunk_size=65536):
 
 ## 7.2 Asynchronous PostgreSQL/Redis Migration
 
-**Complexity:** 🔴 Complex (3-4 weeks)  
-**Priority:** ⭐⭐⭐⭐⭐ Scaling Critical  
-**Dependencies:** PostgreSQL, Redis, Async drivers  
+**Complexity:** 🔴 Complex (3-4 weeks)
+**Priority:** ⭐⭐⭐⭐⭐ Scaling Critical
+**Dependencies:** PostgreSQL, Redis, Async drivers
 
 ### Architecture
 ```
@@ -769,20 +769,20 @@ class AsyncDB:
             "postgresql+asyncpg://user:pass@localhost/mltb"
         )
         self.pool = None
-    
+
     async def init(self):
         self.pool = await create_pool(
             min_size=5, max_size=20,
             command_timeout=30
         )
-    
+
     async def get_user(self, user_id):
         async with self.pool.acquire() as conn:
             return await conn.fetchrow(
                 "SELECT * FROM users WHERE user_id = $1",
                 user_id
             )
-    
+
     async def save_task(self, task):
         async with self.pool.acquire() as conn:
             return await conn.execute(
@@ -835,9 +835,9 @@ class AsyncDB:
 
 ## 8.1 BLAKE3 Hashing Engine (Lightning Fast Integrity)
 
-**Complexity:** 🟡 Medium (3-4 days)  
-**Priority:** ⭐⭐⭐ High Performance  
-**Dependencies:** blake3 library, SIMD/AVX2 support  
+**Complexity:** 🟡 Medium (3-4 days)
+**Priority:** ⭐⭐⭐ High Performance
+**Dependencies:** blake3 library, SIMD/AVX2 support
 
 ### Implementation
 ```bash
@@ -854,13 +854,13 @@ import asyncio
 
 async def hash_file_blake3(filepath):
     hasher = blake3.blake3()
-    
+
     async with aiofiles.open(filepath, 'rb') as f:
         while True:
             chunk = await f.read(65536)
             if not chunk: break
             hasher.update(chunk)
-    
+
     return hasher.hexdigest()  # 64-char hex string
 ```
 
@@ -873,9 +873,9 @@ async def hash_file_blake3(filepath):
 
 ## 8.2 Predictive "Binge-Mode" Pre-fetching
 
-**Complexity:** 🔴 Complex (2-3 weeks)  
-**Priority:** ⭐⭐⭐⭐ User Satisfaction  
-**Dependencies:** Pattern recognition, torrent search API  
+**Complexity:** 🔴 Complex (2-3 weeks)
+**Priority:** ⭐⭐⭐⭐ User Satisfaction
+**Dependencies:** Pattern recognition, torrent search API
 
 ### Architecture
 ```
@@ -947,9 +947,9 @@ markov_chain = {
 
 ## 8.3 Web3 / IPFS Decentralized Permanent Storage
 
-**Complexity:** 🔴 Complex (3-4 weeks)  
-**Priority:** ⭐⭐⭐ Long-term Resilience  
-**Dependencies:** IPFS daemon, Web3.storage API  
+**Complexity:** 🔴 Complex (3-4 weeks)
+**Priority:** ⭐⭐⭐ Long-term Resilience
+**Dependencies:** IPFS daemon, Web3.storage API
 
 ### Architecture
 ```
@@ -977,7 +977,7 @@ import aiohttp
 class IPFSUploader:
     def __init__(self, api_url="http://127.0.0.1:5001"):
         self.client = ipfshttpclient.connect(api_url)
-    
+
     async def pin_file(self, filepath):
         """Upload file to IPFS and pin for persistence"""
         result = self.client.add(filepath, pin=True)
@@ -1017,9 +1017,9 @@ cid = await client.put_files([filepath])
 
 ## 8.4 Serverless Edge Workers (Cloudflare Workers)
 
-**Complexity:** 🔴 Complex (2-3 weeks)  
-**Priority:** ⭐⭐⭐ Bandwidth Optimization  
-**Dependencies:** Cloudflare Workers, JavaScript/Rust  
+**Complexity:** 🔴 Complex (2-3 weeks)
+**Priority:** ⭐⭐⭐ Bandwidth Optimization
+**Dependencies:** Cloudflare Workers, JavaScript/Rust
 
 ### Architecture
 ```
@@ -1046,19 +1046,19 @@ User bandwidth: ✅ Ultra-fast
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    
+
     // Validate token signature
     const token = url.searchParams.get('token');
     if (!isValidToken(token)) {
       return new Response('Invalid token', { status: 403 });
     }
-    
+
     // Extract source from token
     const source = decodeToken(token);
-    
+
     // Stream from source (Telegram, GDrive, etc.)
     const sourceURL = await resolveSource(source);
-    
+
     // Fetch and stream to user
     return fetch(sourceURL, {
       headers: {
@@ -1108,9 +1108,9 @@ wrangler publish
 
 ## 9.1 Forensic Metadata Stripping (Zero-Trust Leeching)
 
-**Complexity:** 🟡 Medium (3-4 days)  
-**Priority:** ⭐⭐⭐⭐ Privacy Critical  
-**Dependencies:** exiftool, mat2, ffmpeg  
+**Complexity:** 🟡 Medium (3-4 days)
+**Priority:** ⭐⭐⭐⭐ Privacy Critical
+**Dependencies:** exiftool, mat2, ffmpeg
 
 ### Implementation
 ```python
@@ -1120,10 +1120,10 @@ import asyncio
 class MetadataStripper:
     async def strip_file(self, filepath):
         """Remove all metadata from file"""
-        
+
         # Detect file type
         mime_type = await self.get_mime_type(filepath)
-        
+
         # Strategy depends on type
         if mime_type.startswith('image/'):
             await self._strip_image(filepath)
@@ -1131,12 +1131,12 @@ class MetadataStripper:
             await self._strip_video(filepath)
         elif mime_type.startswith('application/'):
             await self._strip_document(filepath)
-    
+
     async def _strip_image(self, filepath):
         """Remove EXIF, IPTC, XMP from images"""
         cmd = ["exiftool", "-all=", "-overwrite_original", filepath]
         await asyncio.create_subprocess_exec(*cmd)
-    
+
     async def _strip_video(self, filepath):
         """Re-mux video without metadata streams"""
         output = filepath.replace('.mkv', '.clean.mkv')
@@ -1147,7 +1147,7 @@ class MetadataStripper:
             output
         ]
         await asyncio.create_subprocess_exec(*cmd)
-    
+
     async def _strip_document(self, filepath):
         """Use mat2 for PDFs, Office docs"""
         cmd = ["mat2", "--inplace", filepath]
@@ -1179,9 +1179,9 @@ Documents (PDF/DOCX):
 
 ## 9.2 Cross-Seed Private Tracker Integration
 
-**Complexity:** 🔴 Complex (3-4 weeks)  
-**Priority:** ⭐⭐⭐ Ratio Farming  
-**Dependencies:** cross-seed tool, Private tracker APIs  
+**Complexity:** 🔴 Complex (3-4 weeks)
+**Priority:** ⭐⭐⭐ Ratio Farming
+**Dependencies:** cross-seed tool, Private tracker APIs
 
 ### Architecture
 ```
@@ -1212,31 +1212,31 @@ from typing import List, Dict
 class CrossSeedManager:
     def __init__(self, trackers: List[str]):
         self.trackers = trackers  # API credentials
-    
+
     async def search_all_trackers(self, info_hash: str) -> Dict:
         """Search for torrent on all trackers"""
         results = {}
-        
+
         for tracker in self.trackers:
             result = await self._search_tracker(tracker, info_hash)
             if result:
                 results[tracker] = result
-        
+
         return results
-    
+
     async def inject_and_seed(self, torrent_path: str, data_path: str):
         """Inject torrent to qBittorrent, point to existing data"""
-        
+
         # Get magnet/hash
         info_hash = await self._extract_info_hash(torrent_path)
-        
+
         # Search other trackers
         matches = await self.search_all_trackers(info_hash)
-        
+
         # For each match, download .torrent
         for tracker, torrent_data in matches.items():
             torrent_file = await self._download_torrent(torrent_data)
-            
+
             # Add to qBittorrent with existing data
             await self._qb_client.torrents_add(
                 torrent_files=torrent_file,
@@ -1244,7 +1244,7 @@ class CrossSeedManager:
                 location=data_path,  # Point to existing files
                 skip_checking=True    # Trust existing files
             )
-            
+
             logger.info(f"Injected {tracker}: {torrent_data['name']}")
 ```
 
@@ -1270,9 +1270,9 @@ HDBits (HDB):
 
 ## 9.3 Headless Captcha & Turnstile Farm
 
-**Complexity:** 🔴 Complex (2-3 weeks)  
-**Priority:** ⭐⭐⭐ Bypassing Protections  
-**Dependencies:** Playwright, CapSolver API, 2Captcha API  
+**Complexity:** 🔴 Complex (2-3 weeks)
+**Priority:** ⭐⭐⭐ Bypassing Protections
+**Dependencies:** Playwright, CapSolver API, 2Captcha API
 
 ### Architecture
 ```
@@ -1301,45 +1301,45 @@ import aiohttp
 class CaptchaBypassEngine:
     def __init__(self, capsolver_key: str):
         self.capsolver_key = capsolver_key
-    
+
     async def bypass_turnstile(self, url: str) -> str:
         """Bypass Cloudflare Turnstile CAPTCHA"""
-        
+
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            
+
             # Navigate to protected URL
             await page.goto(url, wait_until="networkidle")
-            
+
             # Detect Turnstile iframe
             turnstile_frame = await page.query_selector('[src*="turnstile"]')
             if not turnstile_frame:
                 # No CAPTCHA required
                 return await self._extract_download_link(page)
-            
+
             # Solve CAPTCHA via CapSolver
             token = await self._solve_with_capsolver(page, url)
-            
+
             # Inject token into Turnstile callback
             await page.evaluate(f"""
                 window.turnstile.reset();
                 window.turnstile.render('#cf-turnstile', {{'callback': null}});
                 window.turnstile.callback({{token: '{token}'}});
             """)
-            
+
             # Wait for redirect
             await page.wait_for_navigation()
-            
+
             # Extract download link
             download_url = await self._extract_download_link(page)
             await browser.close()
-            
+
             return download_url
-    
+
     async def _solve_with_capsolver(self, page, site_url: str) -> str:
         """Solve CAPTCHA with CapSolver API"""
-        
+
         async with aiohttp.ClientSession() as session:
             # Create task
             async with session.post(
@@ -1355,7 +1355,7 @@ class CaptchaBypassEngine:
                 }
             ) as resp:
                 task_id = (await resp.json())['taskId']
-            
+
             # Poll for result (max 30 seconds)
             for _ in range(30):
                 async with session.post(
@@ -1365,9 +1365,9 @@ class CaptchaBypassEngine:
                     result = await resp.json()
                     if result.get('status') == 'ready':
                         return result['solution']['token']
-                
+
                 await asyncio.sleep(1)
-            
+
             raise TimeoutError("CAPTCHA solving timeout")
 ```
 
@@ -1413,9 +1413,9 @@ Integration with:
 
 ## 10.1 Index Link Generation & Batch Operations
 
-**Complexity:** 🟡 Medium (4-5 days)  
-**Priority:** ⭐⭐⭐⭐ Bulk Operations  
-**Dependencies:** URL shortener API, Batch processing queue  
+**Complexity:** 🟡 Medium (4-5 days)
+**Priority:** ⭐⭐⭐⭐ Bulk Operations
+**Dependencies:** URL shortener API, Batch processing queue
 
 ### Features
 ```
@@ -1445,32 +1445,32 @@ Integration with:
 @new_task
 async def genindex(_, message):
     """Generate shareable index from Telegram folder"""
-    
+
     # Extract context: which folder?
     source = await get_folder_context(message)
-    
+
     # List all files in folder
     files = await list_folder_files(source)
-    
+
     # Generate index
     index_html = await generate_index_html(files)
-    
+
     # Upload index to storage
     pub_url = await storage.upload_html(index_html)
-    
+
     # Return link
     await reply(message, f"📑 Index: {pub_url}")
 
 @new_task
 async def batch(_, message):
     """Process batch of links from .txt file"""
-    
+
     # Download .txt file
     file = await message.download()
-    
+
     # Parse links
     links = parse_link_list(file)
-    
+
     # Queue each with stagger
     for i, link in enumerate(links):
         # Delay = i * 5 seconds to spread load
@@ -1480,7 +1480,7 @@ async def batch(_, message):
             user_id=message.from_user.id
         )
         logger.info(f"Queued: {link} (task {task.id})")
-    
+
     # Send summary
     await reply(message, f"✅ Queued {len(links)} downloads")
 ```
@@ -1489,9 +1489,9 @@ async def batch(_, message):
 
 ## 10.2 Built-in Link Bypassers
 
-**Complexity:** 🟡 Medium (3-4 weeks)  
-**Priority:** ⭐⭐⭐ User Convenience  
-**Dependencies:** URL parser, service-specific bypasses  
+**Complexity:** 🟡 Medium (3-4 weeks)
+**Priority:** ⭐⭐⭐ User Convenience
+**Dependencies:** URL parser, service-specific bypasses
 
 ### Supported Bypasses
 ```
@@ -1526,21 +1526,21 @@ Streaming Protection:
 class LinkBypassEngine:
     async def normalize_link(self, url: str) -> str:
         """Convert obfuscated URL to direct link"""
-        
+
         # Check against bypass database
         bypasser = self._get_bypasser(url)
-        
+
         if bypasser:
             direct_url = await bypasser.bypass(url)
             logger.info(f"Bypassed: {url} → {direct_url}")
             return direct_url
-        
+
         # Return original if no bypass found
         return url
-    
+
     def _get_bypasser(self, url: str):
         """Select appropriate bypasser"""
-        
+
         if 'bit.ly' in url:
             return URLShortenerBypasser()
         elif 'adf.ly' in url:
@@ -1548,7 +1548,7 @@ class LinkBypassEngine:
         elif 'mega.nz' in url or 'mega.co.nz' in url:
             return MegaBypasser()
         # ... more services
-        
+
         return None
 ```
 
@@ -1556,9 +1556,9 @@ class LinkBypassEngine:
 
 ## 10.3 Debrid Service Integrations
 
-**Complexity:** 🟡 Medium (2-3 weeks)  
-**Priority:** ⭐⭐⭐⭐ Premium Content  
-**Dependencies:** Real-Debrid API, Alldebrid API, Premium accounts  
+**Complexity:** 🟡 Medium (2-3 weeks)
+**Priority:** ⭐⭐⭐⭐ Premium Content
+**Dependencies:** Real-Debrid API, Alldebrid API, Premium accounts
 
 ### Supported Services
 ```
@@ -1585,19 +1585,19 @@ class DebridManager:
     def __init__(self, service: str, api_token: str):
         self.service = service  # 'rd', 'alldebrid', 'premiumize'
         self.api_token = api_token
-    
+
     async def unrestrict_link(self, protected_url: str) -> str:
         """Convert restricted host link to unrestricted"""
-        
+
         if self.service == 'rd':
             return await self._unrestrict_rd(protected_url)
         elif self.service == 'alldebrid':
             return await self._unrestrict_alldebrid(protected_url)
         # ...
-    
+
     async def _unrestrict_rd(self, url: str) -> str:
         """Real-Debrid unrestriction"""
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 "https://api.real-debrid.com/rest/1.0/unrestrict/link",
@@ -1606,10 +1606,10 @@ class DebridManager:
             ) as resp:
                 data = await resp.json()
                 return data['download']  # Direct link!
-    
+
     async def add_magnet(self, magnet: str) -> str:
         """Add magnet to RD, get download link"""
-        
+
         async with aiohttp.ClientSession() as session:
             # Add magnet
             async with session.post(
@@ -1619,7 +1619,7 @@ class DebridManager:
             ) as resp:
                 add_result = await resp.json()
                 magnet_id = add_result['id']
-            
+
             # Select files
             async with session.post(
                 f"https://api.real-debrid.com/rest/1.0/torrents/selectFiles/{magnet_id}",
@@ -1627,7 +1627,7 @@ class DebridManager:
                 headers={"Authorization": f"Bearer {self.api_token}"}
             ) as resp:
                 pass
-            
+
             # Get download links
             async with session.get(
                 f"https://api.real-debrid.com/rest/1.0/torrents/info/{magnet_id}",
@@ -1644,7 +1644,7 @@ class DebridManager:
 - Team: 2-3 engineers
 - Test coverage: API mocking required
 - Implemented modules: index generation, batch operations, link bypassers, debrid clients
-- Tests: tests/test_phase10_ecosystem_integrations.py
+- Tests: tests/integration/test_ecosystem_integrations.py
 
 ---
 
@@ -1659,9 +1659,9 @@ recursive extraction, salvage mode)
 
 ## 11.1 Zero-Copy Data Transfers (os.sendfile)
 
-**Complexity:** 🟡 Medium (3-4 days)  
-**Priority:** ⭐⭐⭐⭐ Massive Performance  
-**Dependencies:** Linux kernel support, QUIC/HTTP/2  
+**Complexity:** 🟡 Medium (3-4 days)
+**Priority:** ⭐⭐⭐⭐ Massive Performance
+**Dependencies:** Linux kernel support, QUIC/HTTP/2
 
 ### Architecture
 ```
@@ -1696,13 +1696,13 @@ import socket
 class ZeroCopyUploader:
     async def sendfile_to_telegram(self, filepath: str, offset: int = 0) -> str:
         """Upload using os.sendfile (zero-copy)"""
-        
+
         # Connect to Telegram
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         await asyncio.sleep(0)  # Yield to event loop
-        
+
         file_size = os.path.getsize(filepath)
-        
+
         with open(filepath, 'rb') as f:
             sent = 0
             while sent < file_size:
@@ -1713,12 +1713,12 @@ class ZeroCopyUploader:
                     offset + sent,  # Offset
                     file_size - sent  # Count
                 )
-                
+
                 if chunk_sent == 0:
                     break
-                
+
                 sent += chunk_sent
-        
+
         sock.close()
         return "Uploaded via zero-copy!"
 ```
@@ -1735,9 +1735,9 @@ sendfile (zero-copy):     250 MB/sec  | CPU: <5%
 
 ## 11.2 MTProto Parallel Chunk Uploading (Pyrogram)
 
-**Complexity:** 🔴 Complex (2-3 weeks)  
-**Priority:** ⭐⭐⭐⭐⭐ Maximum Speed  
-**Dependencies:** Pyrogram (MTProto implementation), Parallel I/O  
+**Complexity:** 🔴 Complex (2-3 weeks)
+**Priority:** ⭐⭐⭐⭐⭐ Maximum Speed
+**Dependencies:** Pyrogram (MTProto implementation), Parallel I/O
 
 ### Architecture
 ```
@@ -1762,7 +1762,7 @@ import asyncio
 class MTProtoUploader:
     def __init__(self, app: Client):
         self.app = app
-    
+
     async def upload_file_parallel(
         self,
         filepath: str,
@@ -1770,11 +1770,11 @@ class MTProtoUploader:
         num_workers: int = 10
     ) -> str:
         """Upload using parallel MTProto streams"""
-        
+
         file_size = os.path.getsize(filepath)
         chunk_size = 4 * 1024 * 1024  # 4MB per chunk
         num_chunks = (file_size + chunk_size - 1) // chunk_size
-        
+
         # Create worker tasks
         tasks = []
         for i in range(min(num_workers, num_chunks)):
@@ -1788,15 +1788,15 @@ class MTProtoUploader:
                 )
             )
             tasks.append(task)
-        
+
         # Wait for all workers
         chunk_ids = await asyncio.gather(*tasks)
-        
+
         # Reassemble on Telegram's side
         file_id = await self._reassemble_chunks(chat_id, chunk_ids)
-        
+
         return file_id
-    
+
     async def _upload_chunk(
         self,
         filepath: str,
@@ -1806,11 +1806,11 @@ class MTProtoUploader:
         num_chunks: int
     ) -> str:
         """Upload single chunk"""
-        
+
         with open(filepath, 'rb') as f:
             f.seek(chunk_index * chunk_size)
             chunk_data = f.read(chunk_size)
-        
+
         # Upload via MTProto
         # (Pyrogram handles multi-connection internally)
         result = await self.app.send_photo(
@@ -1818,7 +1818,7 @@ class MTProtoUploader:
             photo=chunk_data,
             caption=f"Chunk {chunk_index+1}/{num_chunks}"
         )
-        
+
         return result.photo.file_id
 ```
 
@@ -2138,10 +2138,9 @@ Download this checklist and use it to track implementation progress:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 19, 2026  
-**Prepared For:** Mirror-Leech Telegram Bot Project  
+**Document Version:** 1.0
+**Last Updated:** February 19, 2026
+**Prepared For:** Mirror-Leech Telegram Bot Project
 **Contact:** (Your contact info)
 
 ---
-

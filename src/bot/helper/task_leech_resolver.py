@@ -9,10 +9,8 @@ from pyrogram.enums import ChatAction
 from bot import LOGGER
 from bot.core.config_manager import Config
 from bot.core.telegram_manager import TgClient
-from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.links_utils import is_telegram_link
 from bot.helper.ext_utils.media_utils import create_thumb
-from bot.helper.ext_utils.telegraph_helper import TelegraphHelper
 from bot.helper.task_config_initializers import TaskConfigInitializers
 
 

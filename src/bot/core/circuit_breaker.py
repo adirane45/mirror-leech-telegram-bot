@@ -9,11 +9,10 @@ Implements:
 """
 
 import asyncio
-import time
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
-from typing import Callable, Any, Optional, Dict
-from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, Optional
 
 from .. import LOGGER
 
@@ -27,7 +26,6 @@ class CircuitState(str, Enum):
 
 class CircuitBreakerException(Exception):
     """Raised when circuit breaker is open"""
-    pass
 
 
 @dataclass
@@ -37,16 +35,16 @@ class CircuitBreakerMetrics:
     successful_calls: int = 0
     failed_calls: int = 0
     rejected_calls: int = 0
-    
+
     last_state_change: Optional[datetime] = None
     last_error_message: Optional[str] = None
-    
+
     def success_rate(self) -> float:
         """Calculate success rate"""
         if self.total_calls == 0:
             return 1.0
         return self.successful_calls / self.total_calls
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dict"""
         return {
@@ -63,7 +61,7 @@ class CircuitBreakerMetrics:
 class CircuitBreaker:
     """
     Generic Circuit Breaker implementation
-    
+
     Usage:
         breaker = CircuitBreaker(
             name="my_service",
@@ -71,71 +69,71 @@ class CircuitBreaker:
             success_threshold=2,
             timeout=60,
         )
-        
+
         try:
             result = await breaker.call(my_async_func, arg1, arg2)
         except CircuitBreakerException:
             # Circuit is open, handle gracefully
             pass
     """
-    
+
     def __init__(
         self,
         name: str,
         failure_threshold: int = 5,
         success_threshold: int = 2,
         timeout: int = 60,
-        expected_exception: type = Exception,
-    ):
+        expected_exception: type[BaseException] = Exception,
+    ) -> None:
         self.name = name
         self.failure_threshold = failure_threshold
         self.success_threshold = success_threshold
         self.timeout = timeout
         self.expected_exception = expected_exception
-        
+
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
         self.last_failure_time: Optional[datetime] = None
         self.last_state_change: datetime = datetime.now(timezone.utc)
-        
+
         self.metrics = CircuitBreakerMetrics()
         self._lock = asyncio.Lock()
-    
+
     def _now(self) -> datetime:
         return datetime.now(timezone.utc)
-    
+
     async def _handle_success(self) -> None:
         """Handle successful call"""
         async with self._lock:
             self.metrics.successful_calls += 1
             self.metrics.total_calls += 1
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 self.success_count += 1
-                
+
                 if self.success_count >= self.success_threshold:
                     LOGGER.info(f"CircuitBreaker '{self.name}': HALF_OPEN -> CLOSED")
                     self.state = CircuitState.CLOSED
                     self.failure_count = 0
                     self.success_count = 0
                     self.metrics.last_state_change = self._now()
-            
+
             elif self.state == CircuitState.CLOSED:
                 # Reset failure count on successful call
                 self.failure_count = 0
-    
-    async def _handle_failure(self, error: Exception) -> None:
+
+    async def _handle_failure(self, error: BaseException) -> None:
         """Handle failed call"""
         async with self._lock:
             self.metrics.failed_calls += 1
             self.metrics.total_calls += 1
             self.metrics.last_error_message = str(error)
             self.last_failure_time = self._now()
-            
+
             if self.state == CircuitState.CLOSED:
                 self.failure_count += 1
-                
+
                 if self.failure_count >= self.failure_threshold:
                     LOGGER.warning(
                         f"CircuitBreaker '{self.name}': CLOSED -> OPEN "
@@ -143,24 +141,24 @@ class CircuitBreaker:
                     )
                     self.state = CircuitState.OPEN
                     self.last_state_change = self._now()
-            
+
             elif self.state == CircuitState.HALF_OPEN:
                 # Single failure in HALF_OPEN triggers OPEN
                 LOGGER.warning(f"CircuitBreaker '{self.name}': HALF_OPEN -> OPEN (test failed)")
                 self.state = CircuitState.OPEN
                 self.success_count = 0
                 self.metrics.last_state_change = self._now()
-    
+
     async def _handle_rejection(self) -> None:
         """Handle request rejection"""
         async with self._lock:
             self.metrics.rejected_calls += 1
             self.metrics.total_calls += 1
-    
-    async def call(self, func: Callable, *args, **kwargs) -> Any:
+
+    async def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """
         Call function with circuit breaker protection
-        
+
         Raises:
             CircuitBreakerException: If circuit is open
             Exception: If function raises expected_exception
@@ -185,21 +183,21 @@ class CircuitBreaker:
                         f"Circuit breaker '{self.name}' is OPEN. "
                         f"Retry in {int(self.timeout - time_since_open)}s"
                     )
-        
+
         # Execute the call
         try:
             if asyncio.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
             else:
                 result = func(*args, **kwargs)
-            
+
             await self._handle_success()
             return result
-        
+
         except self.expected_exception as e:
             await self._handle_failure(e)
             raise
-    
+
     async def reset(self) -> None:
         """Force reset circuit to CLOSED"""
         async with self._lock:
@@ -209,7 +207,7 @@ class CircuitBreaker:
             self.success_count = 0
             self.last_state_change = self._now()
             self.metrics.last_state_change = self._now()
-    
+
     async def get_state(self) -> Dict[str, Any]:
         """Get circuit breaker state"""
         async with self._lock:
@@ -226,11 +224,11 @@ class CircuitBreaker:
 
 class CircuitBreakerPool:
     """Manage multiple circuit breakers"""
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.breakers: Dict[str, CircuitBreaker] = {}
         self._lock = asyncio.Lock()
-    
+
     async def get_or_create(
         self,
         name: str,
@@ -250,14 +248,14 @@ class CircuitBreakerPool:
                     expected_exception=expected_exception,
                 )
             return self.breakers[name]
-    
+
     async def get_stats(self) -> Dict[str, Any]:
         """Get stats for all breakers"""
         stats = {}
         for name, breaker in self.breakers.items():
             stats[name] = await breaker.get_state()
         return stats
-    
+
     async def reset_all(self) -> None:
         """Reset all breakers"""
         for breaker in self.breakers.values():

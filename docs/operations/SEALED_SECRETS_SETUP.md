@@ -63,18 +63,18 @@ seal_secret() {
     local secret_name=$1
     local key=$2
     local value=$3
-    
+
     # Create unsealed secret locally
     kubectl create secret generic "$secret_name" \
         --from-literal="$key=$value" \
         -n "$NAMESPACE" \
         --dry-run=client \
         -o yaml > /tmp/secret-$secret_name.yaml
-    
+
     # Seal it
     kubeseal -f /tmp/secret-$secret_name.yaml \
         -w /tmp/sealedsecret-$secret_name.yaml
-    
+
     # Show sealed secret (safe to commit)
     echo "Sealed secret for $secret_name:"
     cat /tmp/sealedsecret-$secret_name.yaml

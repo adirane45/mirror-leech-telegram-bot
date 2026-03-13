@@ -6,13 +6,13 @@ Production-grade Telegram bot for mirroring, leeching, cloud uploads, and automa
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PyPI Packaging](https://img.shields.io/badge/Build-setuptools-3775A9?style=for-the-badge&logo=pypi&logoColor=white)](pyproject.toml)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](docker-compose.yml)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](deployment/compose/docker-compose.yml)
 [![Linux](https://img.shields.io/badge/Linux-Ubuntu%2FDebian-FCC624?style=for-the-badge&logo=linux&logoColor=black)](docs/guides/INSTALLATION.md)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://telegram.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Enabled-009688?style=for-the-badge&logo=fastapi&logoColor=white)](docs/api/API_REFERENCE.md)
-[![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)](docker-compose.yml)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Supported-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](docker-compose.yml)
-[![Celery](https://img.shields.io/badge/Celery-Workers-37814A?style=for-the-badge&logo=celery&logoColor=white)](docker-compose.yml)
+[![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)](deployment/compose/docker-compose.yml)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Supported-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](deployment/compose/docker-compose.yml)
+[![Celery](https://img.shields.io/badge/Celery-Workers-37814A?style=for-the-badge&logo=celery&logoColor=white)](deployment/compose/docker-compose.yml)
 [![Aria2](https://img.shields.io/badge/Aria2-Client-68B604?style=for-the-badge&logo=googlecloudstorage&logoColor=white)](clients/aria2/)
 [![qBittorrent](https://img.shields.io/badge/qBittorrent-Client-2F67BA?style=for-the-badge&logo=qbittorrent&logoColor=white)](clients/qbittorrent/)
 [![SABnzbd](https://img.shields.io/badge/SABnzbd-Client-FF9900?style=for-the-badge&logo=rss&logoColor=white)](clients/sabnzbd/)
@@ -26,6 +26,8 @@ Production-grade Telegram bot for mirroring, leeching, cloud uploads, and automa
 [![License](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge)](docs/LICENSE)
 
 [Overview](#overview) • [Features](#features) • [Architecture](#architecture) • [Quick-Start](#quick-start) • [Configuration](#configuration) • [Deployment](#deployment) • [Documentation](#documentation) • [Security](#security)
+
+**🆕 Code Quality Initiative**: Check out our [10-week improvement roadmap](docs/SUMMARY.md) with GitHub Copilot integration!
 
 </div>
 
@@ -190,10 +192,10 @@ Extended/admin references: [Commands Guide](docs/guides/COMMANDS.md)
 
 ### Compose profiles in this repository
 
-- `docker-compose.yml` (default stack)
-- `docker-compose.optimized.yml` (optimized image/runtime profile)
-- `docker-compose.secure.yml` (security-focused profile)
-- `docker-compose.bluegreen.yml` (blue/green deployment strategy)
+- `deployment/compose/docker-compose.yml` (default stack)
+- `deployment/compose/docker-compose.optimized.yml` (optimized image/runtime profile)
+- `deployment/compose/docker-compose.secure.yml` (security-focused profile)
+- `deployment/compose/docker-compose.bluegreen.yml` (blue/green deployment strategy)
 
 ### Kubernetes support
 

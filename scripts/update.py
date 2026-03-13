@@ -1,20 +1,15 @@
-from sys import exit
 from importlib import import_module
-from logging import (
-    FileHandler,
-    StreamHandler,
-    INFO,
-    basicConfig,
-    error as log_error,
-    info as log_info,
-    getLogger,
-    ERROR,
-)
-from os import path, remove, getenv
+from logging import ERROR, INFO, FileHandler, StreamHandler, basicConfig
+from logging import error as log_error
+from logging import getLogger
+from logging import info as log_info
+from os import getenv, path, remove
+from subprocess import run as srun
+from sys import exit
+from typing import Any, Dict
+
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from subprocess import run as srun
-from typing import Dict, Any
 
 getLogger("pymongo").setLevel(ERROR)
 

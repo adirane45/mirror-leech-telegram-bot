@@ -16,13 +16,13 @@ Implements in order of preference:
 
 Usage:
     from bot.core.secret_reader import SecretReader
-    
+
     # Get required secret (raises if not found)
     bot_token = SecretReader.get_secret("BOT_TOKEN")
-    
+
     # Get optional secret (returns None if not found)
     custom_value = SecretReader.get_optional_secret("CUSTOM_VAR", default="default")
-    
+
     # Validate all required secrets are available
     found, missing = SecretReader.validate_secrets([
         "BOT_TOKEN",
@@ -34,9 +34,9 @@ Usage:
 """
 
 import os
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
-from datetime import datetime, UTC
+from typing import Any, Dict, List, Optional, Tuple
 
 from .. import LOGGER
 
@@ -44,13 +44,13 @@ from .. import LOGGER
 class SecretReader:
     """
     Read secrets from environment or mounted secret files
-    
+
     Priority:
     1. ${VAR}_FILE environment variable (Docker Swarm pattern)
     2. ${VAR} direct environment variable (K8s / .env)
     3. /run/secrets/${var_lower} (Docker mount)
     4. ValueError if not found
-    
+
     Example:
         BOT_TOKEN = SecretReader.get_secret("BOT_TOKEN")
         # Tries in order:
@@ -59,7 +59,7 @@ class SecretReader:
         # 3. /run/secrets/bot_token (Docker)
         # 4. Raise error
     """
-    
+
     @staticmethod
     def get_secret(
         var_name: str,
@@ -68,55 +68,35 @@ class SecretReader:
     ) -> str:
         """
         Get secret from multiple sources
-        
+
         Args:
             var_name: Environment variable name (e.g., "BOT_TOKEN")
             default: Default value if not found
             allow_empty: If True, empty strings are valid values
-        
+
         Returns:
             Secret value
-        
+
         Raises:
             ValueError: If secret not found and no default
         """
-        # Strategy 1: Check _FILE variant (Docker Swarm convention)
-        file_var = f"{var_name}_FILE"
-        if file_var in os.environ:
-            file_path = os.environ[file_var]
-            try:
-                with open(file_path, 'r') as f:
-                    value = f.read().strip()
-                    if value or allow_empty:
-                        LOGGER.debug(f"✓ Loaded {var_name} from file: {file_path}")
-                        return value
-            except IOError as e:
-                LOGGER.warning(f"⚠️  Could not read secret file {file_path}: {e}")
-        
-        # Strategy 2: Direct environment variable (K8s or .env)
-        if var_name in os.environ:
-            value = os.environ[var_name]
-            if value or allow_empty:
-                LOGGER.debug(f"✓ Loaded {var_name} from environment")
-                return value
-        
-        # Strategy 3: Docker Secrets mount point
-        secret_file = Path(f"/run/secrets/{var_name.lower()}")
-        if secret_file.exists():
-            try:
-                with open(secret_file, 'r') as f:
-                    value = f.read().strip()
-                    if value or allow_empty:
-                        LOGGER.debug(f"✓ Loaded {var_name} from Docker secret")
-                        return value
-            except IOError as e:
-                LOGGER.warning(f"⚠️  Could not read Docker secret {secret_file}: {e}")
-        
+        file_secret = SecretReader._get_secret_from_file_env(var_name, allow_empty)
+        if file_secret is not None:
+            return file_secret
+
+        env_secret = SecretReader._get_secret_from_environment(var_name, allow_empty)
+        if env_secret is not None:
+            return env_secret
+
+        docker_secret = SecretReader._get_secret_from_docker_mount(var_name, allow_empty)
+        if docker_secret is not None:
+            return docker_secret
+
         # Strategy 4: Default value
         if default is not None:
             LOGGER.warning(f"⚠️  Using default for {var_name}")
             return default
-        
+
         # Not found
         raise ValueError(
             f"Secret '{var_name}' not found in:\n"
@@ -125,16 +105,72 @@ class SecretReader:
             f"  - /run/secrets/{var_name.lower()} (Docker)\n"
             f"  - default value"
         )
-    
+
+    @staticmethod
+    def _is_secret_value_valid(value: str, allow_empty: bool) -> bool:
+        return bool(value) or allow_empty
+
+    @staticmethod
+    def _read_secret_file(
+        file_path: str,
+        var_name: str,
+        allow_empty: bool,
+        source_name: str,
+    ) -> Optional[str]:
+        try:
+            with open(file_path, 'r') as f:
+                value = f.read().strip()
+                if SecretReader._is_secret_value_valid(value, allow_empty):
+                    LOGGER.debug(f"✓ Loaded {var_name} from {source_name}")
+                    return value
+        except IOError as e:
+            LOGGER.warning(f"⚠️  Could not read {source_name} {file_path}: {e}")
+        return None
+
+    @staticmethod
+    def _get_secret_from_file_env(var_name: str, allow_empty: bool) -> Optional[str]:
+        file_var = f"{var_name}_FILE"
+        if file_var not in os.environ:
+            return None
+        file_path = os.environ[file_var]
+        return SecretReader._read_secret_file(
+            file_path,
+            var_name,
+            allow_empty,
+            f"file path variable {file_var}",
+        )
+
+    @staticmethod
+    def _get_secret_from_environment(var_name: str, allow_empty: bool) -> Optional[str]:
+        if var_name not in os.environ:
+            return None
+        value = os.environ[var_name]
+        if SecretReader._is_secret_value_valid(value, allow_empty):
+            LOGGER.debug(f"✓ Loaded {var_name} from environment")
+            return value
+        return None
+
+    @staticmethod
+    def _get_secret_from_docker_mount(var_name: str, allow_empty: bool) -> Optional[str]:
+        secret_file = Path(f"/run/secrets/{var_name.lower()}")
+        if not secret_file.exists():
+            return None
+        return SecretReader._read_secret_file(
+            str(secret_file),
+            var_name,
+            allow_empty,
+            "Docker secret",
+        )
+
     @staticmethod
     def get_optional_secret(var_name: str, default: Optional[str] = None) -> Optional[str]:
         """
         Get optional secret (returns None if not found)
-        
+
         Args:
             var_name: Environment variable name
             default: Default value if not found
-        
+
         Returns:
             Secret value or default/None
         """
@@ -142,54 +178,54 @@ class SecretReader:
             return SecretReader.get_secret(var_name)
         except ValueError:
             return default
-    
+
     @staticmethod
     def get_all_secrets(prefix: str = "") -> Dict[str, str]:
         """
         Get all secrets matching a prefix
-        
+
         Example:
             secrets = SecretReader.get_all_secrets("TELEGRAM_")
             # Returns: {"API": "xxx", "HASH": "yyy", "BOT_TOKEN": "zzz"}
-        
+
         Args:
             prefix: Variable prefix to filter (optional)
-        
+
         Returns:
             Dictionary of var_name: value pairs
         """
         secrets = {}
-        
+
         for key, value in os.environ.items():
             if prefix and not key.startswith(prefix):
                 continue
-            
+
             # Skip _FILE variants (already processed)
             if key.endswith("_FILE"):
                 continue
-            
+
             # Skip tech vars
             if key in ("PATH", "HOME", "USER", "PWD"):
                 continue
-            
+
             try:
                 secrets[key] = SecretReader.get_secret(key)
             except ValueError:
                 pass
-        
+
         return secrets
-    
+
     @staticmethod
-    def validate_secrets(required: list) -> tuple:
+    def validate_secrets(required: List[str]) -> Tuple[bool, List[str]]:
         """
         Validate that all required secrets are available
-        
+
         Args:
             required: List of required secret names
-        
+
         Returns:
             (all_found: bool, missing: list[str])
-        
+
         Example:
             found, missing = SecretReader.validate_secrets([
                 "BOT_TOKEN",
@@ -205,23 +241,23 @@ class SecretReader:
                 SecretReader.get_secret(secret_name)
             except ValueError:
                 missing.append(secret_name)
-        
+
         return len(missing) == 0, missing
-    
+
     @staticmethod
     def health_check() -> Dict[str, Any]:
         """
         Check secret loading health
-        
+
         Returns:
             Health status dictionary
         """
-        status = {
+        status: Dict[str, Any] = {
             'timestamp': datetime.now(UTC).isoformat(),
             'sources': {},
             'errors': []
         }
-        
+
         # Check Docker Secrets mount
         docker_secrets_path = Path("/run/secrets")
         if docker_secrets_path.exists():
@@ -236,14 +272,14 @@ class SecretReader:
                 status['errors'].append(f"Docker Secrets: {e}")
         else:
             status['sources']['docker_secrets'] = {'available': False}
-        
+
         # Check environment variables
         env_count = sum(1 for k in os.environ.keys() if not k.startswith('_'))
         status['sources']['environment'] = {
             'available': True,
             'count': env_count
         }
-        
+
         # Check .env files
         env_files = [
             Path(".env"),
@@ -257,7 +293,7 @@ class SecretReader:
             'count': len(available_env_files),
             'files': [str(f) for f in available_env_files]
         }
-        
+
         return status
 
 

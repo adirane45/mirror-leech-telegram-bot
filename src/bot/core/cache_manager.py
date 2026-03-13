@@ -4,12 +4,10 @@ Multi-tier caching system (L1 in-memory, L2 Redis, L3 distributed)
 """
 
 import asyncio
-import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
 import logging
-import zlib
 import pickle
+from datetime import datetime
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .cache_manager_models import CacheEntry, CacheStatistics
 
@@ -28,15 +26,15 @@ class CacheManager:
     _instance: Optional['CacheManager'] = None
     _lock = asyncio.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = False
         self.l1_cache: Dict[str, CacheEntry] = {}  # In-memory LRU cache
         self.l1_max_size_mb = 100
         self.l1_max_entries = 10000
         self.statistics = CacheStatistics()
         self.compression_enabled = True
-        self.cache_warming_tasks: List[asyncio.Task] = []
-        
+        self.cache_warming_tasks: List[asyncio.Task[None]] = []
+
     @classmethod
     def get_instance(cls) -> 'CacheManager':
         """Get singleton instance"""
@@ -47,11 +45,11 @@ class CacheManager:
     async def enable(self, max_size_mb: int = 100, compression: bool = True) -> bool:
         """
         Enable the Cache Manager
-        
+
         Args:
             max_size_mb: Maximum L1 cache size in MB
             compression: Enable compression for cached values
-            
+
         Returns:
             Success status
         """
@@ -77,10 +75,10 @@ class CacheManager:
     def _get_entry_size_bytes(self, entry: CacheEntry) -> int:
         """
         Estimate size of cache entry in bytes for memory management.
-        
+
         Args:
             entry: CacheEntry to measure
-            
+
         Returns:
             Estimated size in bytes, 0 if calculation fails
         """
@@ -105,7 +103,7 @@ class CacheManager:
         """Evict least recently used entry"""
         if not self.l1_cache:
             return
-        
+
         # Find LRU entry
         lru_key = min(
             self.l1_cache.keys(),
@@ -114,7 +112,7 @@ class CacheManager:
                 self.l1_cache[k].access_count
             )
         )
-        
+
         del self.l1_cache[lru_key]
         self.statistics.l1_evictions += 1
         logger.debug(f"Evicted LRU entry: {lru_key}")
@@ -133,13 +131,13 @@ class CacheManager:
     ) -> bool:
         """
         Set cache value
-        
+
         Args:
             key: Cache key
             value: Value to cache
             ttl: Time to live in seconds (uses 300s default if None)
             namespace: Namespace for key organization
-            
+
         Returns:
             Success status
         """
@@ -149,11 +147,11 @@ class CacheManager:
         try:
             # Ensure capacity before adding
             await self._ensure_capacity()
-            
+
             full_key = f"{namespace}:{key}"
             ttl_seconds = ttl or 300
             entry = CacheEntry(key=full_key, value=value, ttl=ttl_seconds)
-            
+
             self.l1_cache[full_key] = entry
             logger.debug(f"Cached {full_key} (TTL: {ttl_seconds}s)")
             return True
@@ -164,11 +162,11 @@ class CacheManager:
     async def get(self, key: str, namespace: str = "default") -> Optional[Any]:
         """
         Get value from cache
-        
+
         Args:
             key: Cache key
             namespace: Namespace for key organization
-            
+
         Returns:
             Cached value if found and not expired, None otherwise
         """
@@ -178,25 +176,25 @@ class CacheManager:
 
         try:
             full_key = f"{namespace}:{key}"
-            
+
             if full_key in self.l1_cache:
                 entry = self.l1_cache[full_key]
-                
+
                 if entry.is_expired():
                     del self.l1_cache[full_key]
                     self.statistics.l1_misses += 1
                     self.statistics.total_misses += 1
                     return None
-                
+
                 # Update access info
                 entry.last_accessed = datetime.now()
                 entry.access_count += 1
-                
+
                 self.statistics.l1_hits += 1
                 self.statistics.total_hits += 1
                 logger.debug(f"Cache hit: {full_key}")
                 return entry.value
-            
+
             self.statistics.l1_misses += 1
             self.statistics.total_misses += 1
             logger.debug(f"Cache miss: {full_key}")
@@ -209,11 +207,11 @@ class CacheManager:
     async def delete(self, key: str, namespace: str = "default") -> bool:
         """
         Delete cache entry
-        
+
         Args:
             key: Cache key
             namespace: Namespace for key organization
-            
+
         Returns:
             Success status
         """
@@ -231,30 +229,30 @@ class CacheManager:
     async def invalidate_pattern(self, pattern: str, namespace: str = "default") -> int:
         """
         Invalidate all cache entries matching pattern
-        
+
         Args:
             pattern: Pattern to match (supports * wildcard)
             namespace: Namespace for key organization
-            
+
         Returns:
             Number of entries invalidated
         """
         try:
             full_pattern = f"{namespace}:{pattern}"
             deleted = 0
-            
+
             # Convert pattern to regex-like matching
             # Simple implementation: * matches any characters
             import re
             regex_pattern = full_pattern.replace('*', '.*')
             regex = re.compile(f"^{regex_pattern}$")
-            
+
             keys_to_delete = [k for k in self.l1_cache.keys() if regex.match(k)]
-            
+
             for key in keys_to_delete:
                 del self.l1_cache[key]
                 deleted += 1
-            
+
             logger.info(f"Invalidated {deleted} cache entries matching {full_pattern}")
             return deleted
         except Exception as e:
@@ -264,21 +262,21 @@ class CacheManager:
     async def warm_cache(
         self,
         key: str,
-        loader_func: Callable,
+        loader_func: Callable[[], Awaitable[Any]],
         ttl: int = 3600,
         interval: int = 600,
         namespace: str = "cache_warming"
     ) -> bool:
         """
         Warm cache with pre-loaded data on a schedule
-        
+
         Args:
             key: Cache key
             loader_func: Async function to load data
             ttl: Time to live for cached data
             interval: Interval in seconds to refresh
             namespace: Namespace for key organization
-            
+
         Returns:
             Success status
         """
@@ -286,7 +284,7 @@ class CacheManager:
             return False
 
         try:
-            async def warm_task():
+            async def warm_task() -> None:
                 while self.enabled:
                     try:
                         logger.debug(f"Warming cache for {namespace}:{key}")
@@ -294,17 +292,17 @@ class CacheManager:
                         await self.set(key, data, ttl=ttl, namespace=namespace)
                     except Exception as e:
                         logger.error(f"Error warming cache: {e}")
-                    
+
                     await asyncio.sleep(interval)
-            
+
             # Start warming task
             task = asyncio.create_task(warm_task())
             self.cache_warming_tasks.append(task)
-            
+
             # Load initial data
             data = await loader_func()
             await self.set(key, data, ttl=ttl, namespace=namespace)
-            
+
             logger.info(f"Cache warming started for {namespace}:{key} (interval: {interval}s)")
             return True
         except Exception as e:
@@ -314,10 +312,10 @@ class CacheManager:
     async def clear(self, namespace: Optional[str] = None) -> bool:
         """
         Clear cache entries
-        
+
         Args:
             namespace: Specific namespace to clear (clears all if None)
-            
+
         Returns:
             Success status
         """
@@ -339,7 +337,7 @@ class CacheManager:
     async def get_statistics(self) -> Dict[str, Any]:
         """Get cache statistics"""
         total_size_bytes = sum(self._get_entry_size_bytes(e) for e in self.l1_cache.values())
-        
+
         stats = {
             'enabled': self.enabled,
             'l1_entries': len(self.l1_cache),

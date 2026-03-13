@@ -14,7 +14,7 @@ Search across multiple torrent sites and preview results before downloading.
 
 ```
 /search <query> - Search all sources
-/search movie <query> - Search movies only  
+/search movie <query> - Search movies only
 /search tv <query> - Search TV shows
 /search anime <query> - Search anime
 ```
@@ -31,7 +31,7 @@ Search across multiple torrent sites and preview results before downloading.
 
 - ✅ **Multi-source search** - Searches multiple torrent sites simultaneously
 - ✅ **Smart ranking** - Results sorted by seeders and quality
-- ✅ **Quality detection** - Automatically detects 1080p, 720p, 4K  
+- ✅ **Quality detection** - Automatically detects 1080p, 720p, 4K
 - ✅ **Interactive results** - Click to download directly
 - ✅ **Pagination** - Browse through 50+ results
 - ✅ **Filter options** - Filter by size, seeders, quality
@@ -41,7 +41,7 @@ Search across multiple torrent sites and preview results before downloading.
 
 Each result shows:
 - Title with quality indicator
-- File size  
+- File size
 - Seeders & leechers
 - Source website
 - Download button
@@ -135,10 +135,10 @@ POST /files/rename?path=<path>&new_name=<name> - Rename file
 
 ### Supported File Types
 
-**Videos:** MP4, MKV, AVI, MOV, WebM  
-**Audio:** MP3, FLAC, WAV, M4A  
-**Images:** JPG, PNG, GIF, WebP  
-**Documents:** PDF, DOC, TXT, EPUB  
+**Videos:** MP4, MKV, AVI, MOV, WebM
+**Audio:** MP3, FLAC, WAV, M4A
+**Images:** JPG, PNG, GIF, WebP
+**Documents:** PDF, DOC, TXT, EPUB
 **Archives:** ZIP, RAR, 7Z, TAR
 
 ### UI Features
@@ -193,7 +193,7 @@ Customizable progress notifications with better updates.
 
 # 4. Check queue status
 /queue
-# Shows: 
+# Shows:
 # - Active: 2/3
 # - Queued: 5
 # - Your download is #3 in queue
@@ -258,7 +258,7 @@ User: [Opens file browser, downloads to device]
 
 ```
 User: /queue
-Bot: 
+Bot:
 📋 Queue Status
 🔄 Active: 3/3
 ⏳ Queued: 7
@@ -266,7 +266,7 @@ Bot:
 
 By Priority:
 • URGENT: 1
-• HIGH: 2  
+• HIGH: 2
 • NORMAL: 7
 
 User: [Clicks "Pause All"]

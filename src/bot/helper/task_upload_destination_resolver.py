@@ -5,11 +5,7 @@ Extracts complex cc=33 upload resolution logic from common.py
 """
 
 from bot import Config
-from bot.helper.ext_utils.links_utils import (
-    is_rclone_path,
-    is_gdrive_link,
-    is_gdrive_id,
-)
+from bot.helper.ext_utils.links_utils import is_gdrive_id, is_gdrive_link, is_rclone_path
 from bot.helper.mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from bot.helper.mirror_leech_utils.rclone_utils.list import RcloneList
 from bot.helper.task_config_normalizers import TaskConfigNormalizers

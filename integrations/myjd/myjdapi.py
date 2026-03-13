@@ -1,11 +1,8 @@
 from json import JSONDecodeError
+
 from httpx import AsyncClient, AsyncHTTPTransport, RequestError, Timeout
 
-from .exception import (
-    MYJDApiException,
-    MYJDConnectionException,
-    MYJDDecodeException,
-)
+from .exception import MYJDApiException, MYJDConnectionException, MYJDDecodeException
 
 
 class System:

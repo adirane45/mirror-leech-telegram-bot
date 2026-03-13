@@ -1,20 +1,13 @@
-from time import time
+from asyncio import gather
 from re import search as research
-from asyncio import gather, sleep
+from time import time
+
 from aiofiles.os import path as aiopath
-from psutil import (
-    disk_usage,
-    cpu_percent,
-    swap_memory,
-    cpu_count,
-    virtual_memory,
-    net_io_counters,
-    boot_time,
-)
+from psutil import boot_time, cpu_count, cpu_percent, disk_usage, net_io_counters, swap_memory, virtual_memory
 
 from .. import bot_start_time
-from ..helper.ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..helper.ext_utils.bot_utils import cmd_exec, new_task
+from ..helper.ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..helper.telegram_helper.message_utils import send_message
 
 commands = {
@@ -89,46 +82,39 @@ async def get_version_async(command, regex):
 async def get_service_status():
     """Check if external services are available"""
     from os import environ
-    
+
     versions = {}
-    
-    # Check Aria2 - if ARIA2_HOST is configured, assume it's available
-    aria2_host = environ.get("ARIA2_HOST", "").strip()
-    if aria2_host and aria2_host.lower() != "none":
-        try:
-            from ..core.torrent_manager import TorrentManager
-            # Try to get version from aria2 via RPC
-            ver = await TorrentManager.aria2.getVersion()
-            if ver and isinstance(ver, dict):
-                versions["aria2"] = ver.get("version", "Available (RPC)")
-            else:
-                versions["aria2"] = "Available (RPC)"
-        except Exception:
-            versions["aria2"] = "Available (docker)"
-    else:
-        versions["aria2"] = "Not configured"
-    
-    # Check qBittorrent - if QB_HOST is configured, assume it's available
-    qb_host = environ.get("QB_HOST", "").strip()
-    if qb_host and qb_host.lower() != "none":
-        versions["qBittorrent"] = "Available (docker)"
-    else:
-        versions["qBittorrent"] = "Not configured"
-    
-    # Check SABnzbd - if SAB_HOST is configured, assume it's available
-    sab_host = environ.get("SAB_HOST", "").strip()
-    if sab_host and sab_host.lower() != "none":
-        versions["SABnzbd+"] = "Available (docker)"
-    else:
-        versions["SABnzbd+"] = "Not configured"
-    
-    # Check rclone - if rclone.conf exists, assume it's available
-    if await aiopath.exists("/app/rclone.conf"):
-        versions["rclone"] = "Available (configured)"
-    else:
-        versions["rclone"] = "Not configured"
-    
+
+    versions["aria2"] = await _get_aria2_status(environ)
+    versions["qBittorrent"] = (
+        "Available (docker)" if _is_service_configured(environ, "QB_HOST") else "Not configured"
+    )
+    versions["SABnzbd+"] = (
+        "Available (docker)" if _is_service_configured(environ, "SAB_HOST") else "Not configured"
+    )
+    versions["rclone"] = "Available (configured)" if await aiopath.exists("/app/rclone.conf") else "Not configured"
+
     return versions
+
+
+def _is_service_configured(environ, env_key):
+    value = environ.get(env_key, "").strip()
+    return bool(value and value.lower() != "none")
+
+
+async def _get_aria2_status(environ):
+    if not _is_service_configured(environ, "ARIA2_HOST"):
+        return "Not configured"
+
+    try:
+        from ..core.torrent_manager import TorrentManager
+
+        ver = await TorrentManager.aria2.getVersion()
+        if ver and isinstance(ver, dict):
+            return ver.get("version", "Available (RPC)")
+        return "Available (RPC)"
+    except Exception:
+        return "Available (docker)"
 
 
 @new_task
@@ -140,16 +126,16 @@ async def get_packages_version():
         "ffmpeg": (["ffmpeg", "-version"], r"ffmpeg version ([\d.]+(-\w+)?).*"),
         "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     }
-    
+
     tasks = [get_version_async(command, regex) for command, regex in local_tools.values()]
     versions = await gather(*tasks)
     for tool, version in zip(local_tools.keys(), versions):
         commands[tool] = version
-    
+
     # Get service status for docker containers
     service_versions = await get_service_status()
     commands.update(service_versions)
-    
+
     # Get git commit info
     if await aiopath.exists(".git"):
         try:

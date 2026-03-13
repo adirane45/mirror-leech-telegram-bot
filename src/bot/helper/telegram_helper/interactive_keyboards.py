@@ -1,7 +1,7 @@
 # Enhanced Interactive Keyboards for Better UI/UX
 # Modified by: justadi
 
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 class InteractiveKeyboards:

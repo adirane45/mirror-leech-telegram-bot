@@ -8,13 +8,12 @@ Date: February 5, 2026
 """
 
 import asyncio
-import shutil
-from pathlib import Path
-from datetime import datetime, timedelta, UTC
-from typing import Dict, Optional, List
 import json
-import hashlib
+import shutil
+from datetime import UTC, datetime, timedelta
 from logging import getLogger
+from pathlib import Path
+from typing import Any, Optional
 
 from .config_manager import Config
 
@@ -24,23 +23,26 @@ LOGGER = getLogger(__name__)
 class BackupMetadata:
     """Metadata for a backup"""
 
-    def __init__(self, backup_dir: Path):
+    def __init__(self, backup_dir: Path) -> None:
         self.backup_dir = backup_dir
         self.metadata_file = backup_dir / "metadata.json"
-        self.data = self._load_metadata()
+        self.data: dict[str, Any] = self._load_metadata()
 
-    def _load_metadata(self) -> Dict:
+    def _load_metadata(self) -> dict[str, Any]:
         """Load metadata from file"""
         if self.metadata_file.exists():
             try:
                 with open(self.metadata_file, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        return data
+                    return {}
             except Exception as e:
                 LOGGER.error(f"Error loading metadata: {e}")
                 return {}
         return {}
 
-    def save(self):
+    def save(self) -> None:
         """Save metadata to file"""
         try:
             with open(self.metadata_file, "w") as f:
@@ -48,7 +50,7 @@ class BackupMetadata:
         except Exception as e:
             LOGGER.error(f"Error saving metadata: {e}")
 
-    def update(self, key: str, value):
+    def update(self, key: str, value: Any) -> None:
         """Update metadata field"""
         self.data[key] = value
         self.save()
@@ -60,19 +62,19 @@ class BackupManager:
     Supports incremental backups and verification
     """
 
-    _instance = None
-    _enabled = False
-    _backup_root = None
+    _instance: Optional["BackupManager"] = None
+    _enabled: bool = False
+    _backup_root: Optional[Path] = None
 
-    def __new__(cls):
+    def __new__(cls) -> "BackupManager":
         if cls._instance is None:
             cls._instance = super(BackupManager, cls).__new__(cls)
         return cls._instance
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable backup manager"""
         self._enabled = getattr(Config, "ENABLE_BACKUP_SYSTEM", False)
-        
+
         if self._enabled:
             backup_dir = getattr(Config, "BACKUP_DIR", "backups")
             self._backup_root = Path(backup_dir)
@@ -86,12 +88,18 @@ class BackupManager:
         """Check if backup manager is enabled"""
         return self._enabled
 
+    def _require_backup_root(self) -> Path:
+        backup_root = self._backup_root
+        if backup_root is None:
+            raise RuntimeError("Backup root is not configured")
+        return backup_root
+
     async def create_backup(
         self,
-        source_paths: List[str],
+        source_paths: list[str],
         backup_name: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> Optional[Dict]:
+    ) -> Optional[dict[str, Any]]:
         """
         Create a backup of specified paths
 
@@ -111,7 +119,7 @@ class BackupManager:
             if backup_name is None:
                 backup_name = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
-            backup_dir = self._backup_root / backup_name
+            backup_dir = self._require_backup_root() / backup_name
             backup_dir.mkdir(exist_ok=True)
 
             # Create metadata
@@ -196,14 +204,14 @@ class BackupManager:
             return False
 
         try:
-            backup_dir = self._backup_root / backup_name
+            backup_dir = self._require_backup_root() / backup_name
             if not backup_dir.exists():
                 LOGGER.error(f"Backup not found: {backup_name}")
                 return False
 
             # Load metadata
             metadata = BackupMetadata(backup_dir)
-            original_paths = metadata.data.get("source_paths", [])
+            metadata.data.get("source_paths", [])
 
             # Restore files
             for item_data in metadata.data.get("items", []):
@@ -245,7 +253,7 @@ class BackupManager:
             return False
 
         try:
-            backup_dir = self._backup_root / backup_name
+            backup_dir = self._require_backup_root() / backup_name
             if not backup_dir.exists():
                 return False
 
@@ -264,18 +272,19 @@ class BackupManager:
             LOGGER.error(f"Error verifying backup: {e}")
             return False
 
-    def list_backups(self) -> List[Dict]:
+    def list_backups(self) -> list[dict[str, Any]]:
         """List all available backups"""
         if not self._enabled:
             return []
 
-        backups = []
+        backups: list[dict[str, Any]] = []
 
-        if not self._backup_root.exists():
+        backup_root = self._backup_root
+        if backup_root is None or not backup_root.exists():
             return backups
 
         try:
-            for backup_dir in self._backup_root.iterdir():
+            for backup_dir in backup_root.iterdir():
                 if not backup_dir.is_dir():
                     continue
 
@@ -316,8 +325,9 @@ class BackupManager:
         try:
             cutoff_time = datetime.now(UTC) - timedelta(days=days)
             deleted_count = 0
+            backup_root = self._require_backup_root()
 
-            for backup_dir in self._backup_root.iterdir():
+            for backup_dir in backup_root.iterdir():
                 if not backup_dir.is_dir():
                     continue
 
@@ -351,7 +361,7 @@ class BackupManager:
                 total += item.stat().st_size
         return total
 
-    def get_backup_stats(self) -> Dict:
+    def get_backup_stats(self) -> dict[str, Any]:
         """Get backup system statistics"""
         if not self._enabled:
             return {"enabled": False}
@@ -361,7 +371,7 @@ class BackupManager:
 
         return {
             "enabled": True,
-            "backup_directory": str(self._backup_root),
+            "backup_directory": str(self._require_backup_root()),
             "total_backups": len(backups),
             "total_size": total_size,
             "backups": backups,

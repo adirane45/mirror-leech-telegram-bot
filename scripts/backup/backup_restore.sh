@@ -42,19 +42,19 @@ echo ""
 create_backup() {
     log_info "Starting backup: ${BACKUP_NAME}"
     mkdir -p "${BACKUP_PATH}"
-    
+
     # 1. Backup configuration files
     log_info "Backing up configuration files..."
     mkdir -p "${BACKUP_PATH}/config"
     cp config.py "${BACKUP_PATH}/config/" 2>/dev/null || log_warn "config.py not found"
     cp .env.production "${BACKUP_PATH}/config/" 2>/dev/null || log_warn ".env.production not found"
-    cp docker-compose.yml "${BACKUP_PATH}/config/" 2>/dev/null || log_warn "docker-compose.yml not found"
-    
+    cp deployment/compose/docker-compose.yml "${BACKUP_PATH}/config/" 2>/dev/null || log_warn "deployment/compose/docker-compose.yml not found"
+
     # 2. Backup critical application files
     log_info "Backing up critical application files..."
     mkdir -p "${BACKUP_PATH}/app"
     cp -r bot/core/*.py "${BACKUP_PATH}/app/" 2>/dev/null || log_warn "bot/core not fully backed up"
-    
+
     # 3. Backup database - MongoDB
     log_info "Backing up MongoDB database..."
     mkdir -p "${BACKUP_PATH}/mongodb"
@@ -62,19 +62,19 @@ create_backup() {
       docker exec mltb-mongodb tar czf /tmp/mongodump.tar.gz -C /tmp mongodump && \
       docker cp mltb-mongodb:/tmp/mongodump.tar.gz "${BACKUP_PATH}/mongodb/" && \
       log_info "MongoDB backup completed" || log_warn "MongoDB backup failed"
-    
+
     # 4. Backup Redis database
     log_info "Backing up Redis database..."
     mkdir -p "${BACKUP_PATH}/redis"
     docker exec mltb-redis redis-cli BGSAVE 2>/dev/null || true
     sleep 2
     docker cp mltb-redis:/data/dump.rdb "${BACKUP_PATH}/redis/" 2>/dev/null || log_warn "Redis backup failed"
-    
+
     # 5. Backup logs
     log_info "Backing up logs..."
     mkdir -p "${BACKUP_PATH}/logs"
     cp -r logs/* "${BACKUP_PATH}/logs/" 2>/dev/null || log_warn "No logs to backup"
-    
+
     # 6. Create backup metadata
     cat > "${BACKUP_PATH}/BACKUP_MANIFEST.txt" << EOF
 MLTB Backup Information
@@ -89,7 +89,7 @@ Includes:
   - MongoDB database dump
   - Redis database snapshot
   - Application logs
-  
+
 Recovery Instructions:
 1. Ensure MLTB services are stopped: docker compose down
 2. Extract backup: tar xzf ${BACKUP_NAME}.tar.gz
@@ -106,7 +106,7 @@ EOF
     tar czf "${BACKUP_NAME}.tar.gz" "${BACKUP_NAME}/"
     rm -rf "${BACKUP_NAME}"
     log_info "Backup completed: ${BACKUP_NAME}.tar.gz"
-    
+
     # 8. List backup
     ls -lh "${BACKUP_NAME}.tar.gz"
 
@@ -129,7 +129,7 @@ verify_backup() {
         log_error "Backup file not found: ${backup_file}"
         return 1
     fi
-    
+
     log_info "Verifying backup integrity: ${backup_file}"
     if tar tzf "${backup_file}" > /dev/null; then
         log_info "✅ Backup integrity verified"
@@ -151,33 +151,33 @@ list_backups() {
 # Function: Restore from backup
 restore_backup() {
     local backup_file="$1"
-    
+
     if [ -z "${backup_file}" ]; then
         log_error "Usage: restore_backup backup_filename"
         return 1
     fi
-    
+
     if [ ! -f "${backup_file}" ]; then
         log_error "Backup file not found: ${backup_file}"
         return 1
     fi
-    
+
     log_info "⚠️  WARNING: This will restore your system from backup"
     log_info "Backup file: ${backup_file}"
     read -p "Continue? (y/N): " -n 1 -r
     echo
-    
+
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log_warn "Restore cancelled"
         return 1
     fi
-    
+
     log_info "Stopping MLTB services..."
     docker compose down || true
-    
+
     log_info "Extracting backup..."
     tar xzf "${backup_file}"
-    
+
     log_warn "Backup restored. Please verify before restarting services."
     log_info "To restart: docker compose up -d"
 }

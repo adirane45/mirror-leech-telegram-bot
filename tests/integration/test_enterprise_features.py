@@ -1,5 +1,5 @@
 """
-Comprehensive tests for Phase 9: Enterprise Features
+Comprehensive tests for enterprise features
 
 Testing modules:
 - Metadata Stripping Pipeline
@@ -713,6 +713,30 @@ async def test_mmap_copier():
             copied_data = f.read()
             assert copied_data == test_data
     
+    finally:
+        os.unlink(source_file)
+        if os.path.exists(dest_file):
+            os.unlink(dest_file)
+
+
+@pytest.mark.asyncio
+async def test_mmap_copier_empty_file():
+    """Test memory-mapped copier with empty source file"""
+    with tempfile.NamedTemporaryFile(mode='wb', delete=False) as f:
+        source_file = f.name
+
+    dest_file = source_file + ".copy"
+
+    try:
+        copier = MMapCopier()
+
+        stats = await copier.copy_file(source_file, dest_file)
+
+        assert stats.bytes_processed == 0
+        assert stats.chunks_processed == 0
+        assert os.path.exists(dest_file)
+        assert os.path.getsize(dest_file) == 0
+
     finally:
         os.unlink(source_file)
         if os.path.exists(dest_file):

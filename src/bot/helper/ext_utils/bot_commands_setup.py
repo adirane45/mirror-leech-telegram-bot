@@ -1,21 +1,21 @@
 # Bot Commands Setup - Modified by: justadi
 from pyrogram.types import (
     BotCommand,
-    BotCommandScopeDefault,
-    BotCommandScopeAllPrivateChats,
     BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+    BotCommandScopeDefault,
 )
 
+from ... import LOGGER
 from ...core.telegram_manager import TgClient
 from ..telegram_helper.bot_commands import BotCommands
-from ... import LOGGER
 
 
 async def set_bot_commands():
     """Set bot commands that appear in Telegram's command menu"""
     # Get the command suffix
     i = getattr(BotCommands, 'StartCommand', 'start').replace('start', '')
-    
+
     commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Get help and command list"),
@@ -46,7 +46,7 @@ async def set_bot_commands():
         BotCommand(f"psummary{i}", "Progress summary"),
         BotCommand(f"cstats{i}", "Comparison stats"),
     ]
-    
+
     try:
         from asyncio import sleep
         scopes = [
@@ -70,4 +70,3 @@ async def set_bot_commands():
         LOGGER.info("✅ Bot commands set successfully for default/private/group scopes")
     except Exception as e:
         LOGGER.error(f"Failed to set bot commands: {e}")
-

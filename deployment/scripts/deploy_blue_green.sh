@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-COMPOSE=(docker compose -f "$PROJECT_ROOT/docker-compose.yml" -f "$PROJECT_ROOT/docker-compose.bluegreen.yml")
+COMPOSE=(docker compose -f "$PROJECT_ROOT/compose/docker-compose.yml" -f "$PROJECT_ROOT/compose/docker-compose.bluegreen.yml")
 ACTIVE_FILE="$PROJECT_ROOT/.bluegreen_active"
 
 if [[ -f "$ACTIVE_FILE" ]]; then
@@ -22,7 +22,7 @@ fi
 echo "Deploying new version to $TARGET_COLOR..."
 
 # Stop legacy single app service to free ports
-(docker compose -f "$PROJECT_ROOT/docker-compose.yml" stop app >/dev/null 2>&1) || true
+(docker compose -f "$PROJECT_ROOT/compose/docker-compose.yml" stop app >/dev/null 2>&1) || true
 
 "${COMPOSE[@]}" up -d "app-$TARGET_COLOR"
 

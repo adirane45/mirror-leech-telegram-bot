@@ -207,7 +207,7 @@ README.md (Quick start section)
 ### 20-Minute Getting Started
 ```
 README.md (complete)
-  + 
+  +
 EXAMPLES.md (first 3-4 examples)
 ```
 

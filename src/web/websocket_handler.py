@@ -10,9 +10,10 @@ Provides real-time updates for:
 
 import asyncio
 import json
-from typing import Set, Dict, Any
-from fastapi import WebSocket, WebSocketDisconnect
 from logging import getLogger
+from typing import Any, Dict, Set
+
+from fastapi import WebSocket, WebSocketDisconnect
 
 LOGGER = getLogger(__name__)
 
@@ -25,21 +26,21 @@ broadcast_queue: asyncio.Queue = asyncio.Queue()
 
 class ConnectionManager:
     """Manages WebSocket connections and broadcasting"""
-    
+
     def __init__(self):
         self.active_connections: Set[WebSocket] = set()
-    
+
     async def connect(self, websocket: WebSocket):
         """Accept and store a new WebSocket connection"""
         await websocket.accept()
         self.active_connections.add(websocket)
         LOGGER.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
-    
+
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection"""
         self.active_connections.discard(websocket)
         LOGGER.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
-    
+
     async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket):
         """Send a message to a specific connection"""
         try:
@@ -47,7 +48,7 @@ class ConnectionManager:
         except Exception as e:
             LOGGER.error(f"Error sending personal message: {e}")
             self.disconnect(websocket)
-    
+
     async def broadcast(self, message: Dict[str, Any]):
         """Broadcast a message to all connected clients"""
         disconnected = set()
@@ -57,11 +58,11 @@ class ConnectionManager:
             except Exception as e:
                 LOGGER.error(f"Error broadcasting to connection: {e}")
                 disconnected.add(connection)
-        
+
         # Clean up disconnected clients
         for conn in disconnected:
             self.disconnect(conn)
-    
+
     async def broadcast_download_update(self, download_id: str, data: Dict[str, Any]):
         """Broadcast download progress update"""
         message = {
@@ -70,7 +71,7 @@ class ConnectionManager:
             "data": data
         }
         await self.broadcast(message)
-    
+
     async def broadcast_system_stats(self, stats: Dict[str, Any]):
         """Broadcast system statistics update"""
         message = {
@@ -78,7 +79,7 @@ class ConnectionManager:
             "data": stats
         }
         await self.broadcast(message)
-    
+
     async def broadcast_notification(self, title: str, message: str, level: str = "info"):
         """Broadcast a notification to all clients"""
         notification = {
@@ -98,28 +99,28 @@ manager = ConnectionManager()
 async def handle_websocket_client(websocket: WebSocket):
     """Handle a WebSocket connection lifecycle"""
     await manager.connect(websocket)
-    
+
     try:
         # Send initial connection confirmation
         await manager.send_personal_message({
             "type": "connected",
             "message": "WebSocket connection established"
         }, websocket)
-        
+
         # Keep connection alive and handle incoming messages
         while True:
             try:
                 # Wait for messages from client (e.g., ping/pong, commands)
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
                 message = json.loads(data)
-                
+
                 # Handle different message types
                 if message.get("type") == "ping":
                     await manager.send_personal_message({
                         "type": "pong",
                         "timestamp": asyncio.get_event_loop().time()
                     }, websocket)
-                
+
                 elif message.get("type") == "subscribe":
                     # Client can subscribe to specific channels
                     channel = message.get("channel")
@@ -127,13 +128,13 @@ async def handle_websocket_client(websocket: WebSocket):
                         "type": "subscribed",
                         "channel": channel
                     }, websocket)
-                
+
             except asyncio.TimeoutError:
                 # Send keepalive ping
                 await manager.send_personal_message({
                     "type": "keepalive"
                 }, websocket)
-            
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         LOGGER.info("Client disconnected normally")
@@ -166,7 +167,7 @@ def broadcast_system_update(cpu: float, memory: float, disk: float, **kwargs):
 
 def broadcast_notification(title: str, message: str, level: str = "info"):
     """Broadcast a notification to all connected clients
-    
+
     Args:
         title: Notification title
         message: Notification message

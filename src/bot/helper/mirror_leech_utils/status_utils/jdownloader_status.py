@@ -1,12 +1,8 @@
 from time import time
 
-from .... import LOGGER, jd_listener_lock, jd_downloads
+from .... import LOGGER, jd_downloads, jd_listener_lock
 from ....core.jdownloader_booter import jdownloader
-from ...ext_utils.status_utils import (
-    MirrorStatus,
-    get_readable_file_size,
-    get_readable_time,
-)
+from ...ext_utils.status_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 
 def _get_combined_info(result, old_info):

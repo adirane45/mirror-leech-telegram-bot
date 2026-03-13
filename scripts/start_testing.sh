@@ -56,15 +56,15 @@ try:
     from pyrogram import Client
     from config.main_config import Config
     import os
-    
+
     # Get bot username if available
     if hasattr(Config, 'BOT_TOKEN') and Config.BOT_TOKEN:
         username = Config.BOT_TOKEN.split(':')[0]
         print(f"Bot Token: Configured (ID: {username})")
-    
+
     owner = getattr(Config, 'OWNER_ID', 'Not set')
     print(f"Owner ID: {owner}")
-    
+
 except Exception as e:
     print(f"Error: {e}")
 PYEOF

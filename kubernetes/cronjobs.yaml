@@ -15,21 +15,21 @@ metadata:
 spec:
   # Schedule: Daily at 2 AM UTC
   schedule: "0 2 * * *"
-  
+
   # Keep last 3 job runs for debugging
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
-  
+
   # Prevent multiple concurrent runs
   concurrencyPolicy: Forbid
-  
+
   # Deadline: Complete within 10 minutes or abort
   jobTemplate:
     spec:
       backoffLimit: 3
       activeDeadlineSeconds: 600
       completionMode: NonIndexed
-      
+
       template:
         metadata:
           labels:
@@ -41,25 +41,25 @@ spec:
         spec:
           serviceAccountName: mltb-secret-rotator
           restartPolicy: OnFailure
-          
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             fsGroup: 1000
-          
+
           containers:
           - name: secret-rotator
             image: mirror-leech-telegram-bot:latest
             imagePullPolicy: Always
-            
+
             command:
             - /bin/bash
             - -c
             - |
               set -e
-              
+
               echo "Starting daily Rclone token refresh..."
-              
+
               # 1. Get new token from auth service
               echo "Fetching new Rclone token from auth service..."
               NEW_RCLONE_TOKEN=$(curl -s "https://rclone-auth.service/refresh" \
@@ -67,14 +67,14 @@ spec:
                 --header "Content-Type: application/json" \
                 --connect-timeout 10 \
                 --max-time 30 | jq -r '.token')
-              
+
               if [ -z "$NEW_RCLONE_TOKEN" ]; then
                 echo "ERROR: Failed to fetch new Rclone token"
                 exit 1
               fi
-              
+
               echo "✓ Fetched new Rclone token"
-              
+
               # 2. Rotate secret in Kubernetes
               echo "Rotating secret in Kubernetes..."
               /app/kubernetes/rotate-secret.sh \
@@ -83,9 +83,9 @@ spec:
                 "$NEW_RCLONE_TOKEN" \
                 --strategy rolling \
                 --namespace mltb
-              
+
               echo "✓ Secret rotation completed"
-              
+
               # 3. Send success notification
               curl -X POST https://alerts.service/notify \
                 -H "Content-Type: application/json" \
@@ -95,9 +95,9 @@ spec:
                   "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
                   "cluster": "production"
                 }' || echo "Warning: Failed to send notification"
-              
+
               echo "✓ Daily rotation job completed successfully"
-            
+
             env:
             # Auth credentials for token refresh service
             - name: RCLONE_AUTH_TOKEN
@@ -105,11 +105,11 @@ spec:
                 secretKeyRef:
                   name: mltb-rotation-credentials
                   key: rclone-refresh-token
-            
+
             # Rotation script location
             - name: ROTATION_SCRIPT
               value: "/app/kubernetes/rotate-secret.sh"
-            
+
             resources:
               requests:
                 memory: "256Mi"
@@ -117,7 +117,7 @@ spec:
               limits:
                 memory: "512Mi"
                 cpu: "500m"
-            
+
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -142,16 +142,16 @@ spec:
   # Schedule: 1st, 91st, 181st, 271st day of year at 3 AM UTC
   # Cron: 0 3 1,4,7,10 * * (approximation: 1st of Jan, Apr, Jul, Oct)
   schedule: "0 3 1 1,4,7,10 *"
-  
+
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 10
   concurrencyPolicy: Forbid
-  
+
   jobTemplate:
     spec:
       backoffLimit: 2
       activeDeadlineSeconds: 1800  # 30 minutes for database rotation
-      
+
       template:
         metadata:
           labels:
@@ -164,39 +164,39 @@ spec:
         spec:
           serviceAccountName: mltb-secret-rotator
           restartPolicy: OnFailure
-          
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
             fsGroup: 1000
-          
+
           containers:
           - name: secret-rotator
             image: mirror-leech-telegram-bot:latest
             imagePullPolicy: Always
-            
+
             command:
             - /bin/bash
             - -c
             - |
               set -e
-              
+
               echo "Starting quarterly database password rotation..."
-              
+
               # 1. Generate new secure password
               echo "Generating new secure password..."
               NEW_DB_PASSWORD=$(openssl rand -base64 32)
-              
+
               if [ -z "$NEW_DB_PASSWORD" ]; then
                 echo "ERROR: Failed to generate new password"
                 exit 1
               fi
-              
+
               echo "✓ Generated new password"
-              
+
               # 2. Update database with new password + grace period
               echo "Updating database to accept new password (grace period: 60s)..."
-              
+
               # Connect to database and add new password
               python3 << 'EOF'
 import os
@@ -208,7 +208,7 @@ from datetime import datetime, timedelta
 db_url = os.environ.get("DATABASE_URL")
 client = pymongo.MongoClient(db_url)
 db = client.admin
-              
+
 # Create new user with new password (or update existing)
 new_password = os.environ.get("NEW_DB_PASSWORD")
 username = os.environ.get("DATABASE_USERNAME")
@@ -216,7 +216,7 @@ username = os.environ.get("DATABASE_USERNAME")
 try:
     db.command('updateUser', username, pwd=new_password, mechanisms=['SCRAM-SHA-256'])
     print(f"✓ Database password updated for user '{username}'")
-    
+
     # Grace period: Database accepts both old and new for 60 seconds
     print("⏳ 60-second grace period: Both old & new passwords work")
     time.sleep(60)
@@ -227,7 +227,7 @@ except Exception as e:
 finally:
     client.close()
 EOF
-              
+
               # 3. Rotate secret in Kubernetes (rolling strategy for safety)
               echo "Rotating secret in Kubernetes with blue-green strategy..."
               /app/kubernetes/rotate-secret.sh \
@@ -236,12 +236,12 @@ EOF
                 "$NEW_DB_PASSWORD" \
                 --strategy blue-green \
                 --namespace mltb
-              
+
               echo "✓ Secret rotation completed"
-              
+
               # 4. Verify connectivity with new password
               echo "Verifying database connectivity with new password..."
-              
+
               python3 << 'EOF'
 import os
 import pymongo
@@ -264,18 +264,18 @@ for attempt in range(5):
             print(f"ERROR: Could not verify database connectivity: {e}")
             raise
 EOF
-              
+
               # 5. Disable old password (database-specific)
               echo "Disabling old password on database..."
               # This is optional - removes old password from database
               # Comment out if you want to keep it for rollback
-              
+
               # 6. Update backup credentials if needed
               echo "Updating backup system with new credentials..."
               # kubectl create secret generic mltb-db-backup-credentials \
               #   --from-literal=PASSWORD="$NEW_DB_PASSWORD" \
               #   --dry-run=client -o yaml | kubectl apply -f -
-              
+
               # 7. Send notification
               curl -X POST https://alerts.service/notify \
                 -H "Content-Type: application/json" \
@@ -285,9 +285,9 @@ EOF
                   "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
                   "severity": "info"
                 }' || echo "Warning: Failed to send notification"
-              
+
               echo "✓ Quarterly rotation job completed successfully"
-            
+
             env:
             - name: DATABASE_URL
               valueFrom:
@@ -301,7 +301,7 @@ EOF
                   key: DATABASE_USERNAME
             - name: NEW_DB_PASSWORD
               value: "$(openssl rand -base64 32)"
-            
+
             resources:
               requests:
                 memory: "512Mi"
@@ -309,7 +309,7 @@ EOF
               limits:
                 memory: "1Gi"
                 cpu: "1000m"
-            
+
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false  # Needs /tmp for scripts
@@ -333,16 +333,16 @@ metadata:
 spec:
   # Schedule: Every Monday at 1 AM UTC
   schedule: "0 1 * * 1"
-  
+
   successfulJobsHistoryLimit: 4
   failedJobsHistoryLimit: 8
   concurrencyPolicy: Forbid
-  
+
   jobTemplate:
     spec:
       backoffLimit: 1
       activeDeadlineSeconds: 300
-      
+
       template:
         metadata:
           labels:
@@ -352,22 +352,22 @@ spec:
         spec:
           serviceAccountName: mltb-secret-rotator
           restartPolicy: OnFailure
-          
+
           containers:
           - name: health-checker
             image: mirror-leech-telegram-bot:latest
             imagePullPolicy: Always
-            
+
             command:
             - /bin/bash
             - -c
             - |
               set -e
-              
+
               echo "Running secret rotation infrastructure health check..."
-              
+
               HEALTH_STATUS="healthy"
-              
+
               # Check 1: Validate rotation script exists
               if [ ! -f /app/kubernetes/rotate-secret.sh ]; then
                 echo "❌ FAILED: Rotation script not found"
@@ -375,7 +375,7 @@ spec:
               else
                 echo "✓ Rotation script present"
               fi
-              
+
               # Check 2: Verify all required secrets exist
               REQUIRED_SECRETS=("mltb-telegram-secrets" "mltb-database-secrets" "mltb-redis-secrets")
               for secret in "${REQUIRED_SECRETS[@]}"; do
@@ -386,20 +386,20 @@ spec:
                   HEALTH_STATUS="unhealthy"
                 fi
               done
-              
+
               # Check 3: Verify deployment is running
               READY_REPLICAS=$(kubectl get deployment mltb-app -n mltb \
                 -o jsonpath='{.status.readyReplicas}')
               DESIRED_REPLICAS=$(kubectl get deployment mltb-app -n mltb \
                 -o jsonpath='{.spec.replicas}')
-              
+
               if [ "$READY_REPLICAS" -eq "$DESIRED_REPLICAS" ]; then
                 echo "✓ All replicas ready ($READY_REPLICAS/$DESIRED_REPLICAS)"
               else
                 echo "⚠️  WARNING: Not all replicas ready ($READY_REPLICAS/$DESIRED_REPLICAS)"
                 HEALTH_STATUS="degraded"
               fi
-              
+
               # Check 4: Verify RBAC permissions
               if kubectl auth can-i patch secrets -n mltb &>/dev/null; then
                 echo "✓ RBAC permissions verified"
@@ -407,25 +407,25 @@ spec:
                 echo "❌ FAILED: Insufficient RBAC permissions"
                 HEALTH_STATUS="unhealthy"
               fi
-              
+
               # Check 5: Verify logs for recent errors
               RECENT_ERRORS=$(kubectl logs -n mltb -l app=mltb-app \
                 --since=24h --all-containers=true | \
                 grep -c "ERROR.*secret" || true)
-              
+
               if [ "$RECENT_ERRORS" -gt 5 ]; then
                 echo "⚠️  WARNING: Multiple secret-related errors in logs"
                 HEALTH_STATUS="degraded"
               else
                 echo "✓ No excessive secret errors in logs"
               fi
-              
+
               # Summary
               echo ""
               echo "========================="
               echo "Health Check Status: $HEALTH_STATUS"
               echo "========================="
-              
+
               # Send metrics
               if [ "$HEALTH_STATUS" = "healthy" ]; then
                 curl -X POST https://metrics.service/custom \
@@ -436,7 +436,7 @@ spec:
                   -d "secret_rotation_health=0" || true
                 exit 1
               fi
-            
+
             resources:
               requests:
                 memory: "128Mi"
@@ -520,10 +520,10 @@ type: Opaque
 stringData:
   # Rclone auth service token (for token refresh)
   rclone-refresh-token: "replace-with-actual-token"
-  
+
   # Alert service webhook token
   alert-webhook-token: "replace-with-actual-token"
-  
+
   # Database admin credentials (for password rotation)
   database-admin-password: "replace-with-actual-password"
 

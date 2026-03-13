@@ -53,7 +53,7 @@ Send these commands to your bot:
 /start                # Initialize
 /help                 # See all commands
 /mirror https://speed.hetzner.de/10MB.bin    # Test mirror
-/leech https://speed.hetzner.de/10MB.bin     # Test leech  
+/leech https://speed.hetzner.de/10MB.bin     # Test leech
 /ytdl https://youtu.be/dQw4w9WgXcQ           # Test YouTube
 /status               # Check download status
 ```

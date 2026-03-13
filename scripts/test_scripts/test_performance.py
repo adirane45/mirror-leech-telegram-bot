@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Phase 4 Performance Optimization - Test Script
+Performance Optimization Test Script
 Tests all performance modules
 
 Usage:
-    python3 scripts/test_scripts/test_phase4_performance.py
+    python3 scripts/test_scripts/test_performance.py
 """
 
 import sys
@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 print("=" * 60)
-print("Phase 4: Performance Optimization - Module Tests")
+print("Performance Optimization - Module Tests")
 print("=" * 60)
 print()
 

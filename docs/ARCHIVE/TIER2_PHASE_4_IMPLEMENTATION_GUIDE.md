@@ -1,8 +1,8 @@
 # Phase 4: Performance & Optimization - Implementation Guide
 
-**Status:** Ready for Implementation 🚀  
-**Date:** February 6, 2026  
-**Version:** Enhanced MLTB v3.1.0  
+**Status:** Ready for Implementation 🚀
+**Date:** February 6, 2026
+**Version:** Enhanced MLTB v3.1.0
 **Time to Implement:** 30-60 minutes (basic) or 2-4 hours (full stack)
 
 ### Project Status Update
@@ -205,16 +205,16 @@ from bot.core.enhanced_startup_phase4 import initialize_phase4_services, shutdow
 
 async def main():
     # Phase 1, 2, 3 startup code...
-    
+
     # Initialize Phase 4
     phase4_status = await initialize_phase4_services()
     if not phase4_status['success']:
         logger.error(f"Phase 4 initialization failed: {phase4_status['errors']}")
     else:
         logger.info(f"Phase 4 initialized: {phase4_status['summary']}")
-    
+
     # Run bot...
-    
+
     # Shutdown Phase 4 on exit
     on_exit_handler = lambda: asyncio.run(shutdown_phase4_services())
 ```
@@ -232,11 +232,11 @@ async def setup_phase4():
     if ENABLE_QUERY_OPTIMIZER:
         optimizer = QueryOptimizer.get_instance()
         await optimizer.enable()
-    
+
     if ENABLE_CACHE_MANAGER:
         cache = CacheManager.get_instance()
         await cache.enable()
-    
+
     if ENABLE_RATE_LIMITER:
         limiter = RateLimiter.get_instance()
         await limiter.enable()
@@ -250,21 +250,21 @@ from bot.core.query_optimizer import QueryOptimizer
 
 async def execute_query(sql_query):
     optimizer = QueryOptimizer.get_instance()
-    
+
     # Analyze query
     optimization = await optimizer.analyze_query(sql_query)
     if optimization.estimated_improvement > 50:
         logger.info(f"Use optimized query: {optimization.optimized_query}")
-    
+
     # Check cache
     cached = await optimizer.get_cached_result(sql_query)
     if cached:
         return cached
-    
+
     # Execute and cache
     result = await db.execute(sql_query)
     await optimizer.cache_query_result(sql_query, result, ttl=300)
-    
+
     return result
 ```
 
@@ -289,18 +289,18 @@ cache = CacheManager.get_instance()
 # Option 1: Manual caching
 async def get_user(user_id):
     key = f"user:{user_id}"
-    
+
     # Check cache
     user = await cache.get(key)
     if user:
         return user
-    
+
     # Load from DB
     user = await db.users.find_one({'_id': user_id})
-    
+
     # Cache for 1 hour
     await cache.set(key, user, ttl=3600, namespace="users")
-    
+
     return user
 
 # Option 2: Decorator
@@ -313,13 +313,13 @@ async def get_user_decorated(user_id):
 ```python
 async def warm_popular_data():
     """Warm cache with frequently accessed data"""
-    
+
     async def load_top_users():
         return await db.users.find(
             {'status': 'active'},
             limit=100
         ).to_list(None)
-    
+
     await cache.warm_cache(
         key="popular:users",
         loader_func=load_top_users,
@@ -344,7 +344,7 @@ async def setup_connection_pools():
         min_size=5,
         max_size=20
     )
-    
+
     await pool_mgr.create_pool(
         name="redis",
         backend="redis",
@@ -383,14 +383,14 @@ SEARCH_LIMIT = RateLimitConfig(
 # Enforce in request handlers
 async def handle_upload_request(user_id, file):
     allowed, status = await limiter.is_allowed(user_id, UPLOAD_LIMIT)
-    
+
     if not allowed:
         return {
             'status': 429,
             'retry_after': status.retry_after,
             'message': f'Rate limited. Retry after {status.retry_after}s'
         }
-    
+
     # Process upload
     return await process_upload(user_id, file)
 ```
@@ -406,7 +406,7 @@ processor = BatchProcessor.get_instance()
 async def handle_download_batch(items):
     """Process multiple downloads together"""
     results = {}
-    
+
     for item in items:
         download_info = item.data
         try:
@@ -414,7 +414,7 @@ async def handle_download_batch(items):
             results[item.item_id] = result
         except Exception as e:
             logger.error(f"Batch item failed: {e}")
-    
+
     return results
 
 # Enable with handler
@@ -470,22 +470,22 @@ from bot.core.enhanced_startup_phase4 import get_phase4_status
 
 async def monitor_phase4():
     """Periodic monitoring of Phase 4 services"""
-    
+
     while True:
         status = await get_phase4_status()
-        
+
         # Log status
         logger.info(f"Phase 4 Status: {status}")
-        
+
         # Check for issues
         query_opt = status.get('query_optimizer', {})
         if query_opt.get('hit_rate', 0) < 50:
             logger.warning("Low cache hit rate in Query Optimizer")
-        
+
         limiter = status.get('rate_limiter', {})
         if limiter.get('block_rate', 0) > 10:
             logger.warning("High rate limit blocking rate")
-        
+
         # Wait before next check
         await asyncio.sleep(60)
 ```
@@ -578,17 +578,17 @@ from locust import HttpUser, task, between
 
 class Phase4User(HttpUser):
     wait_time = between(1, 5)
-    
+
     @task
     def query_with_caching(self):
         # This request should be cached
         self.client.get("/api/data")
-    
+
     @task
     def batch_operation(self):
         # Submit batch items
         self.client.post("/api/batch", json={"items": [...] * 10})
-    
+
     @task
     def rate_limited(self):
         # Test rate limiting
@@ -607,18 +607,18 @@ import time
 async def load_test():
     async with aiohttp.ClientSession() as session:
         start = time.time()
-        
+
         # Make 1000 requests
         tasks = []
         for i in range(1000):
             task = session.get('http://localhost:8000/api/data')
             tasks.append(task)
-        
+
         responses = await asyncio.gather(*tasks)
-        
+
         duration = time.time() - start
         successful = sum(1 for r in responses if r.status == 200)
-        
+
         print(f"Completed {successful}/1000 in {duration:.1f}s")
         print(f"Throughput: {successful/duration:.0f} req/s")
 
@@ -697,7 +697,7 @@ If issues occur:
 
 **Solutions:**
 1. Increase RATE_LIMIT_DEFAULT_RPS
-2. Increase RATE_LIMIT_BURST_SIZE  
+2. Increase RATE_LIMIT_BURST_SIZE
 3. Create tier-specific limits (higher for important APIs)
 4. Review backoff strategy (may be too aggressive)
 5. Check for client retrying too quickly

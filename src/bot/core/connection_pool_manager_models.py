@@ -4,9 +4,9 @@ Data structures for connection pooling
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Any
-from datetime import datetime
 
 
 class BackendType(Enum):
@@ -30,7 +30,7 @@ class PoolStatistics:
     failed_acquisitions: int = 0
     avg_wait_time_ms: float = 0.0
     max_wait_time_ms: float = 0.0
-    
+
     @property
     def utilization_percent(self) -> float:
         """Calculate pool utilization percentage"""
@@ -41,7 +41,7 @@ class PoolStatistics:
 
 class Connection:
     """Wrapper around a database connection"""
-    
+
     def __init__(self, connection_id: str, backend: BackendType, raw_connection: Any):
         self.connection_id = connection_id
         self.backend = backend

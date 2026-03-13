@@ -66,11 +66,11 @@ receivers:
         parse_mode: 'HTML'
         message: |
           <b>🔔 Alert</b>
-          
+
           <b>Status:</b> {{ .Status | toUpper }}
           <b>Severity:</b> {{ .GroupLabels.severity }}
           <b>Alert:</b> {{ .GroupLabels.alertname }}
-          
+
           {{ range .Alerts }}
           <b>Summary:</b> {{ .Annotations.summary }}
           <b>Description:</b> {{ .Annotations.description }}
@@ -84,18 +84,18 @@ receivers:
         parse_mode: 'HTML'
         message: |
           <b>🚨 CRITICAL ALERT</b>
-          
+
           <b>Alert:</b> {{ .GroupLabels.alertname }}
           <b>Component:</b> {{ .GroupLabels.component }}
-          
+
           {{ range .Alerts }}
           <b>⚠️ {{ .Annotations.summary }}</b>
           {{ .Annotations.description }}
-          
+
           <b>Started:</b> {{ .StartsAt.Format "15:04:05" }}
           {{ if .EndsAt }}<b>Ended:</b> {{ .EndsAt.Format "15:04:05" }}{{ end }}
           {{ end }}
-          
+
           <b>Action required immediately!</b>
 
   - name: 'telegram-warnings'
@@ -105,10 +105,10 @@ receivers:
         parse_mode: 'HTML'
         message: |
           <b>⚠️ Warning</b>
-          
+
           <b>Alert:</b> {{ .GroupLabels.alertname }}
           <b>Component:</b> {{ .GroupLabels.component }}
-          
+
           {{ range .Alerts }}
           {{ .Annotations.summary }}
           {{ .Annotations.description }}
@@ -121,9 +121,9 @@ receivers:
         parse_mode: 'HTML'
         message: |
           <b>ℹ️ Info</b>
-          
+
           <b>Alert:</b> {{ .GroupLabels.alertname }}
-          
+
           {{ range .Alerts }}
           {{ .Annotations.summary }}
           {{ end }}

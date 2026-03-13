@@ -4,9 +4,9 @@ Data structures for query analysis, statistics, and optimization results
 """
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List, Optional
-from datetime import datetime, UTC
+from typing import List, Optional
 
 
 class QueryType(Enum):

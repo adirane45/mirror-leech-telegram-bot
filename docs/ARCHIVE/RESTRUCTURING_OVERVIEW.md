@@ -28,7 +28,7 @@ mirror-leech-telegram-bot/
 mirror-leech-telegram-bot/
 ├── src/                     # ✨ NEW: All application code centralized
 │   ├── bot/                 # Telegram bot logic
-│   ├── web/                 # FastAPI web server  
+│   ├── web/                 # FastAPI web server
 │   └── api/                 # API layer (ready for expansion)
 │
 ├── deployment/              # ✨ IMPROVED: Deployment files organized

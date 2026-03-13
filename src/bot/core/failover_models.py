@@ -13,7 +13,7 @@ import asyncio
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -58,7 +58,7 @@ class RecoveryAction:
     timeout_seconds: int = 30
     depends_on: List[str] = field(default_factory=list)  # Other action IDs
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -85,7 +85,7 @@ class RecoveryOperation:
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     rollback_data: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -109,7 +109,7 @@ class CascadeEvent:
     root_cause: str = ''
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     is_active: bool = True
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -133,7 +133,7 @@ class RecoveryMetrics:
     total_cascades_handled: int = 0
     last_cascade_time: Optional[datetime] = None
     uptime_percentage: float = 100.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -149,30 +149,27 @@ class RecoveryMetrics:
 
 class RecoveryHandler(ABC):
     """Abstract recovery handler for different strategies"""
-    
+
     @abstractmethod
     async def execute(self, action: RecoveryAction) -> bool:
         """Execute recovery action"""
-        pass
-    
+
     @abstractmethod
     async def rollback(self, operation: RecoveryOperation) -> bool:
         """Rollback recovery action"""
-        pass
-    
+
     @abstractmethod
     async def supports(self, strategy: RecoveryStrategy) -> bool:
         """Check if handler supports strategy"""
-        pass
 
 
 class DefaultRecoveryHandler(RecoveryHandler):
     """Default recovery handler with basic restart/reconnect"""
-    
-    def __init__(self):
-        self.restart_handlers: Dict[str, Callable] = {}
-        self.reconnect_handlers: Dict[str, Callable] = {}
-    
+
+    def __init__(self) -> None:
+        self.restart_handlers: Dict[str, Callable[[], Any]] = {}
+        self.reconnect_handlers: Dict[str, Callable[[], Any]] = {}
+
     async def execute(self, action: RecoveryAction) -> bool:
         """Execute recovery action"""
         try:
@@ -185,7 +182,7 @@ class DefaultRecoveryHandler(RecoveryHandler):
             return False
         except Exception:
             return False
-    
+
     async def rollback(self, operation: RecoveryOperation) -> bool:
         """Rollback recovery action"""
         try:
@@ -193,7 +190,7 @@ class DefaultRecoveryHandler(RecoveryHandler):
             return True
         except Exception:
             return False
-    
+
     async def supports(self, strategy: RecoveryStrategy) -> bool:
         """Check if handler supports strategy"""
         return strategy in [
@@ -201,7 +198,7 @@ class DefaultRecoveryHandler(RecoveryHandler):
             RecoveryStrategy.RECONNECT,
             RecoveryStrategy.ISOLATE
         ]
-    
+
     async def _handle_restart(self, action: RecoveryAction) -> bool:
         """Handle component restart"""
         try:
@@ -210,7 +207,7 @@ class DefaultRecoveryHandler(RecoveryHandler):
             return True
         except Exception:
             return False
-    
+
     async def _handle_reconnect(self, action: RecoveryAction) -> bool:
         """Handle component reconnection"""
         try:
@@ -219,7 +216,7 @@ class DefaultRecoveryHandler(RecoveryHandler):
             return True
         except Exception:
             return False
-    
+
     async def _handle_isolate(self, action: RecoveryAction) -> bool:
         """Handle component isolation"""
         try:
@@ -231,23 +228,19 @@ class DefaultRecoveryHandler(RecoveryHandler):
 
 class FailoverEventListener(ABC):
     """Abstract listener for failover events"""
-    
+
     @abstractmethod
     async def on_failure_detected(self, component_id: str, error: str) -> None:
         """Called when failure detected"""
-        pass
-    
+
     @abstractmethod
     async def on_recovery_started(self, operation_id: str) -> None:
         """Called when recovery starts"""
-        pass
-    
+
     @abstractmethod
     async def on_recovery_completed(self, operation_id: str, success: bool) -> None:
         """Called when recovery completes"""
-        pass
-    
+
     @abstractmethod
     async def on_cascade_detected(self, cascade: CascadeEvent) -> None:
         """Called when cascade detected"""
-        pass

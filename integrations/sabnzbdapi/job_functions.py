@@ -1,7 +1,25 @@
+from typing import Any, cast
+
 from .bound_methods import SubFunctions
 
 
 class JobFunctions(SubFunctions):
+
+    async def call(
+        self,
+        params: dict[str, Any] | None = None,
+        requests_args: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], await super().call(params, requests_args, **kwargs))
+
+    @staticmethod
+    def _to_csv(value: str | int | list[str] | None) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return ",".join(value)
+        return str(value)
 
     async def add_uri(
         self,
@@ -10,10 +28,10 @@ class JobFunctions(SubFunctions):
         nzbname: str = "",
         password: str = "",
         cat: str = "*",
-        script: list = None,
+        script: list[str] | None = None,
         priority: int = 0,
         pp: int = 1,
-    ):
+    ) -> dict[str, Any]:
 
         'return {"status": True, "nzo_ids": ["SABnzbd_nzo_kyt1f0"]}'
 
@@ -43,10 +61,10 @@ class JobFunctions(SubFunctions):
         limit: int | None = None,
         search: str | None = None,
         category: str | list[str] | None = None,
-        priority: int | list[str] | None = None,
+        priority: str | int | list[str] | None = None,
         status: str | list[str] | None = None,
         nzo_ids: str | list[str] | None = None,
-    ):
+    ) -> dict[str, Any]:
         """return {
             "queue": {
                 "status": "Downloading",
@@ -131,14 +149,10 @@ class JobFunctions(SubFunctions):
             }
         }"""
 
-        if nzo_ids:
-            nzo_ids = nzo_ids if isinstance(nzo_ids, str) else ",".join(nzo_ids)
-        if status:
-            status = status if isinstance(status, str) else ",".join(status)
-        if category:
-            category = category if isinstance(category, str) else ",".join(category)
-        if priority:
-            priority = priority if isinstance(priority, str) else ",".join(priority)
+        nzo_ids = self._to_csv(nzo_ids)
+        status = self._to_csv(status)
+        category = self._to_csv(category)
+        priority = self._to_csv(priority)
 
         return await self.call(
             {
@@ -153,15 +167,17 @@ class JobFunctions(SubFunctions):
             },
         )
 
-    async def pause_job(self, nzo_id: str):
+    async def pause_job(self, nzo_id: str) -> dict[str, Any]:
         """return {"status": True, "nzo_ids": ["all effected ids"]}"""
         return await self.call({"mode": "queue", "name": "pause", "value": nzo_id})
 
-    async def resume_job(self, nzo_id: str):
+    async def resume_job(self, nzo_id: str) -> dict[str, Any]:
         """return {"status": True, "nzo_ids": ["all effected ids"]}"""
         return await self.call({"mode": "queue", "name": "resume", "value": nzo_id})
 
-    async def delete_job(self, nzo_id: str | list[str], delete_files: bool = False):
+    async def delete_job(
+        self, nzo_id: str | list[str], delete_files: bool = False
+    ) -> dict[str, Any]:
         """return {"status": True, "nzo_ids": ["all effected ids"]}"""
         return await self.call(
             {
@@ -172,21 +188,21 @@ class JobFunctions(SubFunctions):
             }
         )
 
-    async def pause_all(self):
+    async def pause_all(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "pause"})
 
-    async def resume_all(self):
+    async def resume_all(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "resume"})
 
-    async def purge_all(self, delete_files: bool = False):
+    async def purge_all(self, delete_files: bool = False) -> dict[str, Any]:
         """return {"status": True, "nzo_ids": ["all effected ids"]}"""
         return await self.call(
             {"mode": "queue", "name": "purge", "del_files": 1 if delete_files else 0}
         )
 
-    async def get_files(self, nzo_id: str):
+    async def get_files(self, nzo_id: str) -> dict[str, Any]:
         """
         return {
             "files": [
@@ -205,7 +221,7 @@ class JobFunctions(SubFunctions):
         """
         return await self.call({"mode": "get_files", "value": nzo_id})
 
-    async def remove_file(self, nzo_id: str, file_ids: str | list[str]):
+    async def remove_file(self, nzo_id: str, file_ids: str | list[str]) -> dict[str, Any]:
         return await self.call(
             {
                 "mode": "queue",
@@ -226,7 +242,7 @@ class JobFunctions(SubFunctions):
         nzo_ids: str | list[str] | None = None,
         failed_only: bool = False,
         last_history_update: int | None = None,
-    ):
+    ) -> dict[str, Any]:
         """{
             "history": {
                 "noofslots": 220,
@@ -367,12 +383,9 @@ class JobFunctions(SubFunctions):
             }
         }"""
 
-        if nzo_ids:
-            nzo_ids = nzo_ids if isinstance(nzo_ids, str) else ",".join(nzo_ids)
-        if status:
-            status = status if isinstance(status, str) else ",".join(status)
-        if category:
-            category = category if isinstance(category, str) else ",".join(category)
+        nzo_ids = self._to_csv(nzo_ids)
+        status = self._to_csv(status)
+        category = self._to_csv(category)
 
         return await self.call(
             {
@@ -389,17 +402,17 @@ class JobFunctions(SubFunctions):
             },
         )
 
-    async def retry_item(self, nzo_id: str, password: str = ""):
+    async def retry_item(self, nzo_id: str, password: str = "") -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "retry", "value": nzo_id, "password": password})
 
-    async def retry_all(self):
+    async def retry_all(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "retry_all"})
 
     async def delete_history(
         self, nzo_ids: str | list[str], archive: int = 0, delete_files: bool = False
-    ):
+    ) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call(
             {
@@ -411,31 +424,33 @@ class JobFunctions(SubFunctions):
             }
         )
 
-    async def change_job_pp(self, nzo_id: str, pp: int):
+    async def change_job_pp(self, nzo_id: str, pp: int) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "change_opts", "value": nzo_id, "value2": pp})
 
-    async def set_speedlimit(self, limit: str | int):
+    async def set_speedlimit(self, limit: str | int) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "config", "name": "speedlimit", "value": limit})
 
-    async def delete_config(self, section: str, keyword: str):
+    async def delete_config(self, section: str, keyword: str) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call(
             {"mode": "del_config", "section": section, "keyword": keyword}
         )
 
-    async def set_config_default(self, keyword: str | list[str]):
+    async def set_config_default(self, keyword: str | list[str]) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "set_config_default", "keyword": keyword})
 
-    async def get_config(self, section: str = None, keyword: str = None):
+    async def get_config(
+        self, section: str | None = None, keyword: str | None = None
+    ) -> dict[str, Any]:
         """return config as dic"""
         return await self.call(
             {"mode": "get_config", "section": section, "keyword": keyword}
         )
 
-    async def set_config(self, section: str, keyword: str, value: str):
+    async def set_config(self, section: str, keyword: str, value: str) -> dict[str, Any]:
         """Returns the new setting when saved successfully"""
         return await self.call(
             {
@@ -446,7 +461,9 @@ class JobFunctions(SubFunctions):
             }
         )
 
-    async def set_special_config(self, section: str, items: dict):
+    async def set_special_config(
+        self, section: str, items: dict[str, Any]
+    ) -> dict[str, Any]:
         """Returns the new setting when saved successfully"""
         return await self.call(
             {
@@ -456,7 +473,7 @@ class JobFunctions(SubFunctions):
             }
         )
 
-    async def server_stats(self):
+    async def server_stats(self) -> dict[str, Any]:
         """return {
             "day": 2352634799,
             "week": 32934490677,
@@ -491,18 +508,18 @@ class JobFunctions(SubFunctions):
         }"""
         return await self.call({"mode": "server_stats"})
 
-    async def version(self):
+    async def version(self) -> dict[str, Any]:
         """return {'version': '4.2.2'}"""
         return await self.call({"mode": "version"})
 
-    async def restart(self):
+    async def restart(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "restart"})
 
-    async def restart_repair(self):
+    async def restart_repair(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "restart_repair"})
 
-    async def shutdown(self):
+    async def shutdown(self) -> dict[str, Any]:
         """return {"status": True}"""
         return await self.call({"mode": "shutdown"})

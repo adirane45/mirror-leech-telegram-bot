@@ -1,10 +1,34 @@
+from typing import Any
+
+
 class SubFunctions:
 
-    async def check_login(self):
+    async def call(
+        self,
+        params: dict[str, Any] | None = None,
+        requests_args: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        raise NotImplementedError
+
+    async def get_config(
+        self, section: str | None = None, keyword: str | None = None
+    ) -> dict[str, Any]:
+        raise NotImplementedError
+
+    async def set_special_config(
+        self, section: str, items: dict[str, Any]
+    ) -> dict[str, Any]:
+        raise NotImplementedError
+
+    async def delete_config(self, section: str, keyword: str) -> dict[str, Any]:
+        raise NotImplementedError
+
+    async def check_login(self) -> dict[str, Any] | bool:
         res = await self.get_config("servers")
         return res["config"] or False
 
-    async def add_server(self, server: dict):
+    async def add_server(self, server: dict[str, Any]) -> dict[str, Any]:
         """server = {
             "name": "main",
             "displayname": "main",
@@ -26,8 +50,8 @@ class SubFunctions:
         }"""
         return await self.set_special_config("servers", server)
 
-    async def create_category(self, name: str, dir: str):
+    async def create_category(self, name: str, dir: str) -> dict[str, Any]:
         return await self.set_special_config("categories", {"name": name, "dir": dir})
 
-    async def delete_category(self, name: str):
+    async def delete_category(self, name: str) -> dict[str, Any]:
         return await self.delete_config("categories", name)

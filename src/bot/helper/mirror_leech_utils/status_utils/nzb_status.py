@@ -1,12 +1,7 @@
 from asyncio import gather
 
-from .... import LOGGER, sabnzbd_client, nzb_jobs, nzb_listener_lock
-from ...ext_utils.status_utils import (
-    MirrorStatus,
-    get_readable_file_size,
-    get_readable_time,
-    time_to_seconds,
-)
+from .... import LOGGER, nzb_jobs, nzb_listener_lock, sabnzbd_client
+from ...ext_utils.status_utils import MirrorStatus, get_readable_file_size, get_readable_time, time_to_seconds
 
 
 async def get_download(nzo_id, old_info=None):

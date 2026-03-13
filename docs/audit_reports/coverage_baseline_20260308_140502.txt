@@ -1,0 +1,49 @@
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting tests/unit/test_api_gateway.py ________________
+ImportError while importing test module '/home/kali/mirror-leech-telegram-bot/tests/unit/test_api_gateway.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_api_gateway.py:9: in <module>
+    from bot.core.api_gateway import (
+E   ImportError: cannot import name 'CircuitState' from 'bot.core.api_gateway' (/home/kali/mirror-leech-telegram-bot/src/bot/core/api_gateway.py)
+_____________ ERROR collecting tests/unit/test_failover_manager.py _____________
+ImportError while importing test module '/home/kali/mirror-leech-telegram-bot/tests/unit/test_failover_manager.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_failover_manager.py:20: in <module>
+    from bot.core.failover_manager import (
+E   ImportError: cannot import name 'CascadeLevel' from 'bot.core.failover_manager' (/home/kali/mirror-leech-telegram-bot/src/bot/core/failover_manager.py)
+___________ ERROR collecting tests/unit/test_replication_manager.py ____________
+ImportError while importing test module '/home/kali/mirror-leech-telegram-bot/tests/unit/test_replication_manager.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_replication_manager.py:20: in <module>
+    from bot.core.replication_manager import (
+E   ImportError: cannot import name 'ReplicationLag' from 'bot.core.replication_manager' (/home/kali/mirror-leech-telegram-bot/src/bot/core/replication_manager.py)
+_____________ ERROR collecting tests/unit/test_task_coordinator.py _____________
+ImportError while importing test module '/home/kali/mirror-leech-telegram-bot/tests/unit/test_task_coordinator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_task_coordinator.py:9: in <module>
+    from bot.core.task_coordinator import (
+E   ImportError: cannot import name 'DefaultTaskExecutor' from 'bot.core.task_coordinator' (/home/kali/mirror-leech-telegram-bot/src/bot/core/task_coordinator.py)
+=========================== short test summary info ============================
+ERROR tests/unit/test_api_gateway.py
+ERROR tests/unit/test_failover_manager.py
+ERROR tests/unit/test_replication_manager.py
+ERROR tests/unit/test_task_coordinator.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+4 errors in 15.85s

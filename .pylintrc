@@ -1,0 +1,62 @@
+# Pylint configuration
+# Reference: https://pylint.pycqa.org/en/latest/technical_reference/features.html
+
+[MASTER]
+extension-pkg-whitelist=pydantic
+disable=
+    # Disabling rules that conflict with our style guide
+    duplicate-code,        # Often false positives
+    too-many-arguments,    # Async functions often need many args
+    too-many-locals,       # Complex functions need local vars
+    too-few-public-methods, # Dataclasses and models are common
+    too-many-instance-attributes,
+    missing-docstring,     # Will enforce gradually
+    line-too-long,         # Handled by black
+    invalid-name,          # Often conflicts with API requirements
+    broad-except,          # Sometimes necessary
+    
+allow-reexport=yes
+
+# Load plugin for more checks
+load-plugins=
+    pylint.extensions.docparams,
+    pylint.extensions.typing,
+
+[FORMAT]
+max-line-length=120
+indent-string='    '
+indent-after-paren=4
+
+[DESIGN]
+max-attributes=10
+max-arguments=7
+max-locals=20
+
+[LOGGING]
+logging-format-style=new
+
+[SIMILARITIES]
+# Ignore imports when checking for duplication
+ignore-imports=yes
+min-similarity-lines=5
+
+[MESSAGES CONTROL]
+# Enable only critical checks
+enable=
+    all,
+
+disable=
+    C0330,  # Wrong hanging indentation before block
+    C0326,  # Bad whitespace around operator
+    W0212,  # Protected member access
+    C0103,  # Invalid name
+    R0913,  # Too many arguments
+    R0914,  # Too many local variables
+    C0111,  # Missing docstring  
+    C0112,  # Empty docstring
+    R0801,  # Duplicate code
+
+[REPORTS]
+output-format=colorized
+reports=no
+

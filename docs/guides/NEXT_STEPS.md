@@ -51,7 +51,7 @@ This will:
 
 Current settings:
 - Telegram API: 5 failures before opening
-- Google Drive: 3 failures before opening  
+- Google Drive: 3 failures before opening
 - Aria2 Client: 5 failures before opening
 
 **Adjust if:**
@@ -116,7 +116,7 @@ docker exec 9ea93d6c31a9 redis-cli ping
 
 ### 1. **Restrict Bot Access**
 Update authorized users in config:
-- Set `OWNER_ID` 
+- Set `OWNER_ID`
 - Configure `USER_SESSION_STRING` for authorized users
 - Enable `USERS_ONLY_MODE` if needed
 
@@ -139,7 +139,7 @@ ufw enable
 ```bash
 ./scripts/quick_check.sh
 ```
-✅ All green = Healthy  
+✅ All green = Healthy
 ⚠️ Any yellow/red = Investigate
 
 ### Weekly Review
@@ -257,12 +257,12 @@ docker restart 9ea93d6c31a9
 
 ## ✅ Current Status
 
-**Last Updated:** 2026-02-27 22:30 UTC  
-**Bot Status:** ✅ Operational  
-**Category B:** ✅ Enabled  
-**Health:** ✅ All systems green  
-**Container:** 9ea93d6c31a9  
-**Uptime:** 20+ minutes since last restart  
+**Last Updated:** 2026-02-27 22:30 UTC
+**Bot Status:** ✅ Operational
+**Category B:** ✅ Enabled
+**Health:** ✅ All systems green
+**Container:** 9ea93d6c31a9
+**Uptime:** 20+ minutes since last restart
 
 **Current Metrics:**
 - Circuit Breakers: All CLOSED (0 failures)

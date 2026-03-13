@@ -104,7 +104,7 @@ The Mirror Leech Telegram Bot is **stable, tested, and ready for production depl
 ### Circuit Breaker Status
 ```
 🟢 Telegram API    [CLOSED] (0/5 failures)
-🟢 Google Drive    [CLOSED] (0/3 failures)  
+🟢 Google Drive    [CLOSED] (0/3 failures)
 🟢 Aria2 Download  [CLOSED] (0/5 failures)
 ```
 

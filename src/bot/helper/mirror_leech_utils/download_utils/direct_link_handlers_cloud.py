@@ -6,26 +6,24 @@ Handles direct link generation for cloud storage services:
 - pCloud, AKM Files, Shrdsk
 """
 
-from cloudscraper import create_scraper
-from hashlib import sha256
-from json import loads
-from lxml.etree import HTML
-from os import path as ospath
-from re import findall, match, search
-from requests import Session, post, get
-from requests.adapters import HTTPAdapter
-from urllib.parse import parse_qs, urlparse, quote
-from urllib3.util.retry import Retry
-from uuid import uuid4
-from base64 import b64decode
 import time
+from base64 import b64decode
+from hashlib import sha256
+from os import path as ospath
+from re import findall
+from urllib.parse import quote, urlparse
+from uuid import uuid4
 
-from ....core.config_manager import Config
-from .direct_link_handlers_base import FolderHandler, TokenHandler
+from cloudscraper import create_scraper
+from lxml.etree import HTML
+from requests import Session, get, post
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
-from ...ext_utils.links_utils import is_share_link
 from ...ext_utils.status_utils import speed_string_to_bytes
+from .direct_link_handlers_base import FolderHandler, TokenHandler
 
 user_agent = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
@@ -36,11 +34,11 @@ def _extract_password(url, separator="::"):
     """Extract and remove password from URL if present (guard clause style)"""
     if separator not in url:
         return url, ""
-    
+
     parts = url.split(separator)
     if len(parts) != 2:
         return url, ""
-    
+
     return parts[0], parts[1]
 
 
@@ -105,6 +103,56 @@ def filepress(url):
     return f'https://drive.google.com/uc?id={res["data"]}&export=download'
 
 
+def _sharer_headers(boundary, hostname):
+    return {
+        "Content-Type": f"multipart/form-data; boundary=----WebKitFormBoundary{boundary}",
+        "x-token": hostname,
+        "useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10",
+    }
+
+
+def _extract_sharer_key_or_raise(text):
+    key = findall(r'"key",\s+"(.*?)"', text)
+    if not key:
+        raise DirectDownloadLinkException("ERROR: Key not found!")
+    if not HTML(text).xpath("//button[@id='drc']"):
+        raise DirectDownloadLinkException(
+            "ERROR: This link don't have direct download button"
+        )
+    return key[0]
+
+
+def _build_sharer_post_data(boundary, key):
+    return (
+        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action"\r\n\r\ndirect\r\n'
+        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n{key}\r\n'
+        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action_token"\r\n\r\n\r\n'
+        f"------WebKitFormBoundary{boundary}--\r\n"
+    )
+
+
+def _extract_primary_drive_url_or_raise(res):
+    if "url" not in res:
+        raise DirectDownloadLinkException(
+            "ERROR: Drive Link not found, Try in your browser"
+        )
+    if "drive.google.com" in res["url"] or "drive.usercontent.google.com" in res["url"]:
+        return res["url"]
+    return None
+
+
+def _extract_drive_link_from_html_or_raise(html_text):
+    drive_link = HTML(html_text).xpath("//a[contains(@class,'btn')]/@href")
+    if drive_link and (
+        "drive.google.com" in drive_link[0]
+        or "drive.usercontent.google.com" in drive_link[0]
+    ):
+        return drive_link[0]
+    raise DirectDownloadLinkException(
+        "ERROR: Drive Link not found, Try in your browser"
+    )
+
+
 def sharer_scraper(url):
     cget = create_scraper().request
     try:
@@ -116,50 +164,21 @@ def sharer_scraper(url):
         res = cget("GET", url, headers=header)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    key = findall(r'"key",\s+"(.*?)"', res.text)
-    if not key:
-        raise DirectDownloadLinkException("ERROR: Key not found!")
-    key = key[0]
-    if not HTML(res.text).xpath("//button[@id='drc']"):
-        raise DirectDownloadLinkException(
-            "ERROR: This link don't have direct download button"
-        )
+    key = _extract_sharer_key_or_raise(res.text)
     boundary = uuid4()
-    headers = {
-        "Content-Type": f"multipart/form-data; boundary=----WebKitFormBoundary{boundary}",
-        "x-token": raw.hostname,
-        "useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10",
-    }
-
-    data = (
-        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action"\r\n\r\ndirect\r\n'
-        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n{key}\r\n'
-        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action_token"\r\n\r\n\r\n'
-        f"------WebKitFormBoundary{boundary}--\r\n"
-    )
+    headers = _sharer_headers(boundary, raw.hostname)
+    data = _build_sharer_post_data(boundary, key)
     try:
         res = cget("POST", url, cookies=res.cookies, headers=headers, data=data).json()
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if "url" not in res:
-        raise DirectDownloadLinkException(
-            "ERROR: Drive Link not found, Try in your browser"
-        )
-    if "drive.google.com" in res["url"] or "drive.usercontent.google.com" in res["url"]:
-        return res["url"]
+    if direct_link := _extract_primary_drive_url_or_raise(res):
+        return direct_link
     try:
         res = cget("GET", res["url"])
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if (drive_link := HTML(res.text).xpath("//a[contains(@class,'btn')]/@href")) and (
-        "drive.google.com" in drive_link[0]
-        or "drive.usercontent.google.com" in drive_link[0]
-    ):
-        return drive_link[0]
-    else:
-        raise DirectDownloadLinkException(
-            "ERROR: Drive Link not found, Try in your browser"
-        )
+    return _extract_drive_link_from_html_or_raise(res.text)
 
 
 def wetransfer(url):
@@ -238,32 +257,35 @@ class LinkBoxHandler(FolderHandler):
         except Exception as e:
             raise DirectDownloadLinkException("ERROR: invalid URL") from e
 
-    def _fetch_single_item(self, item_id):
+    def _fetch_linkbox_detail_json(self, item_id):
         try:
-            _json = self.session.get(
+            return self.session.get(
                 "https://www.linkbox.to/api/file/detail",
                 params={"itemId": item_id},
             ).json()
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
-        data = _json["data"]
+    def _extract_item_info_or_raise(self, payload):
+        data = payload.get("data")
         if not data:
-            if "msg" in _json:
-                raise DirectDownloadLinkException(f"ERROR: {_json['msg']}")
+            if "msg" in payload:
+                raise DirectDownloadLinkException(f"ERROR: {payload['msg']}")
             raise DirectDownloadLinkException("ERROR: data not found")
 
-        item_info = data["itemInfo"]
+        item_info = data.get("itemInfo")
         if not item_info:
             raise DirectDownloadLinkException("ERROR: itemInfo not found")
+        return item_info
 
+    def _build_linkbox_filename(self, item_info):
         filename = item_info["name"]
         sub_type = item_info.get("sub_type")
         if sub_type and not filename.strip().endswith(sub_type):
             filename += f".{sub_type}"
-        if not self.details["title"]:
-            self.details["title"] = filename
+        return filename
 
+    def _append_linkbox_item(self, filename, item_info):
         item = {
             "path": "",
             "filename": filename,
@@ -276,7 +298,30 @@ class LinkBoxHandler(FolderHandler):
             self.details["total_size"] += size
         self.details["contents"].append(item)
 
+    def _fetch_single_item(self, item_id):
+        payload = self._fetch_linkbox_detail_json(item_id)
+        item_info = self._extract_item_info_or_raise(payload)
+        filename = self._build_linkbox_filename(item_info)
+        if not self.details["title"]:
+            self.details["title"] = filename
+        self._append_linkbox_item(filename, item_info)
+
     def _traverse_links(self, _id=0, folder_path=""):
+        data = self._fetch_folder_data(_id)
+        
+        if self._is_single_item(data):
+            return
+        
+        if not self.details["title"]:
+            self.details["title"] = data["dirName"]
+        
+        contents = data.get("list")
+        if not contents:
+            return
+        
+        self._process_contents(contents, folder_path)
+
+    def _fetch_folder_data(self, _id):
         params = {
             "shareToken": self.share_token,
             "pageSize": 1000,
@@ -290,55 +335,54 @@ class LinkBoxHandler(FolderHandler):
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
-        data = _json["data"]
+        data = _json.get("data")
         if not data:
             if "msg" in _json:
                 raise DirectDownloadLinkException(f"ERROR: {_json['msg']}")
             raise DirectDownloadLinkException("ERROR: data not found")
+        return data
 
+    def _is_single_item(self, data):
         try:
             if data["shareType"] == "singleItem":
                 self._fetch_single_item(data["itemId"])
-                return
+                return True
         except Exception:
             pass
+        return False
 
-        if not self.details["title"]:
-            self.details["title"] = data["dirName"]
-
-        contents = data["list"]
-        if not contents:
-            return
-
+    def _process_contents(self, contents, folder_path):
         for content in contents:
             if content["type"] == "dir" and "url" not in content:
-                if not folder_path:
-                    new_folder_path = ospath.join(self.details["title"], content["name"])
-                else:
-                    new_folder_path = ospath.join(folder_path, content["name"])
-                if not self.details["title"]:
-                    self.details["title"] = content["name"]
-                self._traverse_links(content["id"], new_folder_path)
-                continue
+                self._handle_directory(content, folder_path)
+            elif "url" in content:
+                self._handle_file(content, folder_path)
 
-            if "url" in content:
-                effective_folder_path = folder_path if folder_path else self.details["title"]
-                filename = content["name"]
-                if (
-                    sub_type := content.get("sub_type")
-                ) and not filename.strip().endswith(sub_type):
-                    filename += f".{sub_type}"
-                item = {
-                    "path": ospath.join(effective_folder_path),
-                    "filename": filename,
-                    "url": content["url"],
-                }
-                if "size" in content:
-                    size = content["size"]
-                    if isinstance(size, str) and size.isdigit():
-                        size = float(size)
-                    self.details["total_size"] += size
-                self.details["contents"].append(item)
+    def _handle_directory(self, content, folder_path):
+        if not folder_path:
+            new_folder_path = ospath.join(self.details["title"], content["name"])
+        else:
+            new_folder_path = ospath.join(folder_path, content["name"])
+        if not self.details["title"]:
+            self.details["title"] = content["name"]
+        self._traverse_links(content["id"], new_folder_path)
+
+    def _handle_file(self, content, folder_path):
+        effective_folder_path = folder_path if folder_path else self.details["title"]
+        filename = content["name"]
+        if (sub_type := content.get("sub_type")) and not filename.strip().endswith(sub_type):
+            filename += f".{sub_type}"
+        item = {
+            "path": ospath.join(effective_folder_path),
+            "filename": filename,
+            "url": content["url"],
+        }
+        if "size" in content:
+            size = content["size"]
+            if isinstance(size, str) and size.isdigit():
+                size = float(size)
+            self.details["total_size"] += size
+        self.details["contents"].append(item)
 
     def handle(self):
         try:
@@ -409,7 +453,8 @@ class GoFileHandler(TokenHandler):
         self._set_cached_token(token)
         return token
 
-    def _collect_contents(self, file_id, token, folder_path=""):
+    def _fetch_gofile_data(self, file_id, token):
+        """Fetch data from GoFile API"""
         _url = f"https://api.gofile.io/contents/{file_id}?cache=true"
         headers = {
             "User-Agent": user_agent,
@@ -422,20 +467,41 @@ class GoFileHandler(TokenHandler):
         if self._password:
             _url += f"&password={self._password}"
         try:
-            _json = self.session.get(_url, headers=headers).json()
+            return self.session.get(_url, headers=headers).json()
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
-        if _json["status"] in "error-passwordRequired":
+    def _validate_gofile_response(self, json_response):
+        """Validate GoFile API response"""
+        if json_response["status"] in "error-passwordRequired":
             raise DirectDownloadLinkException(
                 f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(self.original_url)}"
             )
-        if _json["status"] in "error-passwordWrong":
+        if json_response["status"] in "error-passwordWrong":
             raise DirectDownloadLinkException("ERROR: This password is wrong !")
-        if _json["status"] in "error-notFound":
+        if json_response["status"] in "error-notFound":
             raise DirectDownloadLinkException("ERROR: File not found on gofile's server")
-        if _json["status"] in "error-notPublic":
+        if json_response["status"] in "error-notPublic":
             raise DirectDownloadLinkException("ERROR: This folder is not public")
+
+    def _process_gofile_file(self, content, folder_path):
+        """Process a GoFile file item"""
+        effective_folder_path = folder_path if folder_path else self.details["title"]
+        item = {
+            "path": ospath.join(effective_folder_path),
+            "filename": content["name"],
+            "url": content["link"],
+        }
+        if "size" in content:
+            size = content["size"]
+            if isinstance(size, str) and size.isdigit():
+                size = float(size)
+            self.details["total_size"] += size
+        self.details["contents"].append(item)
+
+    def _collect_contents(self, file_id, token, folder_path=""):
+        _json = self._fetch_gofile_data(file_id, token)
+        self._validate_gofile_response(_json)
 
         data = _json["data"]
         if not self.details["title"]:
@@ -450,20 +516,8 @@ class GoFileHandler(TokenHandler):
                 else:
                     new_folder_path = ospath.join(folder_path, content["name"])
                 self._collect_contents(content["id"], token, new_folder_path)
-                continue
-
-            effective_folder_path = folder_path if folder_path else self.details["title"]
-            item = {
-                "path": ospath.join(effective_folder_path),
-                "filename": content["name"],
-                "url": content["link"],
-            }
-            if "size" in content:
-                size = content["size"]
-                if isinstance(size, str) and size.isdigit():
-                    size = float(size)
-                self.details["total_size"] += size
-            self.details["contents"].append(item)
+            else:
+                self._process_gofile_file(content, folder_path)
 
     def handle(self):
         try:
@@ -591,14 +645,14 @@ class MediaFireFolderHandler(FolderHandler):
         except Exception:
             return None
 
-    def _collect_folder_contents(self, folder_key, folder_path="", content_type="folders"):
+    def _fetch_folder_content_response(self, folder_key, content_type):
+        params = {
+            "content_type": content_type,
+            "folder_key": folder_key,
+            "response_format": "json",
+        }
         try:
-            params = {
-                "content_type": content_type,
-                "folder_key": folder_key,
-                "response_format": "json",
-            }
-            _json = self.session.get(
+            return self.session.get(
                 "https://www.mediafire.com/api/1.5/folder/get_content.php",
                 params=params,
             ).json()
@@ -607,38 +661,50 @@ class MediaFireFolderHandler(FolderHandler):
                 f"ERROR: {e.__class__.__name__} While getting content"
             ) from e
 
-        _res = _json["response"]
-        if "message" in _res:
-            raise DirectDownloadLinkException(f"ERROR: {_res['message']}")
+    def _extract_folder_content_or_raise(self, payload):
+        response = payload["response"]
+        if "message" in response:
+            raise DirectDownloadLinkException(f"ERROR: {response['message']}")
+        return response["folder_content"]
 
-        _folder_content = _res["folder_content"]
+    def _process_mediafire_subfolders(self, folder_content, folder_path):
+        for folder in folder_content["folders"]:
+            new_folder_path = (
+                ospath.join(folder_path, folder["name"])
+                if folder_path
+                else ospath.join(folder["name"])
+            )
+            self._collect_folder_contents(folder["folderkey"], new_folder_path)
+
+    def _append_mediafire_file_item(self, file, folder_path):
+        file_url = self._scrape_download_link(file["links"]["normal_download"])
+        if not file_url:
+            return
+        item = {
+            "filename": file["filename"],
+            "path": ospath.join(folder_path if folder_path else self.details["title"]),
+            "url": file_url,
+        }
+        if "size" in file:
+            size = file["size"]
+            if isinstance(size, str) and size.isdigit():
+                size = float(size)
+            self.details["total_size"] += size
+        self.details["contents"].append(item)
+
+    def _process_mediafire_files(self, folder_content, folder_path):
+        for file in folder_content["files"]:
+            self._append_mediafire_file_item(file, folder_path)
+
+    def _collect_folder_contents(self, folder_key, folder_path="", content_type="folders"):
+        payload = self._fetch_folder_content_response(folder_key, content_type)
+        _folder_content = self._extract_folder_content_or_raise(payload)
         if content_type == "folders":
-            folders = _folder_content["folders"]
-            for folder in folders:
-                if folder_path:
-                    new_folder_path = ospath.join(folder_path, folder["name"])
-                else:
-                    new_folder_path = ospath.join(folder["name"])
-                self._collect_folder_contents(folder["folderkey"], new_folder_path)
+            self._process_mediafire_subfolders(_folder_content, folder_path)
             self._collect_folder_contents(folder_key, folder_path, "files")
             return
 
-        files = _folder_content["files"]
-        for file in files:
-            file_url = self._scrape_download_link(file["links"]["normal_download"])
-            if not file_url:
-                continue
-            item = {
-                "filename": file["filename"],
-                "path": ospath.join(folder_path if folder_path else self.details["title"]),
-                "url": file_url,
-            }
-            if "size" in file:
-                size = file["size"]
-                if isinstance(size, str) and size.isdigit():
-                    size = float(size)
-                self.details["total_size"] += size
-            self.details["contents"].append(item)
+        self._process_mediafire_files(_folder_content, folder_path)
 
     def _format_response(self):
         if len(self.details["contents"]) == 1:

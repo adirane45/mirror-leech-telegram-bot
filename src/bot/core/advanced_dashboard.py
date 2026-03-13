@@ -15,17 +15,16 @@ Features:
 - Interactive web dashboard
 - System statistics and monitoring
 
-Modified by: AI Refactoring 
+Modified by: AI Refactoring
 Date: February 8, 2026
 """
 
 from fastapi import APIRouter, WebSocket
 from fastapi.responses import HTMLResponse
 
-from .advanced_dashboard_websocket import AdvancedDashboardWebSocketHandler
 from .advanced_dashboard_endpoints import AdvancedDashboardEndpoints
 from .advanced_dashboard_html import get_advanced_dashboard_html
-
+from .advanced_dashboard_websocket import AdvancedDashboardWebSocketHandler
 
 # Create router with API v3 prefix
 router = APIRouter(prefix="/api/v3", tags=["phase3"])

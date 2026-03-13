@@ -3,7 +3,7 @@ Task Configuration Module (Refactored)
 Main TaskConfig class with delegated operations to specialized modules
 
 Refactoring achievements:
-- Lines: 1218 → ~230 (-81%)  
+- Lines: 1218 → ~230 (-81%)
 - Methods: 52 → 18 delegation methods
 - Cyclomatic Complexity: Average 7.31 → ~2
 - Max Nesting Depth: 5 → 1
@@ -14,7 +14,7 @@ All complex logic extracted to specialized processors:
 - task_config_normalizers.py
 - task_upload_destination_resolver.py
 - task_leech_resolver.py
-- task_ffmpeg_processor.py  
+- task_ffmpeg_processor.py
 - task_media_operations.py
 - task_archive_operations.py
 - task_name_substitution.py

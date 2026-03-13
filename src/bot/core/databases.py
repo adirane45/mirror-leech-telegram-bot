@@ -10,12 +10,12 @@ Implements:
 """
 
 import asyncio
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 try:
-    import asyncpg
+    import asyncpg  # type: ignore[import-not-found]
     ASYNCPG_AVAILABLE = True
 except ImportError:
     ASYNCPG_AVAILABLE = False
@@ -39,9 +39,9 @@ class DatabaseConfig:
 class AsyncDatabasePool:
     """Async database connection pool"""
     
-    def __init__(self, config: DatabaseConfig):
+    def __init__(self, config: DatabaseConfig) -> None:
         self.config = config
-        self.pool = None
+        self.pool: Any = None
         self.connected = False
     
     async def connect(self) -> bool:
@@ -82,7 +82,7 @@ class AsyncDatabasePool:
             LOGGER.error(f"Failed to disconnect: {e}")
             return False
     
-    async def execute(self, query: str, *args) -> Any:
+    async def execute(self, query: str, *args: Any) -> Any:
         """Execute a query"""
         if not self.pool:
             return None
@@ -94,7 +94,7 @@ class AsyncDatabasePool:
             LOGGER.error(f"Query execution failed: {e}")
             return None
     
-    async def fetch(self, query: str, *args) -> List[Dict]:
+    async def fetch(self, query: str, *args: Any) -> List[Dict[str, Any]]:
         """Fetch query results"""
         if not self.pool:
             return []
@@ -107,7 +107,7 @@ class AsyncDatabasePool:
             LOGGER.error(f"Fetch failed: {e}")
             return []
     
-    async def fetchrow(self, query: str, *args) -> Optional[Dict]:
+    async def fetchrow(self, query: str, *args: Any) -> Optional[Dict[str, Any]]:
         """Fetch single row"""
         if not self.pool:
             return None
@@ -120,7 +120,7 @@ class AsyncDatabasePool:
             LOGGER.error(f"Fetchrow failed: {e}")
             return None
     
-    async def fetchval(self, query: str, *args) -> Any:
+    async def fetchval(self, query: str, *args: Any) -> Any:
         """Fetch single value"""
         if not self.pool:
             return None
@@ -247,7 +247,7 @@ class AsyncDatabase:
         await self.pool.disconnect()
     
     # User operations
-    async def get_user(self, user_id: int) -> Optional[Dict]:
+    async def get_user(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Get user by ID"""
         return await self.pool.fetchrow(
             "SELECT * FROM users WHERE user_id = $1",
@@ -267,7 +267,7 @@ class AsyncDatabase:
             LOGGER.error(f"Failed to create user: {e}")
             return False
     
-    async def update_user(self, user_id: int, **kwargs) -> bool:
+    async def update_user(self, user_id: int, **kwargs: Any) -> bool:
         """Update user attributes"""
         try:
             # Build SET clause
@@ -347,7 +347,7 @@ class AsyncDatabase:
         self,
         user_id: int,
         limit: int = 50
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """Get tasks for user"""
         return await self.pool.fetch(
             "SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2",

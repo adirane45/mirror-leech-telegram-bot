@@ -3,10 +3,10 @@
 # Better task management and organization
 # Modified by: justadi
 
+from .. import task_dict, task_dict_lock
 from ..core.task_categorizer import TaskCategorizer
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.telegram_helper.message_utils import send_message
-from .. import task_dict, task_dict_lock
 
 
 @new_task
@@ -14,37 +14,16 @@ async def manage_categories(_, message):
     """Create/list/delete categories"""
     parts = message.text.split(maxsplit=2)
     if len(parts) < 2:
-        await send_message(
-            message,
-            "<b>📂 Categories</b>\n\n"
-            "Usage:\n"
-            "<code>/category list</code>\n"
-            "<code>/category add &lt;name&gt;</code>\n"
-            "<code>/category del &lt;name&gt;</code>\n"
-            "<code>/category stats</code>",
-        )
+        await send_message(message, _category_usage_text())
         return
 
     action = parts[1].lower()
 
     if action == "list":
-        cats = await TaskCategorizer.get_all_categories()
-        if not cats:
-            await send_message(message, "<b>No categories found.</b>")
-            return
-        text = "<b>📂 Categories</b>\n\n"
-        for name, cat in cats.items():
-            text += f"• <code>{name}</code> ({cat.get('task_count', 0)})\n"
-        await send_message(message, text)
+        await _send_categories_list(message)
         return
-
     if action == "stats":
-        stats = await TaskCategorizer.get_category_stats()
-        text = "<b>📊 Category Stats</b>\n\n"
-        text += f"Total: {stats.get('total_tasks', 0)} tasks\n"
-        for name, data in stats.get("categories", {}).items():
-            text += f"• {name}: {data.get('count', 0)}\n"
-        await send_message(message, text)
+        await _send_categories_stats(message)
         return
 
     if len(parts) < 3:
@@ -53,15 +32,59 @@ async def manage_categories(_, message):
 
     name = parts[2].strip()
     if action == "add":
-        ok = await TaskCategorizer.create_category(name)
-        msg = "<b>✅ Category created.</b>" if ok else "<b>❌ Failed to create.</b>"
-        await send_message(message, msg)
+        await _run_category_mutation(
+            message,
+            TaskCategorizer.create_category,
+            name,
+            "<b>✅ Category created.</b>",
+            "<b>❌ Failed to create.</b>",
+        )
     elif action == "del":
-        ok = await TaskCategorizer.delete_category(name)
-        msg = "<b>✅ Category deleted.</b>" if ok else "<b>❌ Failed to delete.</b>"
-        await send_message(message, msg)
+        await _run_category_mutation(
+            message,
+            TaskCategorizer.delete_category,
+            name,
+            "<b>✅ Category deleted.</b>",
+            "<b>❌ Failed to delete.</b>",
+        )
     else:
         await send_message(message, "<b>❌ Invalid action.</b>")
+
+
+def _category_usage_text():
+    return (
+        "<b>📂 Categories</b>\n\n"
+        "Usage:\n"
+        "<code>/category list</code>\n"
+        "<code>/category add &lt;name&gt;</code>\n"
+        "<code>/category del &lt;name&gt;</code>\n"
+        "<code>/category stats</code>"
+    )
+
+
+async def _send_categories_list(message):
+    cats = await TaskCategorizer.get_all_categories()
+    if not cats:
+        await send_message(message, "<b>No categories found.</b>")
+        return
+    text = "<b>📂 Categories</b>\n\n"
+    for name, cat in cats.items():
+        text += f"• <code>{name}</code> ({cat.get('task_count', 0)})\n"
+    await send_message(message, text)
+
+
+async def _send_categories_stats(message):
+    stats = await TaskCategorizer.get_category_stats()
+    text = "<b>📊 Category Stats</b>\n\n"
+    text += f"Total: {stats.get('total_tasks', 0)} tasks\n"
+    for name, data in stats.get("categories", {}).items():
+        text += f"• {name}: {data.get('count', 0)}\n"
+    await send_message(message, text)
+
+
+async def _run_category_mutation(message, operation, name, success_msg, error_msg):
+    ok = await operation(name)
+    await send_message(message, success_msg if ok else error_msg)
 
 
 @new_task

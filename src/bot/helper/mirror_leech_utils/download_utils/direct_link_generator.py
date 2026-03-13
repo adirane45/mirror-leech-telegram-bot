@@ -3,7 +3,7 @@ Direct Link Generator - Download Link Generator for Various Hosting Services
 
 Phase 2 Refactoring Complete:
 - Extracted utilities to direct_link_utils.py
-- Extracted handler registry to direct_link_handler_registry.py  
+- Extracted handler registry to direct_link_handler_registry.py
 - Extracted base classes to direct_link_handlers_base.py
 - Extracted cloud storage handlers to direct_link_handlers_cloud.py
 - Extracted streaming handlers to direct_link_handlers_streaming.py
@@ -24,23 +24,18 @@ Handler Organization:
 - direct_link_handlers_file.py: MediaFire, 1Fichier, Transfer.it, Send.cm, etc.
 """
 
+from typing import Callable, cast
 from urllib.parse import urlparse
 
-from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
-from ...ext_utils.links_utils import is_share_link
 from .direct_link_handler_registry import HandlerRegistry
 
 # Import ALL handler functions from specialized modules
 # This ensures handlers are available in globals() for dynamic lookup
-from .direct_link_handlers_cloud import *
-from .direct_link_handlers_streaming import *
-from .direct_link_handlers_api import *
-from .direct_link_handlers_file import *
 
 
 class HandlerDispatcher:
-    def __init__(self, registry):
+    def __init__(self, registry: type[HandlerRegistry]) -> None:
         self.registry = registry
 
     def _validate_url(self, link: str) -> str:
@@ -52,16 +47,16 @@ class HandlerDispatcher:
             raise DirectDownloadLinkException("ERROR: Invalid URL")
         return clean_link
 
-    def _resolve_handler(self, link: str):
+    def _resolve_handler(self, link: str) -> Callable[[str], str]:
         handler_name = self.registry.get_handler_name(link)
         handler = globals().get(handler_name)
         if not callable(handler):
             raise DirectDownloadLinkException(
                 f"No Direct link function found for {link}"
             )
-        return handler
+        return cast(Callable[[str], str], handler)
 
-    def _execute_handler(self, handler, link: str):
+    def _execute_handler(self, handler: Callable[[str], str], link: str) -> str:
         try:
             return handler(link)
         except DirectDownloadLinkException:
@@ -71,7 +66,7 @@ class HandlerDispatcher:
                 f"ERROR: {e.__class__.__name__}"
             ) from e
 
-    def execute(self, link: str):
+    def execute(self, link: str) -> str:
         clean_link = self._validate_url(link)
         handler = self._resolve_handler(clean_link)
         return self._execute_handler(handler, clean_link)

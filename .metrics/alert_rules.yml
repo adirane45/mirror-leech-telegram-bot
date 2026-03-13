@@ -25,7 +25,7 @@ groups:
       # Phase 4 Rate Limiting
       - alert: HighBlockRate
         expr: |
-          mltb_rate_limiter_blocked_requests / 
+          mltb_rate_limiter_blocked_requests /
           (mltb_rate_limiter_blocked_requests + mltb_rate_limiter_allowed_requests) > 0.30
         for: 5m
         annotations:
@@ -55,7 +55,7 @@ groups:
       # Memory Usage
       - alert: HighMemoryUsage
         expr: |
-          container_memory_usage_bytes{name="mltb-app"} / 
+          container_memory_usage_bytes{name="mltb-app"} /
           container_spec_memory_limit_bytes{name="mltb-app"} > 0.85
         for: 5m
         annotations:

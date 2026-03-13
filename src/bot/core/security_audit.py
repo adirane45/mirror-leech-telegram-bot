@@ -3,20 +3,20 @@ Security Audit Logging for Phase 3
 Comprehensive audit trail for security-sensitive operations
 """
 
-import logging
 import json
-from typing import Any, Dict, Optional
-from datetime import datetime, UTC
+import logging
+import os
+from datetime import UTC, datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
-import os
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class AuditEventType(Enum):
     """Types of security audit events"""
-    
+
     # Authentication events
     LOGIN_SUCCESS = "LOGIN_SUCCESS"
     LOGIN_FAILURE = "LOGIN_FAILURE"
@@ -24,31 +24,31 @@ class AuditEventType(Enum):
     TOKEN_GENERATED = "TOKEN_GENERATED"
     TOKEN_REVOKED = "TOKEN_REVOKED"
     TOKEN_EXPIRED = "TOKEN_EXPIRED"
-    
+
     # Authorization events
     PERMISSION_GRANTED = "PERMISSION_GRANTED"
     PERMISSION_DENIED = "PERMISSION_DENIED"
     ROLE_ASSIGNED = "ROLE_ASSIGNED"
     ROLE_REMOVED = "ROLE_REMOVED"
-    
+
     # Access events
     API_ACCESS = "API_ACCESS"
     RESOURCE_ACCESS = "RESOURCE_ACCESS"
     ADMIN_ACCESS = "ADMIN_ACCESS"
     SENSITIVE_DATA_ACCESS = "SENSITIVE_DATA_ACCESS"
-    
+
     # Security events
     CSRF_DETECTION = "CSRF_DETECTION"
     XSS_DETECTION = "XSS_DETECTION"
     SQL_INJECTION_DETECTION = "SQL_INJECTION_DETECTION"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
     UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
-    
+
     # Configuration events
     CONFIG_CHANGE = "CONFIG_CHANGE"
     SECRET_ROTATION = "SECRET_ROTATION"
     POLICY_CHANGE = "POLICY_CHANGE"
-    
+
     # System events
     SYSTEM_START = "SYSTEM_START"
     SYSTEM_STOP = "SYSTEM_STOP"
@@ -58,7 +58,7 @@ class AuditEventType(Enum):
 
 class AuditSeverity(Enum):
     """Audit severity levels"""
-    
+
     INFO = "INFO"
     WARNING = "WARNING"
     CRITICAL = "CRITICAL"
@@ -66,7 +66,7 @@ class AuditSeverity(Enum):
 
 class AuditEntry:
     """Single audit log entry"""
-    
+
     def __init__(
         self,
         event_type: AuditEventType,
@@ -81,7 +81,7 @@ class AuditEntry:
     ):
         """
         Initialize audit entry
-        
+
         Args:
             event_type: Type of audit event
             user_id: ID of user performing action
@@ -103,7 +103,7 @@ class AuditEntry:
         self.details = details or {}
         self.ip_address = ip_address
         self.user_agent = user_agent
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         return {
@@ -118,7 +118,7 @@ class AuditEntry:
             "user_agent": self.user_agent,
             "details": self.details,
         }
-    
+
     def to_json(self) -> str:
         """Convert to JSON"""
         return json.dumps(self.to_dict())
@@ -127,7 +127,7 @@ class AuditEntry:
 class AuditLogger:
     """
     Security audit logger
-    
+
     Features:
     - JSON structured logging
     - Rotating file handler for large log volumes
@@ -135,7 +135,7 @@ class AuditLogger:
     - Sensitive data redaction
     - Real-time alerting for critical events
     """
-    
+
     def __init__(
         self,
         log_file: str = "data/logs/security-audit.log",
@@ -145,7 +145,7 @@ class AuditLogger:
     ):
         """
         Initialize audit logger
-        
+
         Args:
             log_file: Path to audit log file
             max_file_size: Maximum file size before rotation
@@ -156,29 +156,29 @@ class AuditLogger:
         self.max_file_size = max_file_size
         self.backup_count = backup_count
         self.min_severity = min_severity
-        
+
         # Create logger
         self.logger = logging.getLogger("security-audit")
         self.logger.setLevel(logging.DEBUG)
-        
+
         # Create log directory if needed
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        
+
         # Create rotating file handler
         handler = RotatingFileHandler(
             log_file,
             maxBytes=max_file_size,
             backupCount=backup_count,
         )
-        
+
         # Use JSON formatter
         formatter = logging.Formatter("%(message)s")
         handler.setFormatter(formatter)
-        
+
         self.logger.addHandler(handler)
-        
+
         logger.info(f"AuditLogger initialized: {log_file}")
-    
+
     def _should_log(self, severity: AuditSeverity) -> bool:
         """Check if event should be logged based on severity"""
         severity_order = {
@@ -186,30 +186,30 @@ class AuditLogger:
             AuditSeverity.WARNING: 1,
             AuditSeverity.CRITICAL: 2,
         }
-        
+
         return severity_order.get(severity, 0) >= severity_order.get(self.min_severity, 0)
-    
+
     def log_event(self, entry: AuditEntry) -> None:
         """
         Log an audit event
-        
+
         Args:
             entry: AuditEntry to log
         """
         if not self._should_log(entry.severity):
             return
-        
+
         # Log to audit logger
         self.logger.info(entry.to_json())
-        
+
         # Alert on critical events
         if entry.severity == AuditSeverity.CRITICAL:
             self._alert_critical(entry)
-    
+
     def _alert_critical(self, entry: AuditEntry) -> None:
         """Alert on critical security events"""
         logger.critical(f"SECURITY ALERT: {entry.event_type.value} - {entry.details}")
-    
+
     def log_login(
         self,
         user_id: str,
@@ -220,7 +220,7 @@ class AuditLogger:
         """Log login event"""
         event_type = AuditEventType.LOGIN_SUCCESS if success else AuditEventType.LOGIN_FAILURE
         severity = AuditSeverity.INFO if success else AuditSeverity.WARNING
-        
+
         entry = AuditEntry(
             event_type=event_type,
             user_id=user_id,
@@ -230,9 +230,9 @@ class AuditLogger:
             ip_address=ip_address,
             details=details or {},
         )
-        
+
         self.log_event(entry)
-    
+
     def log_api_access(
         self,
         user_id: str,
@@ -248,14 +248,14 @@ class AuditLogger:
         """Log API access"""
         success = 200 <= status_code < 300
         severity = AuditSeverity.INFO if success else AuditSeverity.WARNING
-        
+
         if status_code == 401:
             severity = AuditSeverity.WARNING
         elif status_code == 403:
             severity = AuditSeverity.WARNING
         elif status_code >= 500:
             severity = AuditSeverity.CRITICAL
-        
+
         details = {
             "method": method,
             "status_code": status_code,
@@ -276,9 +276,9 @@ class AuditLogger:
             ip_address=ip_address,
             details=details,
         )
-        
+
         self.log_event(entry)
-    
+
     def log_security_event(
         self,
         event_type: AuditEventType,
@@ -291,7 +291,7 @@ class AuditLogger:
     ) -> None:
         """
         Log security-related event
-        
+
         Events logged as CRITICAL include:
         - CSRF detection
         - XSS injection detection
@@ -306,14 +306,14 @@ class AuditLogger:
             AuditEventType.UNAUTHORIZED_ACCESS,
             AuditEventType.RATE_LIMIT_EXCEEDED,
         }
-        
+
         if severity is None:
             severity = AuditSeverity.CRITICAL if event_type in critical_events else AuditSeverity.WARNING
 
         merged_details = details or {}
         if request_id:
             merged_details = {**merged_details, "request_id": request_id}
-        
+
         entry = AuditEntry(
             event_type=event_type,
             user_id=user_id,
@@ -322,9 +322,9 @@ class AuditLogger:
             ip_address=ip_address,
             details=merged_details,
         )
-        
+
         self.log_event(entry)
-    
+
     def log_config_change(
         self,
         user_id: str,
@@ -353,9 +353,9 @@ class AuditLogger:
             ip_address=ip_address,
             details=details,
         )
-        
+
         self.log_event(entry)
-    
+
     def log_permission_change(
         self,
         user_id: str,
@@ -368,7 +368,7 @@ class AuditLogger:
     ) -> None:
         """Log permission change"""
         event_type = AuditEventType.PERMISSION_GRANTED if granted else AuditEventType.PERMISSION_DENIED
-        
+
         details = {
             "target_user": target_user,
             "permission": permission,
@@ -385,19 +385,19 @@ class AuditLogger:
             ip_address=ip_address,
             details=details,
         )
-        
+
         self.log_event(entry)
-    
+
     @staticmethod
     def _redact_sensitive(key: str, value: Any) -> Any:
         """Redact sensitive values"""
         sensitive_keywords = ["password", "token", "secret", "key", "credential", "api"]
-        
+
         if any(keyword in key.lower() for keyword in sensitive_keywords):
             if isinstance(value, str) and len(value) > 0:
                 return f"{value[0]}{'*' * (len(value) - 2)}{value[-1]}"
             return "***REDACTED***"
-        
+
         return value
 
 

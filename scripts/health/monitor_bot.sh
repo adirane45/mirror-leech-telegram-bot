@@ -10,12 +10,12 @@ monitor_health() {
     echo "🤖 BOT HEALTH MONITORING - $(date '+%Y-%m-%d %H:%M:%S')"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo
-    
+
     # Container Status
     echo "📦 CONTAINER STATUS"
     docker ps --filter id=$CONTAINER_ID --format "   Status: {{.Status}}" 2>/dev/null || echo "   ❌ Container not running"
     echo
-    
+
     # Web Health
     echo "🌐 WEB SERVICE"
     HEALTH=$(curl -s http://localhost:8060/health 2>/dev/null)
@@ -28,7 +28,7 @@ monitor_health() {
         echo "   ❌ Web API: Unreachable"
     fi
     echo
-    
+
     # Category B Status
     echo "⚡ CATEGORY B FEATURES"
     CB_STATUS=$(docker exec $CONTAINER_ID python3 -c "
@@ -45,7 +45,7 @@ except Exception as e:
     print('❌ Not initialized')
     print(f'ERROR:{e}')
 " 2>/dev/null)
-    
+
     if echo "$CB_STATUS" | grep -q "✅"; then
         echo "   Status: $(echo "$CB_STATUS" | head -1)"
         CB_STATE=$(echo "$CB_STATUS" | grep "CB_STATE:" | cut -d: -f2)
@@ -57,7 +57,7 @@ except Exception as e:
         echo "   Status: ❌ Disabled or error"
     fi
     echo
-    
+
     # Recent Errors
     echo "⚠️  RECENT ERRORS (Last 5)"
     ERROR_COUNT=$(docker exec $CONTAINER_ID grep -c "ERROR\|CRITICAL" /app/data/logs/log.txt 2>/dev/null || echo 0)
@@ -69,14 +69,14 @@ except Exception as e:
         echo "   ✅ No errors"
     fi
     echo
-    
+
     # Process Info
     echo "🔧 PROCESSES"
     docker exec $CONTAINER_ID ps aux 2>/dev/null | grep -E "(PID|python)" | grep -v grep | head -4 | while read line; do
         echo "   $line"
     done
     echo
-    
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 

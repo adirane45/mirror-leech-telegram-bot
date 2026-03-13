@@ -25,7 +25,7 @@ This prevented non-owner users from executing download commands.
 
 ### 1. **Permanent Fix** (Applied to source code)
    - **File**: `src/bot/__main__.py` (Lines 166-195)
-   - **What it does**: 
+   - **What it does**:
      - Checks if auth structures are empty after startup
      - Manually repopulates them from config if needed
      - Logs all actions for debugging
@@ -51,7 +51,7 @@ Send these to your Telegram bot:
 
 ```
 ✅ /start               → Initialize session
-✅ /help                → See all commands  
+✅ /help                → See all commands
 ✅ /mirror URL          → Download file to cloud
 ✅ /leech URL           → Upload to Telegram
 ✅ /ytdl URL            → Download from YouTube

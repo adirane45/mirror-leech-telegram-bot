@@ -4,13 +4,13 @@ Phase 10: Batch Operations
 Parses and schedules batch link processing.
 """
 
+import logging
+import re
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
-import logging
-import re
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class BatchSummary:
 class BatchOperationsManager:
     """Manage batch link submissions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._batches: Dict[str, List[BatchEntry]] = {}
 
     def parse_link_list(self, text: str, max_links: int = 1000) -> Tuple[List[str], List[str]]:

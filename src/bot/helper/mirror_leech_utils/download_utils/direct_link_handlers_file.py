@@ -9,34 +9,31 @@ Handles direct link generation for file hosting and generic services:
 - Special handlers: MP4Upload, Send.cm, CF Bypass
 """
 
-from cloudscraper import create_scraper
-from hashlib import sha256
-from lxml.etree import HTML
+from base64 import b64decode, b64encode
 from os import path as ospath
 from re import findall, match, search
-from requests import Session, get, post
-from requests.adapters import HTTPAdapter
 from time import sleep
 from urllib.parse import parse_qs, urlparse
-from urllib3.util.retry import Retry
-from base64 import b64decode, b64encode
 
-from ....core.config_manager import Config
-from .direct_link_handlers_base import TokenHandler
+from cloudscraper import create_scraper
+from lxml.etree import HTML
+from requests import Session, get, post
+
 from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.status_utils import speed_string_to_bytes
+from .direct_link_handlers_base import TokenHandler
 
 
 def _extract_password(url, separator="::"):
     """Extract and remove password from URL if present (guard clause style)"""
     if separator not in url:
         return url, ""
-    
+
     parts = url.split(separator)
     if len(parts) != 2:
         return url, ""
-    
+
     return parts[0], parts[1]
 
 
@@ -264,24 +261,24 @@ def _mediafire_handle_password(html, session, url, password):
     """Handle password-protected files with guard clause"""
     if not html.xpath("//div[@class='passwordPrompt']"):
         return html
-    
+
     # Guard: password required but not provided
     if not password:
         session.close()
         raise DirectDownloadLinkException(f"ERROR: {PASSWORD_ERROR_MESSAGE}".format(url))
-    
+
     # Try password
     try:
         html = HTML(session.post(url, data={"downloadp": password}).text)
     except Exception as e:
         session.close()
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    
+
     # Guard: wrong password
     if html.xpath("//div[@class='passwordPrompt']"):
         session.close()
         raise DirectDownloadLinkException("ERROR: Wrong password.")
-    
+
     return html
 
 
@@ -290,10 +287,10 @@ def mediafire(url, session=None):
     if "/folder/" in url:
         from .direct_link_handlers_cloud import mediafireFolder
         return mediafireFolder(url)
-    
+
     # Extract password if present
     url, _password = _extract_password(url)
-    
+
     # Guard: already have direct link
     if final_link := findall(r"https?:\/\/download\d+\.mediafire\.com\/\S+\/\S+\/\S+", url):
         return final_link[0]
@@ -303,23 +300,23 @@ def mediafire(url, session=None):
         session = create_scraper()
         parsed_url = urlparse(url)
         url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
-    
+
     # Fetch page with error handling
     try:
         html = HTML(session.get(url).text)
     except Exception as e:
         session.close()
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    
+
     # Check for errors early (guard clauses)
     _mediafire_validate_errors(html, session, url)
     html = _mediafire_handle_password(html, session, url, _password)
-    
+
     # Extract download link
     if not (final_link := html.xpath('//a[@aria-label="Download file"]/@href')):
         session.close()
         raise DirectDownloadLinkException("ERROR: No links found in this page Try Again")
-    
+
     # Handle protocol-relative URLs
     if final_link[0].startswith("//"):
         final_url = f"https://{final_link[0][2:]}"
@@ -327,7 +324,7 @@ def mediafire(url, session=None):
             final_url += f"::{_password}"
         session.close()
         return mediafire(final_url, session)
-    
+
     session.close()
     return final_link[0]
 
@@ -336,10 +333,10 @@ def _fichier_check_wait_limit(error_text):
     """Check and raise wait limit error with proper message"""
     if "you must wait" not in error_text.lower():
         return False
-    
+
     if numbers := [int(word) for word in error_text.split() if word.isdigit()]:
         raise DirectDownloadLinkException(f"ERROR: 1fichier is on a limit. Please wait {numbers[0]} minute.")
-    
+
     raise DirectDownloadLinkException("ERROR: 1fichier is on a limit. Please wait a few minutes/hour.")
 
 
@@ -347,33 +344,33 @@ def _fichier_handle_warnings(ct_warn, link):
     """Handle ct_warn error states with guard clauses"""
     if not ct_warn:
         raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
-    
+
     # 3 warnings case
     if len(ct_warn) == 3:
         error_text = ct_warn[-1].text
-        
+
         # Guard: wait limit
         _fichier_check_wait_limit(error_text)
-        
+
         # Guard: protect access (password)
         if "protect access" in error_text.lower():
             raise DirectDownloadLinkException(f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(link)}")
-        
+
         # Guard: other errors
         raise DirectDownloadLinkException("ERROR: Failed to generate Direct Link from 1fichier!")
-    
+
     # 4 warnings case
     if len(ct_warn) == 4:
         error_text1 = ct_warn[-2].text
         error_text2 = ct_warn[-1].text
-        
+
         # Guard: wait limit
         _fichier_check_wait_limit(error_text1)
-        
+
         # Guard: bad password
         if "bad password" in error_text2.lower():
             raise DirectDownloadLinkException("ERROR: The password you entered is wrong!")
-    
+
     # Default error
     raise DirectDownloadLinkException("ERROR: Error trying to generate Direct Link from 1fichier!")
 
@@ -386,10 +383,10 @@ def fichier(link):
     regex = r"^([http:\/\/|https:\/\/]+)?.*1fichier\.com\/\?.+"
     if not match(regex, link):
         raise DirectDownloadLinkException("ERROR: The link you entered is wrong!")
-    
+
     # Extract password if present
     url, pswd = _extract_password(link)
-    
+
     # Make request
     cget = create_scraper().request
     try:
@@ -399,18 +396,18 @@ def fichier(link):
             req = cget("post", url)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    
+
     # Guard: 404 error
     if req.status_code == 404:
         raise DirectDownloadLinkException("ERROR: File not found/The link you entered is wrong!")
-    
+
     # Parse HTML
     html = HTML(req.text)
-    
+
     # Guard: check for direct link first (happy path)
     if dl_url := html.xpath('//a[@class="ok btn-general btn-orange"]/@href'):
         return dl_url[0]
-    
+
     # Check for error warnings and handle them
     ct_warn = html.xpath('//div[@class="ct_warn"]')
     _fichier_handle_warnings(ct_warn, link)
@@ -666,12 +663,35 @@ def cf_bypass(url):
     raise DirectDownloadLinkException("ERROR: Con't bypass cloudflare")
 
 
-def send_cm_file(url, file_id=None):
+def _parse_send_cm_password(url):
     if "::" in url:
-        _password = url.split("::")[-1]
-        url = url.split("::")[-2]
-    else:
-        _password = ""
+        return url.split("::")[-2], url.split("::")[-1]
+    return url, ""
+
+
+def _extract_send_cm_file_id(html):
+    password_needed = bool(html.xpath("//input[@name='password']"))
+    file_id = html.xpath("//input[@name='id']/@value")
+    if not file_id:
+        raise DirectDownloadLinkException("ERROR: file_id not found")
+    return file_id, password_needed
+
+
+def _build_send_cm_post_data(file_id, password, password_needed):
+    data = {"op": "download2", "id": file_id}
+    if password and password_needed:
+        data["password"] = password
+    return data
+
+
+def _extract_send_cm_location_or_none(response):
+    if "Location" in response.headers:
+        return (response.headers["Location"], ["Referer: https://send.cm/"])
+    return None
+
+
+def send_cm_file(url, file_id=None):
+    url, _password = _parse_send_cm_password(url)
     _passwordNeed = False
     with create_scraper() as session:
         if file_id is None:
@@ -681,17 +701,12 @@ def send_cm_file(url, file_id=None):
                 raise DirectDownloadLinkException(
                     f"ERROR: {e.__class__.__name__}"
                 ) from e
-            if html.xpath("//input[@name='password']"):
-                _passwordNeed = True
-            if not (file_id := html.xpath("//input[@name='id']/@value")):
-                raise DirectDownloadLinkException("ERROR: file_id not found")
+            file_id, _passwordNeed = _extract_send_cm_file_id(html)
         try:
-            data = {"op": "download2", "id": file_id}
-            if _password and _passwordNeed:
-                data["password"] = _password
+            data = _build_send_cm_post_data(file_id, _password, _passwordNeed)
             _res = session.post("https://send.cm/", data=data, allow_redirects=False)
-            if "Location" in _res.headers:
-                return (_res.headers["Location"], ["Referer: https://send.cm/"])
+            if direct_link := _extract_send_cm_location_or_none(_res):
+                return direct_link
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
         if _passwordNeed:

@@ -7,16 +7,15 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
-import graphene
-from typing import Optional, List, Dict, Any
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from bot.core.logger_manager import logger_manager
-from bot.core.alert_manager import alert_manager, AlertType, AlertSeverity
+import graphene
+
+from bot.core.alert_manager import AlertSeverity, AlertType, alert_manager
 from bot.core.backup_manager import backup_manager
+from bot.core.logger_manager import logger_manager
 from bot.core.profiler import profiler
 from bot.core.recovery_manager import recovery_manager
-
 
 # ============ GraphQL Type Definitions ============
 
@@ -103,7 +102,7 @@ class Query(graphene.ObjectType):
 
     # Logger queries
     logger_stats = graphene.Field(LoggerStatsType)
-    
+
     def resolve_logger_stats(self, info):
         """Get logger statistics"""
         stats = logger_manager.get_log_stats()

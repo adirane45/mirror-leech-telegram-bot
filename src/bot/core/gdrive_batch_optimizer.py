@@ -7,7 +7,7 @@ Mock batch optimizer for Google Drive operations.
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class BatchOpResult:
 class GDriveBatchOptimizer:
     """Batch helper for Drive metadata and copy operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.stats = {
             "batch_requests": 0,
             "items_processed": 0,

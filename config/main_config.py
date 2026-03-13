@@ -1,6 +1,7 @@
 # ==================== PRODUCTION ENVIRONMENT SETTINGS ====================
 # Load environment variables
 import os
+
 from dotenv import load_dotenv
 
 # Load .env.production if it exists (for production deployments)
@@ -11,7 +12,7 @@ if os.path.exists(_env_path):
 
 # ==================== REQUIRED CONFIG ====================
 # CRITICAL: Update these with your real credentials before starting the bot
-def _get_safe_int(key, default):
+def _get_safe_int(key: str, default: int) -> int:
     """Safely get integer from environment, return default if invalid"""
     value = os.getenv(key)
     if not value or value.startswith("YOUR_") or value.startswith("GENERATE_"):
@@ -24,13 +25,13 @@ def _get_safe_int(key, default):
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7535236556:AAG-R4Ezs1_Px140VaxETF-y1oVPNNFJBog")
 if BOT_TOKEN.startswith("YOUR_"):
     BOT_TOKEN = "7535236556:AAG-R4Ezs1_Px140VaxETF-y1oVPNNFJBog"
-    
+
 OWNER_ID = _get_safe_int("OWNER_ID", 1041454699)
 TELEGRAM_API = _get_safe_int("TELEGRAM_API", 28965815)
 TELEGRAM_HASH = os.getenv("TELEGRAM_HASH", "9baee82bd0eeeaa34ed185ce32128cc4")
 
 # ==================== OPTIONAL CONFIG ====================
-TG_PROXY = {}
+TG_PROXY: dict[str, str] = {}
 USER_SESSION_STRING = os.getenv("USER_SESSION_STRING", "")
 CMD_SUFFIX = ""
 AUTHORIZED_CHATS = os.getenv("AUTHORIZED_CHATS", "1041454699")
@@ -50,8 +51,8 @@ YT_DLP_OPTIONS = ""
 ENABLE_LINK_BYPASS = os.getenv("ENABLE_LINK_BYPASS", "true").lower() in ("1", "true", "yes")
 USE_SERVICE_ACCOUNTS = False
 NAME_SUBSTITUTE = ""
-FFMPEG_CMDS = {}
-UPLOAD_PATHS = {}
+FFMPEG_CMDS: dict[str, str] = {}
+UPLOAD_PATHS: dict[str, str] = {}
 # GDrive Tools
 GDRIVE_ID = "1mivJQEpn8uMMSAwRFsJPwAd5A4Udy7KR"
 IS_TEAM_DRIVE = False
@@ -285,7 +286,7 @@ EMAIL_SMTP_PORT = 587
 EMAIL_USERNAME = ""
 EMAIL_PASSWORD = ""
 EMAIL_FROM_ADDRESS = ""
-EMAIL_TO_ADDRESSES = []  # List of email addresses
+EMAIL_TO_ADDRESSES: list[str] = []  # List of email addresses
 
 # ==================== BACKUP CONFIGURATION ====================
 # Automatic database backups
@@ -330,7 +331,7 @@ API_SECRET_KEY = ""  # Generate with: python -c "import secrets; print(secrets.t
 JWT_EXPIRATION = 3600  # 1 hour
 
 # IP whitelisting for API
-API_WHITELIST_IPS = []  # Empty = allow all
+API_WHITELIST_IPS: list[str] = []  # Empty = allow all
 
 # ==================== LOGGING ENHANCEMENTS ====================
 # Structured JSON logging
@@ -398,7 +399,7 @@ LOG_DIR = "logs"
 ENABLE_ALERT_SYSTEM = True
 ALERT_RETENTION_HOURS = 24
 
-# Backup Manager  
+# Backup Manager
 ENABLE_BACKUP_SYSTEM = True
 BACKUP_DIR = "backups"
 BACKUP_FREQUENCY = "daily"
@@ -481,7 +482,7 @@ PROMETHEUS_HOST = os.getenv("PROMETHEUS_HOST", "prometheus")
 PROMETHEUS_PORT = _get_safe_int("PROMETHEUS_PORT", 9091)
 PROMETHEUS_METRICS_PATH = "/metrics"
 
-# Grafana configuration  
+# Grafana configuration
 GRAFANA_HOST = os.getenv("GRAFANA_HOST", "localhost")
 GRAFANA_PORT = _get_safe_int("GRAFANA_PORT", 3000)
 GRAFANA_URL = f"http://{GRAFANA_HOST}:{GRAFANA_PORT}"
@@ -569,31 +570,30 @@ SHUTDOWN_TIMEOUT = _get_safe_int("SHUTDOWN_TIMEOUT", 30)
 # Provides backwards compatibility for code importing Config class
 class Config:
     """Configuration wrapper - provides access to all module-level config variables"""
-    
+
     @classmethod
-    def load(cls):
+    def load(cls) -> None:
         """No-op for backward compatibility - config is loaded on module import"""
-        pass
-    
+
     @classmethod
-    def _get_all_vars(cls):
+    def _get_all_vars(cls) -> dict[str, object]:
         """Get all configuration variables"""
         return {k: v for k, v in globals().items() if not k.startswith('_') and k.isupper()}
-    
-    def __getattr__(self, name):
+
+    def __getattr__(self, name: str) -> object:
         """Get configuration variable by attribute access"""
         if name.isupper() and name in globals():
             return globals()[name]
         raise AttributeError(f"Config has no attribute '{name}'")
-    
+
     @classmethod
-    def get(cls, key, default=None):
+    def get(cls, key: str, default: object = None) -> object:
         """Get configuration value with fallback"""
         return globals().get(key, default)
 
 
 # Export all module variables as Config class attributes for compatibility
-_config_vars = {k: v for k, v in globals().items() 
+_config_vars = {k: v for k, v in globals().items()
                 if not k.startswith('_') and k.isupper() and k != 'Config'}
 for _var_name, _var_value in _config_vars.items():
     setattr(Config, _var_name, _var_value)

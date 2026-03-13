@@ -78,7 +78,7 @@ Skip this if you don't need auto-deployment.
 
 3. Add secrets to GitHub repository:
    - Go to **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-   
+
    Create these secrets:
    | Secret Name | Value | Example |
    |------------|-------|---------|
@@ -114,16 +114,16 @@ Skip this if you don't need auto-deployment.
        - `typecheck` (Code Quality Checks)
        - `security` (Code Quality Checks)
        - `test` (Tests - all 3 Python versions)
-     
+
    - [ ] **Require branches to be up to date before merging**
-   
+
    - [ ] **Require code reviews**
      - ✅ Require 1 approvals
-   
+
    - [ ] **Require conversation resolution before merging**
-   
+
    - [ ] **Restrict who can push to matching branches** (optional for admins)
-   
+
    - [ ] **Allow force pushes** → ❌ Do not allow
 
 4. Click **Create**
@@ -392,14 +392,14 @@ gh run list --limit 1 | grep check
 
 After completing this checklist, you should see:
 
-✅ Workflows appearing in **Actions** tab  
-✅ All status checks passing on PRs  
-✅ Docker images pushed to GHCR  
-✅ Coverage reports on Codecov  
-✅ Security scans showing no critical issues  
-✅ Releases created automatically on tags  
-✅ Health checks running every 6 hours  
-✅ Team running `make` commands locally  
+✅ Workflows appearing in **Actions** tab
+✅ All status checks passing on PRs
+✅ Docker images pushed to GHCR
+✅ Coverage reports on Codecov
+✅ Security scans showing no critical issues
+✅ Releases created automatically on tags
+✅ Health checks running every 6 hours
+✅ Team running `make` commands locally
 
 ---
 
@@ -433,4 +433,3 @@ After setup completes:
    - Track deployment status in GitHub Actions
    - Review code coverage trends on Codecov
    - Create GitHub Milestones for sprint planning
-

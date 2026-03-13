@@ -4,8 +4,8 @@ Data structures for cache entries and statistics
 """
 
 from dataclasses import dataclass, field
-from typing import Any
 from datetime import datetime, timedelta
+from typing import Any
 
 
 @dataclass
@@ -17,7 +17,7 @@ class CacheEntry:
     created_at: datetime = field(default_factory=datetime.now)
     last_accessed: datetime = field(default_factory=datetime.now)
     access_count: int = 0
-    
+
     def is_expired(self) -> bool:
         """Check if entry is expired"""
         expiry = self.created_at + timedelta(seconds=self.ttl)
@@ -36,7 +36,7 @@ class CacheStatistics:
     l2_misses: int = 0
     total_hits: int = 0
     total_misses: int = 0
-    
+
     @property
     def hit_rate(self) -> float:
         """Calculate overall hit rate"""

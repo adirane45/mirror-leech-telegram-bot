@@ -1,16 +1,12 @@
-from aioaria2 import Aria2WebsocketClient
-from aioqbt.client import create_client
-from asyncio import gather, TimeoutError
-from aiohttp import ClientError, ClientSession
-from pathlib import Path
+from asyncio import TimeoutError, gather
 from inspect import iscoroutinefunction
 from os import environ
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
+from pathlib import Path
+
+from aioaria2 import Aria2WebsocketClient
+from aiohttp import ClientError
+from aioqbt.client import create_client
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from .. import LOGGER, aria2_options
 
@@ -47,23 +43,23 @@ class TorrentManager:
         qb_port = environ.get("QB_PORT", "8090")
         qb_username = environ.get("QB_USERNAME") or environ.get("WEBUI_USERNAME", "admin")
         qb_password = environ.get("QB_PASSWORD") or environ.get("WEBUI_PASSWORD", "mltbmltb")
-        
+
         # Proxy configuration for 403 errors - disabled for now
         enable_tor = environ.get("ENABLE_TOR", "false").lower() == "true"
         use_proxy = environ.get("USE_PROXY", "false").lower() == "true"
-        
+
         if enable_tor:
             LOGGER.info("⏳ Tor proxy is disabled - coming in next update")
         if use_proxy:
             LOGGER.info("⏳ Custom proxy is disabled - coming in next update")
-        
+
         # Try different authentication methods for qBittorrent
         qb_url = f"http://{qb_host}:{qb_port}/api/v2/"
         qb_client = None
-        
+
         # Create custom session with proxy if needed
         connector_kwargs = {}
-        
+
         # Try with password first
         try:
             qb_client = await create_client(
@@ -90,7 +86,7 @@ class TorrentManager:
                 except Exception as e3:
                     LOGGER.error(f"All qBittorrent authentication methods failed: {e3}")
                     raise
-        
+
         # Connect to aria2 with secret if provided
         if aria2_secret:
             cls.aria2 = await Aria2WebsocketClient.new(
@@ -99,11 +95,11 @@ class TorrentManager:
             )
         else:
             cls.aria2 = await Aria2WebsocketClient.new(f"http://{aria2_host}:{aria2_port}/jsonrpc")
-        
+
         # Log status
         LOGGER.info("✅ Torrent manager ready (proxy feature coming soon)")
 
-        
+
         cls.qbittorrent = qb_client
         cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
 
@@ -121,7 +117,6 @@ class TorrentManager:
                 await cls.aria2.removeDownloadResult(download.get("gid", ""))
             except Exception as e:
                 LOGGER.debug(f"Could not remove download result {download.get('gid')}: {e}")
-                pass
 
     @classmethod
     async def remove_all(cls):
@@ -143,7 +138,6 @@ class TorrentManager:
             await gather(*tasks)
         except Exception as e:
             LOGGER.warning(f"Error removing some downloads: {e}")
-            pass
 
     @classmethod
     async def overall_speed(cls):

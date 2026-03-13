@@ -18,7 +18,7 @@ Date: February 8, 2026
 def get_advanced_dashboard_html() -> str:
     """
     Generate advanced dashboard HTML
-    
+
     Returns:
         HTML string with dashboard interface
     """

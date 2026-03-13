@@ -1,0 +1,16 @@
+# Copilot context folder - git tracking recommendations
+
+# Track templates (reusable)
+!templates/
+
+# Track plans (historical reference)
+!plans/
+
+# Don't track sessions (personal notes)
+sessions/*.md
+!sessions/session-log.md
+!sessions/README.md
+
+# Don't track generated outputs
+*.tmp
+*.bak

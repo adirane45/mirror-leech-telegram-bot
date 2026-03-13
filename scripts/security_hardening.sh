@@ -161,7 +161,7 @@ audit:
   enabled: true
   log_file: "logs/audit.log"
   log_level: "INFO"
-  
+
   events_to_monitor:
     - user_authentication
     - api_access
@@ -169,12 +169,12 @@ audit:
     - database_operations
     - configuration_changes
     - error_events
-  
+
   retention_policy:
     days: 90
     compress: true
     archive: true
-  
+
   redact_fields:
     - password
     - token

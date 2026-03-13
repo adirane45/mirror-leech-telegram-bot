@@ -1,0 +1,4 @@
+Running type safety checks...
+mypy src/ config/ --pretty --show-error-codes
+make: mypy: No such file or directory
+make: *** [Makefile:70: type-check] Error 127

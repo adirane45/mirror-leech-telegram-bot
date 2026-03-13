@@ -14,4 +14,3 @@ except (ImportError, ModuleNotFoundError):
 LOGGER = getLogger(__name__)
 
 __all__ = ["LOGGER", "Config"]
-

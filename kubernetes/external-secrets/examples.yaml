@@ -1,5 +1,5 @@
 # External Secrets Operator Configuration Examples
-# 
+#
 # External Secrets Operator enables syncing secrets from external backends
 # (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, etc.)
 # into Kubernetes as native Secrets.
@@ -52,7 +52,7 @@ spec:
       server: "https://vault.service:8200"
       path: "secret"
       version: "v2"
-      
+
       # Authentication: AppRole
       auth:
         appRole:
@@ -64,7 +64,7 @@ spec:
           secretRef:
             name: vault-creds
             key: secret-id
-      
+
       # Certificate validation (for production)
       caBundle: |
         -----BEGIN CERTIFICATE-----
@@ -84,12 +84,12 @@ metadata:
 spec:
   # How often to sync with Vault
   refreshInterval: 1h
-  
+
   # Connect to SecretStore
   secretStoreRef:
     name: mltb-vault-store
     kind: SecretStore
-  
+
   # Target Kubernetes Secret to create/update
   target:
     name: mltb-telegram-secrets
@@ -99,24 +99,24 @@ spec:
       metadata:
         labels:
           app: mltb-app
-  
+
   # Map Vault paths to Kubernetes secret keys
   data:
   - secretKey: BOT_TOKEN
     remoteRef:
       key: mltb
       property: bot_token
-  
+
   - secretKey: TELEGRAM_API
     remoteRef:
       key: mltb
       property: telegram_api_id
-  
+
   - secretKey: TELEGRAM_HASH
     remoteRef:
       key: mltb
       property: telegram_api_hash
-  
+
   - secretKey: OWNER_ID
     remoteRef:
       key: mltb
@@ -136,22 +136,22 @@ spec:
   secretStoreRef:
     name: mltb-vault-store
     kind: SecretStore
-  
+
   target:
     name: mltb-database-secrets
     creationPolicy: Owner
-  
+
   data:
   - secretKey: DATABASE_URL
     remoteRef:
       key: mltb/database
       property: connection_string
-  
+
   - secretKey: DATABASE_USERNAME
     remoteRef:
       key: mltb/database
       property: username
-  
+
   - secretKey: DATABASE_PASSWORD
     remoteRef:
       key: mltb/database
@@ -178,13 +178,13 @@ spec:
     aws:
       service: SecretsManager
       region: us-east-1
-      
+
       # Use IAM role from pod
       auth:
         jwt:
           serviceAccountRef:
             name: mltb-app
-      
+
       # Optional: Use specific IAM role
       # role: "arn:aws:iam::ACCOUNT:role/mltb-secrets-access"
 
@@ -202,22 +202,22 @@ spec:
   secretStoreRef:
     name: mltb-aws-store
     kind: ClusterSecretStore
-  
+
   target:
     name: mltb-telegram-secrets
     creationPolicy: Owner
-  
+
   data:
   - secretKey: BOT_TOKEN
     remoteRef:
       key: mltb/telegram
       property: bot_token
-  
+
   - secretKey: TELEGRAM_API
     remoteRef:
       key: mltb/telegram
       property: api_id
-  
+
   - secretKey: TELEGRAM_HASH
     remoteRef:
       key: mltb/telegram
@@ -258,7 +258,7 @@ spec:
     azurekv:
       vaultUrl: "https://mltb-vault.vault.azure.net"
       tenantId: "REPLACE_WITH_TENANT_ID"
-      
+
       auth:
         clientSecret:
           clientId:
@@ -281,11 +281,11 @@ spec:
   secretStoreRef:
     name: mltb-azure-store
     kind: SecretStore
-  
+
   target:
     name: mltb-telegram-secrets
     creationPolicy: Owner
-  
+
   data:
   - secretKey: BOT_TOKEN
     remoteRef:
@@ -307,7 +307,7 @@ spec:
   provider:
     gcpsm:
       projectID: "mltb-project-id"
-      
+
       auth:
         workloadIdentity:
           clusterLocation: "us-central1"
@@ -327,11 +327,11 @@ spec:
   secretStoreRef:
     name: mltb-gcp-store
     kind: ClusterSecretStore
-  
+
   target:
     name: mltb-telegram-secrets
     creationPolicy: Owner
-  
+
   data:
   - secretKey: BOT_TOKEN
     remoteRef:
@@ -377,11 +377,11 @@ metadata:
   namespace: mltb
 spec:
   refreshInterval: 1h
-  
+
   secretStoreRef:
     name: mltb-multi-store
     kind: SecretStore
-  
+
   # Fallback if primary fails
   secretStoreRefs:
   - name: mltb-vault-store
@@ -390,11 +390,11 @@ spec:
     kind: ClusterSecretStore
   - name: mltb-local-store  # Local Kubernetes secrets as last resort
     kind: SecretStore
-  
+
   target:
     name: mltb-telegram-secrets
     creationPolicy: Owner
-  
+
   data:
   - secretKey: BOT_TOKEN
     remoteRef:
@@ -420,11 +420,11 @@ metadata:
 spec:
   # Refresh every 6 hours (credentials have 8-hour TTL)
   refreshInterval: 6h
-  
+
   secretStoreRef:
     name: mltb-vault-store
     kind: SecretStore
-  
+
   target:
     name: mltb-database-secrets-dynamic
     creationPolicy: Owner
@@ -433,14 +433,14 @@ spec:
       engineVersion: v2
       data:
         DATABASE_URL: "postgresql://{{ .username }}:{{ .password }}@db.service:5432/mltb"
-  
+
   # Request dynamic credentials from Vault
   data:
   - secretKey: username
     remoteRef:
       key: database/config/mltb
       property: username
-  
+
   - secretKey: password
     remoteRef:
       key: database/creds/short-lived
@@ -474,7 +474,7 @@ spec:
   - name: external-secrets
     interval: 30s
     rules:
-    
+
     # Alert: Secret sync failed
     - alert: ExternalSecretSyncFailed
       expr: |
@@ -488,7 +488,7 @@ spec:
         description: |
           ExternalSecret failed to sync from backend.
           Check connectivity to {{ $labels.backend }} and credentials.
-    
+
     # Alert: Secret backend unreachable
     - alert: SecretBackendUnreachable
       expr: |
@@ -502,7 +502,7 @@ spec:
         description: |
           Cannot connect to {{ $labels.backend }}.
           Check network connectivity and firewall rules.
-    
+
     # Alert: Credential refresh failed
     - alert: CredentialRefreshFailed
       expr: |
@@ -542,7 +542,7 @@ spec:
       containers:
       - name: app
         image: mltb-app:latest
-        
+
         # ExternalSecret automatically creates Secret
         # Reference it like normal K8s Secret
         envFrom:
@@ -550,13 +550,13 @@ spec:
             name: mltb-telegram-secrets
         - secretRef:
             name: mltb-database-secrets
-        
+
         # Can also mount as files for configuration files
         volumeMounts:
         - name: rclone-config
           mountPath: /etc/rclone
           readOnly: true
-      
+
       volumes:
       - name: rclone-config
         secret:

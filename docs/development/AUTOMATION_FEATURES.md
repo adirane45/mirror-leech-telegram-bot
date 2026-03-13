@@ -110,7 +110,7 @@ status = auto_recovery.get_status()
   - CPU/memory usage
   - Custom metrics (queue depth via Prometheus)
   - Request latency
-  
+
 See `DEPRECATION.md` for detailed migration guide.
 
 **Alternative**: Configure `resources.limits` and `resources.requests` in your Kubernetes manifests:
@@ -244,7 +244,7 @@ from bot.core.automation_system import automation_system
 
 async def startup():
     # ... existing startup code ...
-    
+
     # Enable automation
     await automation_system.enable_all(
         notify_callback=handle_admin_alert

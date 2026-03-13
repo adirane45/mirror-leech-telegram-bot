@@ -857,8 +857,8 @@
             modalFooter.innerHTML = '';
             openModal();
             const requestUrl = `/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=selection`;
-            fetch(requestUrl, { 
-                'method': 'POST', 
+            fetch(requestUrl, {
+                'method': 'POST',
                 'body': JSON.stringify(files),
                 'headers': { 'Content-Type': 'application/json' }
             }).then(response => {

@@ -4,8 +4,9 @@ Phase 1 Safe Innovation Path - Enhanced Settings
 Date: February 5, 2026
 """
 
-from kombu import Exchange, Queue
 import os
+
+from kombu import Exchange, Queue
 
 # ========== BROKER & BACKEND CONFIGURATION ==========
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')

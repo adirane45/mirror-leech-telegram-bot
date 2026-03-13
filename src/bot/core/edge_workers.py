@@ -16,7 +16,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, List, Any, Callable
+from typing import Optional, Dict, List, Any, Callable, Tuple
 from enum import Enum
 import json
 
@@ -79,7 +79,7 @@ class EdgeWorkerRuntime:
     - Fetch API
     """
     
-    def __init__(self, worker_config: EdgeWorkerConfig):
+    def __init__(self, worker_config: EdgeWorkerConfig) -> None:
         """
         Initialize edge worker runtime.
         
@@ -88,7 +88,7 @@ class EdgeWorkerRuntime:
         """
         self.config = worker_config
         self.kv_store: Dict[str, Any] = {}
-        self.cache: Dict[str, tuple] = {}  # key -> (data, expiry)
+        self.cache: Dict[str, Tuple[str, datetime]] = {}  # key -> (data, expiry)
         self.request_count = 0
         self.total_latency_ms = 0.0
         
@@ -178,7 +178,7 @@ class EdgeWorkerRuntime:
                 del self.cache[key]
         return None
     
-    def _set_cache(self, key: str, data: str, ttl: int):
+    def _set_cache(self, key: str, data: str, ttl: int) -> None:
         """Set cache with TTL in seconds"""
         expiry = datetime.now().timestamp() + ttl
         self.cache[key] = (data, datetime.fromtimestamp(expiry))
@@ -187,7 +187,7 @@ class EdgeWorkerRuntime:
         """Get value from KV store"""
         return self.kv_store.get(key)
     
-    def set_kv(self, key: str, value: Any):
+    def set_kv(self, key: str, value: Any) -> None:
         """Set value in KV store"""
         self.kv_store[key] = value
     
@@ -217,10 +217,10 @@ class EdgeWorkerManager:
     - Performance monitoring
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize edge worker manager"""
         self.workers: Dict[str, EdgeWorkerRuntime] = {}
-        self.deployment_log: List[Dict] = []
+        self.deployment_log: List[Dict[str, Any]] = []
         self.global_stats = {
             "total_requests": 0,
             "total_latency_ms": 0.0,
@@ -496,7 +496,7 @@ class GlobalCDN:
         
         return True
     
-    async def invalidate_cache(self, content_url: str):
+    async def invalidate_cache(self, content_url: str) -> None:
         """Invalidate cached content across all edge locations"""
         # Mock invalidation
         await asyncio.sleep(0.02)

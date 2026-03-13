@@ -1,10 +1,9 @@
+from ..core.link_bypassers import LinkBypassEngine
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.links_utils import is_url
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import send_message
-from ..core.link_bypassers import LinkBypassEngine
-
 
 BYPASS_ENGINE = LinkBypassEngine(enabled=True)
 

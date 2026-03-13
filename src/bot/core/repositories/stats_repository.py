@@ -3,25 +3,27 @@ Statistics Repository - Handles Redis statistics and monitoring
 Focused on gathering server information and metrics
 """
 
+from typing import Any, Dict
+
 from redis.exceptions import RedisError
 
-from bot import LOGGER
 from . import BaseRepository
 
 
 class StatsRepository(BaseRepository):
     """Manages Redis statistics and monitoring information"""
-    
-    async def get_stats(self) -> dict:
+
+    async def get_stats(self) -> Dict[str, Any]:
         """
         Get Redis statistics and server information
-        
+
         Returns:
             Dictionary containing various Redis metrics and info
         """
         if not self.is_enabled:
             return {"enabled": False, "message": "Redis not enabled"}
-        
+        assert self._client is not None
+
         try:
             info = await self._client.info()
             return {
@@ -41,17 +43,18 @@ class StatsRepository(BaseRepository):
         except RedisError as e:
             self._log_error("GET_STATS", e)
             return {"enabled": True, "error": str(e)}
-    
-    async def get_memory_stats(self) -> dict:
+
+    async def get_memory_stats(self) -> Dict[str, Any]:
         """
         Get detailed memory usage statistics
-        
+
         Returns:
             Dictionary with memory-related metrics
         """
         if not self.is_enabled:
             return {"enabled": False}
-        
+        assert self._client is not None
+
         try:
             info = await self._client.info("memory")
             return {
@@ -68,17 +71,18 @@ class StatsRepository(BaseRepository):
         except RedisError as e:
             self._log_error("GET_MEMORY_STATS", e)
             return {"enabled": True, "error": str(e)}
-    
-    async def get_client_stats(self) -> dict:
+
+    async def get_client_stats(self) -> Dict[str, Any]:
         """
         Get client connection statistics
-        
+
         Returns:
             Dictionary with client-related metrics
         """
         if not self.is_enabled:
             return {"enabled": False}
-        
+        assert self._client is not None
+
         try:
             info = await self._client.info("clients")
             return {
@@ -91,24 +95,25 @@ class StatsRepository(BaseRepository):
         except RedisError as e:
             self._log_error("GET_CLIENT_STATS", e)
             return {"enabled": True, "error": str(e)}
-    
-    async def get_keyspace_stats(self) -> dict:
+
+    async def get_keyspace_stats(self) -> Dict[str, Any]:
         """
         Get keyspace statistics (number of keys per database)
-        
+
         Returns:
             Dictionary with keyspace information
         """
         if not self.is_enabled:
             return {"enabled": False}
-        
+        assert self._client is not None
+
         try:
             info = await self._client.info("keyspace")
-            keyspace = {}
+            keyspace: Dict[str, Any] = {}
             for key, value in info.items():
                 if key.startswith("db"):
                     keyspace[key] = value
-            
+
             return {
                 "enabled": True,
                 "keyspace": keyspace,
@@ -121,31 +126,31 @@ class StatsRepository(BaseRepository):
         except RedisError as e:
             self._log_error("GET_KEYSPACE_STATS", e)
             return {"enabled": True, "error": str(e)}
-    
+
     async def get_cache_hit_ratio(self) -> float:
         """
         Get cache hit ratio (0.0 to 1.0)
-        
+
         Returns:
             Hit ratio as a float (0 = no hits, 1 = all hits)
         """
         if not self.is_enabled:
             return 0.0
-        
+        assert self._client is not None
+
         try:
             info = await self._client.info("stats")
-            hits = info.get("keyspace_hits", 0)
-            misses = info.get("keyspace_misses", 0)
-            
+            hits = int(info.get("keyspace_hits", 0))
+            misses = int(info.get("keyspace_misses", 0))
+
             total = hits + misses
             if total == 0:
                 return 0.0
-            
+
             return hits / total
         except RedisError as e:
             self._log_error("GET_CACHE_HIT_RATIO", e)
             return 0.0
-    
-    async def close(self):
+
+    async def close(self) -> None:
         """Cleanup statistics repository"""
-        pass

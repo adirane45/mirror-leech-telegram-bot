@@ -1,17 +1,15 @@
-from psutil import cpu_percent, virtual_memory, disk_usage
-from time import time
 from re import findall
+from time import time
 
-from apscheduler.triggers.interval import IntervalTrigger
+from psutil import cpu_percent, disk_usage, virtual_memory
 
-from .. import user_data, ui_settings, DOWNLOAD_DIR, LOGGER, scheduler
+from .. import DOWNLOAD_DIR, LOGGER, ui_settings, user_data
 from ..core.config_manager import Config
 from ..core.telegram_manager import TgClient
-from .queue_manager import pause_all_tasks_auto
 from ..helper.ext_utils.bot_utils import new_task
-from ..helper.ext_utils.status_utils import get_readable_file_size
 from ..helper.telegram_helper.button_build import ButtonMaker
-from ..helper.telegram_helper.message_utils import send_message, edit_message
+from ..helper.telegram_helper.message_utils import edit_message, send_message
+from .queue_manager import pause_all_tasks_auto
 
 
 def _get_user_pref(user_id):
@@ -41,7 +39,7 @@ def _settings_message(user_id):
 
 
 def _settings_buttons(user_id):
-    prefs = _get_user_pref(user_id)
+    _get_user_pref(user_id)
     buttons = ButtonMaker()
     buttons.data_button("View: Compact", f"settings view compact")
     buttons.data_button("View: Detailed", f"settings view detailed")

@@ -1,23 +1,33 @@
 from __future__ import annotations
 
+import hashlib
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import hashlib
-from typing import Any, Dict, Optional, Tuple
+from importlib import import_module
+from typing import Any, cast
 
 from aiofiles import open as aiopen
-from aiofiles.os import path as aiopath
-
-from .. import LOGGER
+from aiofiles.os import path as aiopath  # type: ignore[import-untyped]
 from .config_manager import Config
-from .redis_manager import redis_client
-from ..helper.ext_utils.db_handler import database
+
+LOGGER = logging.getLogger(__name__)
+
+
+def _get_database() -> Any:
+    db_module = import_module("bot.helper.ext_utils.db_handler")
+    return getattr(db_module, "database")
+
+
+def _get_redis_client() -> Any:
+    redis_module = import_module("bot.core.redis_manager")
+    return getattr(redis_module, "redis_client")
 
 
 @dataclass
 class FileCacheEntry:
     cache_key: str
-    hashes: Dict[str, str]
+    hashes: dict[str, str]
     size: int
     file_id: str
     file_unique_id: str
@@ -42,13 +52,13 @@ class FileCacheManager:
     def _expires_at(self) -> datetime:
         return self._now() + timedelta(days=self.ttl_days)
 
-    def _cache_key(self, hashes: Dict[str, str], size: int) -> Optional[str]:
+    def _cache_key(self, hashes: dict[str, str], size: int) -> str | None:
         sha1 = hashes.get("sha1") or hashes.get("md5")
         if not sha1 or not size:
             return None
         return f"filecache:{sha1}:{size}"
 
-    def _is_expired(self, entry: Dict[str, Any]) -> bool:
+    def _is_expired(self, entry: dict[str, Any]) -> bool:
         expires_at = entry.get("expires_at")
         if not expires_at:
             return False
@@ -57,7 +67,7 @@ class FileCacheManager:
         except ValueError:
             return False
 
-    async def compute_hashes(self, file_path: str) -> Optional[Dict[str, str]]:
+    async def compute_hashes(self, file_path: str) -> dict[str, str] | None:
         if not await aiopath.exists(file_path):
             return None
         md5 = hashlib.md5()
@@ -88,14 +98,16 @@ class FileCacheManager:
         return hashes
 
     async def get_cached_entry(
-        self, hashes: Dict[str, str], size: int
-    ) -> Optional[Dict[str, Any]]:
+        self, hashes: dict[str, str], size: int
+    ) -> dict[str, Any] | None:
         if not self.enabled:
             return None
         cache_key = self._cache_key(hashes, size)
         if not cache_key:
             return None
 
+        redis_client = _get_redis_client()
+        database = _get_database()
         entry = None
         if redis_client.is_enabled:
             entry = await redis_client.get(cache_key)
@@ -112,9 +124,11 @@ class FileCacheManager:
             return None
 
         await self._touch_entry(cache_key, entry)
-        return entry
+        return cast(dict[str, Any], entry)
 
     async def delete_entry(self, cache_key: str) -> None:
+        redis_client = _get_redis_client()
+        database = _get_database()
         if redis_client.is_enabled:
             await redis_client.delete(cache_key)
         if database.db is not None:
@@ -122,20 +136,22 @@ class FileCacheManager:
 
     async def store_entry(
         self,
-        hashes: Dict[str, str],
+        hashes: dict[str, str],
         size: int,
         file_id: str,
         file_unique_id: str,
         file_type: str,
         mime_type: str,
         file_name: str,
-    ) -> Optional[FileCacheEntry]:
+    ) -> FileCacheEntry | None:
         if not self.enabled:
             return None
         cache_key = self._cache_key(hashes, size)
         if not cache_key:
             return None
 
+        redis_client = _get_redis_client()
+        database = _get_database()
         now = self._now()
         entry = FileCacheEntry(
             cache_key=cache_key,
@@ -165,13 +181,15 @@ class FileCacheManager:
 
         return entry
 
-    async def _touch_entry(self, cache_key: str, entry: Dict[str, Any]) -> None:
+    async def _touch_entry(self, cache_key: str, entry: dict[str, Any]) -> None:
         now = self._now().isoformat()
         hits = int(entry.get("hits", 0)) + 1
         entry["hits"] = hits
         entry["last_seen"] = now
         entry["expires_at"] = self._expires_at().isoformat()
 
+        redis_client = _get_redis_client()
+        database = _get_database()
         if redis_client.is_enabled:
             await redis_client.set(cache_key, entry, ttl=self.ttl_days * 86400)
         if database.db is not None:
@@ -181,7 +199,7 @@ class FileCacheManager:
                 upsert=True,
             )
 
-    async def prepare_hashes(self, file_path: str) -> Optional[Tuple[Dict[str, str], int]]:
+    async def prepare_hashes(self, file_path: str) -> tuple[dict[str, str], int] | None:
         if not self.enabled:
             return None
         try:

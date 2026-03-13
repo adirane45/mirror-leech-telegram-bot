@@ -1,16 +1,18 @@
-from aiofiles.os import remove, path as aiopath
-from aiofiles import open as aiopen
-from base64 import b64encode
-from aiohttp.client_exceptions import ClientError
 from asyncio import TimeoutError
+from base64 import b64encode
 
-from .... import task_dict_lock, task_dict, LOGGER
+from aiofiles import open as aiopen
+from aiofiles.os import path as aiopath
+from aiofiles.os import remove
+from aiohttp.client_exceptions import ClientError
+
+from .... import LOGGER, task_dict, task_dict_lock
 from ....core.config_manager import Config
-from ....core.torrent_manager import TorrentManager, is_metadata, aria2_name
+from ....core.torrent_manager import TorrentManager, aria2_name, is_metadata
 from ...ext_utils.bot_utils import bt_selection_buttons
 from ...ext_utils.task_manager import check_running_tasks
 from ...mirror_leech_utils.status_utils.aria2_status import Aria2Status
-from ...telegram_helper.message_utils import send_status_message, send_message
+from ...telegram_helper.message_utils import send_message, send_status_message
 
 
 def _map_download_path(path: str) -> str:
@@ -19,9 +21,8 @@ def _map_download_path(path: str) -> str:
     return path
 
 
-async def add_aria2_download(listener, dpath, header, ratio, seed_time):
-    dpath = _map_download_path(dpath)
-    a2c_opt = {"dir": dpath}
+def _build_aria2_options(listener, dpath, header, ratio, seed_time):
+    a2c_opt = {"dir": _map_download_path(dpath)}
     if listener.name:
         a2c_opt["out"] = listener.name
     if header:
@@ -30,8 +31,46 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time):
         a2c_opt["seed-ratio"] = ratio
     if seed_time:
         a2c_opt["seed-time"] = seed_time
-    if TORRENT_TIMEOUT := Config.TORRENT_TIMEOUT:
-        a2c_opt["bt-stop-timeout"] = f"{TORRENT_TIMEOUT}"
+    if torrent_timeout := Config.TORRENT_TIMEOUT:
+        a2c_opt["bt-stop-timeout"] = f"{torrent_timeout}"
+    return a2c_opt
+
+
+async def _add_to_aria2(listener, a2c_opt):
+    if await aiopath.exists(listener.link):
+        async with aiopen(listener.link, "rb") as tf:
+            encoded = b64encode(await tf.read()).decode()
+        params = [encoded, [], a2c_opt]
+        return await TorrentManager.aria2.jsonrpc("addTorrent", params)
+    return await TorrentManager.aria2.addUri(uris=[listener.link], options=a2c_opt)
+
+
+def _should_send_status(listener, add_to_queue, download) -> bool:
+    if add_to_queue:
+        return (
+            (not listener.select or "bittorrent" not in download)
+            and listener.multi <= 1
+            and not listener.is_rss
+        )
+    return (
+        (not listener.select or not Config.BASE_URL)
+        and listener.multi <= 1
+        and not listener.is_rss
+    )
+
+
+async def _handle_aria2_selection(listener, gid, download, add_to_queue):
+    if not (listener.select and "bittorrent" in download and not is_metadata(download)):
+        return
+    if not add_to_queue:
+        await TorrentManager.aria2.forcePause(gid)
+    buttons = bt_selection_buttons(gid)
+    msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
+    await send_message(listener.message, msg, buttons)
+
+
+async def add_aria2_download(listener, dpath, header, ratio, seed_time):
+    a2c_opt = _build_aria2_options(listener, dpath, header, ratio, seed_time)
 
     add_to_queue, event = await check_running_tasks(listener)
     if add_to_queue:
@@ -41,21 +80,12 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time):
             a2c_opt["pause"] = "true"
 
     try:
-        if await aiopath.exists(listener.link):
-            async with aiopen(listener.link, "rb") as tf:
-                torrent = await tf.read()
-            encoded = b64encode(torrent).decode()
-            params = [encoded, [], a2c_opt]
-            gid = await TorrentManager.aria2.jsonrpc("addTorrent", params)
-            """gid = await TorrentManager.aria2.add_torrent(path=listener.link, options=a2c_opt)"""
-        else:
-            gid = await TorrentManager.aria2.addUri(
-                uris=[listener.link], options=a2c_opt
-            )
-    except (TimeoutError, ClientError, Exception) as e:
-        LOGGER.info(f"Aria2c Download Error: {e}")
-        await listener.on_download_error(f"{e}")
+        gid = await _add_to_aria2(listener, a2c_opt)
+    except (TimeoutError, ClientError, Exception) as error:
+        LOGGER.info(f"Aria2c Download Error: {error}")
+        await listener.on_download_error(f"{error}")
         return
+
     download = await TorrentManager.aria2.tellStatus(gid)
     if download.get("errorMessage"):
         error = str(download["errorMessage"]).replace("<", " ").replace(">", " ")
@@ -63,38 +93,24 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time):
         await TorrentManager.aria2_remove(download)
         await listener.on_download_error(error)
         return
+
     if await aiopath.exists(listener.link):
         await remove(listener.link)
 
     name = aria2_name(download)
     async with task_dict_lock:
         task_dict[listener.mid] = Aria2Status(listener, gid, queued=add_to_queue)
+
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}. Gid: {gid}")
-        if (
-            (not listener.select or "bittorrent" not in download)
-            and listener.multi <= 1
-            and not listener.is_rss
-        ):
-            await send_status_message(listener.message)
     else:
         LOGGER.info(f"Aria2Download started: {name}. Gid: {gid}")
 
-    await listener.on_download_start()
-
-    if (
-        not add_to_queue
-        and (not listener.select or not Config.BASE_URL)
-        and listener.multi <= 1
-        and not listener.is_rss
-    ):
+    if _should_send_status(listener, add_to_queue, download):
         await send_status_message(listener.message)
-    elif listener.select and "bittorrent" in download and not is_metadata(download):
-        if not add_to_queue:
-            await TorrentManager.aria2.forcePause(gid)
-        SBUTTONS = bt_selection_buttons(gid)
-        msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
-        await send_message(listener.message, msg, SBUTTONS)
+
+    await listener.on_download_start()
+    await _handle_aria2_selection(listener, gid, download, add_to_queue)
 
     if add_to_queue:
         await event.wait()

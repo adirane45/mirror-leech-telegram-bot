@@ -4,16 +4,10 @@ API Gateway Router for request routing and load balancing
 
 import asyncio
 import random
-from datetime import datetime, UTC
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any, Callable, Dict, List, Optional
 
-from .api_gateway_models import (
-    ApiRequest,
-    ApiResponse,
-    RouteConfig,
-    CircuitState,
-    ApiGatewayListener,
-)
+from .api_gateway_models import ApiGatewayListener, ApiRequest, ApiResponse, CircuitState, RouteConfig
 
 
 class ApiGatewayRouter:
@@ -27,9 +21,9 @@ class ApiGatewayRouter:
     - Load balancing decisions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.routes: Dict[str, RouteConfig] = {}
-        self.nodes: Dict[str, dict] = {}
+        self.nodes: Dict[str, Dict[str, Any]] = {}
         self.listeners: List[ApiGatewayListener] = []
         self.enabled = False
         self.node_id = ""
@@ -44,7 +38,7 @@ class ApiGatewayRouter:
         except Exception:
             return False
 
-    async def register_node(self, node_id: str, meta: Optional[dict] = None) -> bool:
+    async def register_node(self, node_id: str, meta: Optional[Dict[str, Any]] = None) -> bool:
         """Register target node"""
         if not self.enabled:
             return False
@@ -102,7 +96,7 @@ class ApiGatewayRouter:
         self,
         request: ApiRequest,
         target_node: str,
-        get_circuit_state_fn=None,
+        get_circuit_state_fn: Optional[Callable[[str], Optional[CircuitState]]] = None,
     ) -> ApiResponse:
         """Process request routing"""
         try:
@@ -143,6 +137,6 @@ class ApiGatewayRouter:
         """Get all registered routes"""
         return self.routes.copy()
 
-    def get_all_nodes(self) -> list:
+    def get_all_nodes(self) -> List[str]:
         """Get all registered nodes"""
         return list(self.nodes.keys())

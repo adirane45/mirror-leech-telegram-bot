@@ -1,8 +1,8 @@
 from asyncio import sleep
 
-from ... import intervals, jd_listener_lock, jd_downloads
-from ..ext_utils.bot_utils import new_task
+from ... import intervals, jd_downloads, jd_listener_lock
 from ...core.jdownloader_booter import jdownloader
+from ..ext_utils.bot_utils import new_task
 from ..ext_utils.status_utils import get_task_by_gid
 
 
@@ -41,6 +41,52 @@ async def _on_download_complete(gid):
                 del jd_downloads[gid]
 
 
+async def _query_jdownloader_packages():
+    """Query JDownloader packages, return None on error."""
+    try:
+        return await jdownloader.device.downloads.query_packages(
+            [{"finished": True, "saveTo": True}]
+        )
+    except:
+        return None
+
+
+async def _cleanup_missing_packages(d_gid, d_dict, all_packages):
+    """Clean up missing package IDs and attempt recovery."""
+    # Remove IDs not in current packages
+    valid_ids = [pid for pid in d_dict["ids"] if pid in all_packages]
+    jd_downloads[d_gid]["ids"] = valid_ids
+    
+    # If no valid IDs remain, try to recover by path
+    if len(jd_downloads[d_gid]["ids"]) == 0:
+        path = jd_downloads[d_gid]["path"]
+        recovered_ids = [
+            uid for uid, pk in all_packages.items()
+            if pk["saveTo"].startswith(path)
+        ]
+        jd_downloads[d_gid]["ids"] = recovered_ids
+    
+    # If still no IDs, remove the download
+    if len(jd_downloads[d_gid]["ids"]) == 0:
+        await remove_download(d_gid)
+
+
+async def _process_completed_downloads(packages):
+    """Mark downloads as complete if all their packages are finished."""
+    completed_packages = [
+        pack["uuid"] for pack in packages if pack.get("finished", False)
+    ]
+    if not completed_packages:
+        return
+    
+    for d_gid, d_dict in list(jd_downloads.items()):
+        if d_dict["status"] == "down":
+            is_finished = all(did in completed_packages for did in d_dict["ids"])
+            if is_finished:
+                jd_downloads[d_gid]["status"] = "done"
+                await _on_download_complete(d_gid)
+
+
 @new_task
 async def _jd_listener():
     while True:
@@ -49,40 +95,17 @@ async def _jd_listener():
             if len(jd_downloads) == 0:
                 intervals["jd"] = ""
                 break
-            try:
-                packages = await jdownloader.device.downloads.query_packages(
-                    [{"finished": True, "saveTo": True}]
-                )
-            except:
+            
+            packages = await _query_jdownloader_packages()
+            if packages is None:
                 continue
-
+            
             all_packages = {pack["uuid"]: pack for pack in packages}
             for d_gid, d_dict in list(jd_downloads.items()):
                 if d_dict["status"] == "down":
-                    for index, pid in enumerate(d_dict["ids"]):
-                        if pid not in all_packages:
-                            del jd_downloads[d_gid]["ids"][index]
-                    if len(jd_downloads[d_gid]["ids"]) == 0:
-                        path = jd_downloads[d_gid]["path"]
-                        jd_downloads[d_gid]["ids"] = [
-                            uid
-                            for uid, pk in all_packages.items()
-                            if pk["saveTo"].startswith(path)
-                        ]
-                    if len(jd_downloads[d_gid]["ids"]) == 0:
-                        await remove_download(d_gid)
-
-            if completed_packages := [
-                pack["uuid"] for pack in packages if pack.get("finished", False)
-            ]:
-                for d_gid, d_dict in list(jd_downloads.items()):
-                    if d_dict["status"] == "down":
-                        is_finished = all(
-                            did in completed_packages for did in d_dict["ids"]
-                        )
-                        if is_finished:
-                            jd_downloads[d_gid]["status"] = "done"
-                            await _on_download_complete(d_gid)
+                    await _cleanup_missing_packages(d_gid, d_dict, all_packages)
+            
+            await _process_completed_downloads(packages)
 
 
 async def on_download_start():

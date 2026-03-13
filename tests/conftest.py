@@ -7,13 +7,16 @@ Enhanced by: justadi
 Date: February 5, 2026
 """
 
-import pytest
 import sys
 from pathlib import Path
 
-# Add bot directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent / 'integrations'))
+import pytest
+
+# Add project root, src, config, and integrations directories to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / 'src'))
+sys.path.insert(0, str(project_root / 'integrations'))
 
 
 @pytest.fixture
@@ -26,16 +29,17 @@ def mock_config():
         BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
         OWNER_ID = 12345678
         DATABASE_URL = ""
-    
+
     return MockConfig
 
 
 @pytest.fixture
 async def redis_client(request):
     """Mock Redis client for testing"""
-    from bot.core.redis_manager import RedisManager
     from typing import Any, Optional
-    
+
+    from bot.core.redis_manager import RedisManager
+
     client = RedisManager()
 
     class _InMemoryCache:
@@ -73,9 +77,9 @@ async def redis_client(request):
         client._client = None
         client._enabled = False
         client._cache = None
-    
+
     yield client
-    
+
     if client._client:
         await client.close()
 
@@ -84,10 +88,10 @@ async def redis_client(request):
 def metrics_collector():
     """Mock metrics collector for testing"""
     from bot.core.metrics import MetricsCollector
-    
+
     collector = MetricsCollector()
     collector._enabled = False
-    
+
     return collector
 
 

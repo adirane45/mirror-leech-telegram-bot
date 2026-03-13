@@ -1,6 +1,6 @@
 [flake8]
 # Maximum line length
-max-line-length = 100
+max-line-length = 120
 
 # Ignore specific errors
 # E203: Whitespace before ':' (conflicts with black)
@@ -11,7 +11,7 @@ max-line-length = 100
 # F401: Module imported but unused (handled by autoflake)
 # F403: Unable to detect undefined names
 # D100-D107: Missing docstrings (can be added gradually)
-extend-ignore = E203,E266,E501,W503,W504,F401,F403,D100,D101,D102,D103,D104,D105,D107
+extend-ignore = E203,E266,E501,W503,W504,F401,F403,D100,D101,D102,D103,D104,D105,D107,D106
 
 # Maximum complexity
 max-complexity = 15

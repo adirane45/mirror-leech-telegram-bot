@@ -1,22 +1,23 @@
-from aioshutil import rmtree as aiormtree, move
 from asyncio import create_subprocess_exec, wait_for
 from asyncio.subprocess import PIPE
-from magic import Magic
-from os import walk, path as ospath, readlink
-from re import split as re_split, I, search as re_search, escape
-from aiofiles.os import (
-    remove,
-    path as aiopath,
-    listdir,
-    rmdir,
-    readlink as aioreadlink,
-    symlink,
-    makedirs as aiomakedirs,
-)
+from os import path as ospath
+from os import readlink, walk
+from re import I, escape
+from re import search as re_search
+from re import split as re_split
 
-from ... import LOGGER, DOWNLOAD_DIR
+from aiofiles.os import listdir
+from aiofiles.os import makedirs as aiomakedirs
+from aiofiles.os import path as aiopath
+from aiofiles.os import readlink as aioreadlink
+from aiofiles.os import remove, rmdir, symlink
+from aioshutil import move
+from aioshutil import rmtree as aiormtree
+from magic import Magic
+
+from ... import DOWNLOAD_DIR, LOGGER
 from ...core.torrent_manager import TorrentManager
-from .bot_utils import sync_to_async, cmd_exec
+from .bot_utils import cmd_exec, sync_to_async
 from .exceptions import NotSupportedExtractionArchive
 
 ARCH_EXT = [
@@ -250,6 +251,7 @@ async def join_files(opath):
     files = await listdir(opath)
     results = []
     exists = False
+    
     for file_ in files:
         if not re_search(r"\.0+2$", file_):
             continue
@@ -257,17 +259,28 @@ async def join_files(opath):
         if mime_type in ["application/x-7z-compressed", "application/zip"]:
             continue
         exists = True
-        final_name = file_.rsplit(".", 1)[0]
-        fpath = f"{opath}/{final_name}"
-        cmd = f'cat "{fpath}."* > "{fpath}"'
-        _, stderr, code = await cmd_exec(cmd, True)
-        if code != 0:
-            LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
-            if await aiopath.isfile(fpath):
-                await remove(fpath)
-            continue
-        results.append(final_name)
+        
+        final_name = await _try_join_file_parts(opath, file_)
+        if final_name:
+            results.append(final_name)
 
+    await _cleanup_joined_files(exists, results, files, opath)
+
+
+async def _try_join_file_parts(opath, file_):
+    final_name = file_.rsplit(".", 1)[0]
+    fpath = f"{opath}/{final_name}"
+    cmd = f'cat "{fpath}."* > "{fpath}"'
+    _, stderr, code = await cmd_exec(cmd, True)
+    if code != 0:
+        LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
+        if await aiopath.isfile(fpath):
+            await remove(fpath)
+        return None
+    return final_name
+
+
+async def _cleanup_joined_files(exists, results, files, opath):
     if not exists:
         LOGGER.warning("No files to join!")
     elif results:
@@ -321,6 +334,42 @@ class SevenZ:
     def progress(self):
         return self._percentage
 
+    def _should_continue_sevenz_read(self):
+        return not (
+            self._listener.subproc.returncode is not None
+            or self._listener.is_cancelled
+            or self._listener.subproc.stdout.at_eof()
+        )
+
+    async def _readline_with_timeout(self, timeout_seconds):
+        try:
+            return await wait_for(self._listener.subproc.stdout.readline(), timeout_seconds)
+        except:
+            return None
+
+    async def _readchar_with_timeout(self, timeout_seconds):
+        try:
+            return await wait_for(self._listener.subproc.stdout.read(1), timeout_seconds)
+        except:
+            return None
+
+    def _apply_percentage_value(self, perc):
+        if perc.isdigit():
+            self._percentage = f"{perc}%"
+            self._processed_bytes = (int(perc) / 100) * self._listener.subsize
+            return
+        self._percentage = "0%"
+
+    def _update_percentage_from_stream_chunk(self, chunk):
+        try:
+            self._percentage = chunk.decode().rsplit(" ", 1)[-1].strip()
+            self._processed_bytes = (
+                int(self._percentage.strip("%")) / 100
+            ) * self._listener.subsize
+        except:
+            self._processed_bytes = 0
+            self._percentage = "0%"
+
     async def _sevenz_progress(self):
         pattern = (
             r"(\d+)\s+bytes|Total Physical Size\s*=\s*(\d+)|Physical Size\s*=\s*(\d+)"
@@ -337,39 +386,23 @@ class SevenZ:
             if match := re_search(pattern, line_text):
                 self._listener.subsize = int(match[1] or match[2] or match[3])
 
-        while not (
-            self._listener.subproc.returncode is not None
-            or self._listener.is_cancelled
-            or self._listener.subproc.stdout.at_eof()
-        ):
-            try:
-                line = await wait_for(self._listener.subproc.stdout.readline(), 2)
-            except:
+        while self._should_continue_sevenz_read():
+            line = await self._readline_with_timeout(2)
+            if line is None:
                 break
             line = line.decode().strip()
             await _update_from_line(line)
+
         s = b""
-        while not (
-            self._listener.is_cancelled
-            or self._listener.subproc.returncode is not None
-            or self._listener.subproc.stdout.at_eof()
-        ):
-            try:
-                char = await wait_for(self._listener.subproc.stdout.read(1), 60)
-            except:
+        while self._should_continue_sevenz_read():
+            char = await self._readchar_with_timeout(60)
+            if char is None:
                 break
             if not char:
                 break
             s += char
             if char == b"%":
-                try:
-                    self._percentage = s.decode().rsplit(" ", 1)[-1].strip()
-                    self._processed_bytes = (
-                        int(self._percentage.strip("%")) / 100
-                    ) * self._listener.subsize
-                except:
-                    self._processed_bytes = 0
-                    self._percentage = "0%"
+                self._update_percentage_from_stream_chunk(s)
                 s = b""
 
         self._processed_bytes = 0

@@ -49,36 +49,36 @@ SUMMARY_FILE="$REPORT_DIR/summary_$TIMESTAMP.txt"
 case "$ANALYSIS_TYPE" in
     "full")
         echo -e "${BLUE}Running full analysis (all metrics)...${NC}"
-        
+
         # Run complexity analysis
         echo ""
         echo -e "${YELLOW}1️⃣  Analyzing code complexity...${NC}"
         python3 "$SCRIPT_DIR/analyze_complexity.py" > "$REPORT_DIR/complexity_$TIMESTAMP.json" 2>&1 || true
-        
+
         # Run hotspot analysis
         echo -e "${YELLOW}2️⃣  Analyzing hotspots (frequently changed complex files)...${NC}"
         python3 "$SCRIPT_DIR/analyze_hotspots.py" > "$REPORT_DIR/hotspots_$TIMESTAMP.json" 2>&1 || true
-        
+
         # Run code health analysis
         echo -e "${YELLOW}3️⃣  Analyzing code health...${NC}"
         python3 "$SCRIPT_DIR/analyze_code_health.py" > "$REPORT_DIR/health_$TIMESTAMP.json" 2>&1 || true
-        
+
         # Run technical debt analysis
         echo -e "${YELLOW}4️⃣  Analyzing technical debt...${NC}"
         python3 "$SCRIPT_DIR/analyze_tech_debt.py" > "$REPORT_DIR/tech_debt_$TIMESTAMP.json" 2>&1 || true
-        
+
         ;;
-        
+
     "quick")
         echo -e "${BLUE}Running quick analysis (complexity only)...${NC}"
         python3 "$SCRIPT_DIR/analyze_complexity.py"
         ;;
-        
+
     "hotspots")
         echo -e "${BLUE}Running hotspot analysis...${NC}"
         python3 "$SCRIPT_DIR/analyze_hotspots.py"
         ;;
-        
+
     *)
         echo -e "${RED}❌ Unknown analysis type: $ANALYSIS_TYPE${NC}"
         echo "Usage: $0 [full|quick|hotspots]"

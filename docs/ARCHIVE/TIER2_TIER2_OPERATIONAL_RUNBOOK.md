@@ -138,7 +138,7 @@ curl http://localhost:9090/-/healthy
 ### 4. Alert Response Procedures
 
 #### 🔴 Critical: API Down
-**Metric:** `up{job="mltb-app"} == 0`  
+**Metric:** `up{job="mltb-app"} == 0`
 **Steps:**
 ```bash
 # 1. Check container status
@@ -158,7 +158,7 @@ sleep 10 && bash scripts/quick_health_check.sh
 ```
 
 #### 🟠 Warning: High Memory Usage
-**Metric:** `container_memory_usage_bytes > 85%`  
+**Metric:** `container_memory_usage_bytes > 85%`
 **Steps:**
 ```bash
 # 1. Check memory breakdown
@@ -177,7 +177,7 @@ docker-compose restart app
 ```
 
 #### 🟠 Warning: High CPU Usage
-**Metric:** `CPU > 80%`  
+**Metric:** `CPU > 80%`
 **Steps:**
 ```bash
 # 1. Check what's running
@@ -195,7 +195,7 @@ curl http://localhost:8060/api/tasks | jq '.total_tasks'
 ```
 
 #### 🟠 Warning: Cache Hit Rate < 60%
-**Metric:** `mltb_cache_hit_rate < 0.60`  
+**Metric:** `mltb_cache_hit_rate < 0.60`
 **Steps:**
 ```bash
 # 1. Check cache statistics
@@ -712,5 +712,5 @@ pool_max_size = 100  # From 20
 
 ---
 
-**Last Updated:** February 6, 2026  
+**Last Updated:** February 6, 2026
 **Tier 2.3 - Operational Runbook**

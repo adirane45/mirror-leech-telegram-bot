@@ -323,7 +323,7 @@ docker restart mltb-app
 ## Known Issues
 
 ### Aria2 RPC Authentication
-**Symptom:** 
+**Symptom:**
 ```
 ERROR - Dashboard aria2 error: Aria2rpcException: unexpected result: {'code': 1, 'message': 'Unauthorized'}
 ```

@@ -1,7 +1,7 @@
 # Tor Setup Guide - Fix HTTP 403 Forbidden Errors
 
-**Problem**: `/qm` command returns HTTP 403 Forbidden  
-**Solution**: Use Tor to rotate IP addresses and bypass IP-based blocking  
+**Problem**: `/qm` command returns HTTP 403 Forbidden
+**Solution**: Use Tor to rotate IP addresses and bypass IP-based blocking
 **Status**: ✅ Implemented & Ready to Use
 
 ---
@@ -361,7 +361,7 @@ QB_PEER_CONNECTION_LIMIT=1000
 
 ---
 
-**Status**: ✅ Tor support fully implemented  
-**Version**: v3.2.1+  
-**Date**: 2026-02-23  
+**Status**: ✅ Tor support fully implemented
+**Version**: v3.2.1+
+**Date**: 2026-02-23
 **Tested**: Docker Compose with tor-simple image

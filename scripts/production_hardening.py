@@ -4,15 +4,14 @@ Phase 1 Production Hardening Configuration
 Sets up logging, backups, health checks, and auto-recovery
 """
 
-import os
-import json
 from datetime import datetime
+
 
 class ProductionHardeningConfig:
     def __init__(self):
         self.config = {}
         self.timestamp = datetime.now().isoformat()
-    
+
     def create_logging_config(self):
         """Generate production logging configuration"""
         logging_config = {
@@ -80,9 +79,9 @@ class ProductionHardeningConfig:
                 }
             }
         }
-        
+
         return logging_config
-    
+
     def create_health_check_script(self):
         """Generate health check script"""
         health_check = '''#!/bin/bash
@@ -168,7 +167,7 @@ echo -e "${GREEN}✨ All health checks passed!${NC}"
 exit 0
 '''
         return health_check
-    
+
     def create_backup_script(self):
         """Generate backup script"""
         backup_script = '''#!/bin/bash
@@ -223,7 +222,7 @@ echo ""
 echo "✨ Backup completed successfully!"
 '''
         return backup_script
-    
+
     def create_docker_compose_hardened(self):
         """Generate hardened docker-compose.prod.yml"""
         compose_config = {
@@ -318,7 +317,7 @@ echo "✨ Backup completed successfully!"
             }
         }
         return compose_config
-    
+
     def create_monitoring_config(self):
         """Generate production monitoring configuration"""
         monitoring_config = {
@@ -352,7 +351,7 @@ echo "✨ Backup completed successfully!"
             }
         }
         return monitoring_config
-    
+
     def create_policy_document(self):
         """Generate policies and procedures document"""
         policy = """
@@ -426,39 +425,39 @@ echo "✨ Backup completed successfully!"
 - Change Log: All updates documented
 """
         return policy
-    
+
     def generate_all_configs(self):
         """Generate all production configuration files"""
         print("\n" + "="*70)
         print("🛡️  PHASE 1 PRODUCTION HARDENING CONFIGURATION")
         print("="*70 + "\n")
-        
+
         print("📝 Generating configuration files...")
-        
+
         # Generate logging config
         logging_config = self.create_logging_config()
         print("✅ Logging configuration generated")
-        
+
         # Generate health check script
         health_check = self.create_health_check_script()
         print("✅ Health check script generated")
-        
+
         # Generate backup script
         backup_script = self.create_backup_script()
         print("✅ Backup script generated")
-        
+
         # Generate docker-compose
         compose_config = self.create_docker_compose_hardened()
         print("✅ Production docker-compose configuration generated")
-        
+
         # Generate monitoring config
         monitoring_config = self.create_monitoring_config()
         print("✅ Monitoring configuration generated")
-        
+
         # Generate policies
         policy_doc = self.create_policy_document()
         print("✅ Policies and procedures document generated")
-        
+
         return {
             'logging': logging_config,
             'health_check': health_check,
@@ -471,11 +470,11 @@ echo "✨ Backup completed successfully!"
 if __name__ == "__main__":
     hardening = ProductionHardeningConfig()
     configs = hardening.generate_all_configs()
-    
+
     print("\n" + "="*70)
     print("✨ PRODUCTION HARDENING COMPLETE")
     print("="*70 + "\n")
-    
+
     print("📋 Configuration Files Generated:")
     print("  1. Logging Configuration (JSON)")
     print("  2. Health Check Script (Bash)")

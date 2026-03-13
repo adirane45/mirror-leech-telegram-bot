@@ -9,16 +9,16 @@ This module provides structured logging with:
 - Performance tracking
 """
 
+import json
 import logging
 import logging.handlers
+import os
 import sys
-import json
 import traceback
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-import os
-import uuid
 
 
 class JsonFormatter(logging.Formatter):
@@ -56,8 +56,9 @@ class JsonFormatter(logging.Formatter):
 
         # Add exception info if present
         if record.exc_info and self.include_traceback:
+            exception_type = record.exc_info[0]
             log_data["exception"] = {
-                "type": record.exc_info[0].__name__,
+                "type": exception_type.__name__ if exception_type is not None else "UnknownException",
                 "message": str(record.exc_info[1]),
                 "traceback": traceback.format_exception(*record.exc_info),
             }
@@ -116,6 +117,7 @@ def setup_logging(
     logger.handlers.clear()
 
     # Create formatters
+    formatter: logging.Formatter
     if json_logs:
         formatter = JsonFormatter()
     else:
@@ -232,8 +234,10 @@ def set_request_id(request_id: Optional[str] = None) -> str:
     # Store in thread-local storage
     import threading
 
-    if not hasattr(threading.current_thread(), "request_id"):
-        threading.current_thread().request_id = request_id
+    current_thread: Any = threading.current_thread()
+
+    if not hasattr(current_thread, "request_id"):
+        current_thread.request_id = request_id
 
     return request_id
 

@@ -1,9 +1,11 @@
+from typing import Any, cast
+
 from httpx import AsyncClient, AsyncHTTPTransport, Timeout
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
-from .job_functions import JobFunctions
 from .exception import APIConnectionError
+from .job_functions import JobFunctions
 
 
 class SabnzbdClient(JobFunctions):
@@ -17,8 +19,8 @@ class SabnzbdClient(JobFunctions):
         port: str = "8070",
         VERIFY_CERTIFICATE: bool = False,
         RETRIES: int = 10,
-        HTTPX_REQUETS_ARGS: dict = None,
-    ):
+        HTTPX_REQUETS_ARGS: dict[str, Any] | None = None,
+    ) -> None:
         if HTTPX_REQUETS_ARGS is None:
             HTTPX_REQUETS_ARGS = {}
         self._base_url = f"{host.rstrip('/')}:{port}"
@@ -26,12 +28,12 @@ class SabnzbdClient(JobFunctions):
         self._VERIFY_CERTIFICATE = VERIFY_CERTIFICATE
         self._RETRIES = RETRIES
         self._HTTPX_REQUETS_ARGS = HTTPX_REQUETS_ARGS
-        self._http_session = None
+        self._http_session: AsyncClient | None = None
         if not self._VERIFY_CERTIFICATE:
             disable_warnings(InsecureRequestWarning)
         super().__init__()
 
-    def _session(self):
+    def _session(self) -> AsyncClient:
         if self._http_session is not None:
             return self._http_session
 
@@ -52,25 +54,27 @@ class SabnzbdClient(JobFunctions):
 
     async def call(
         self,
-        params: dict = None,
-        requests_args: dict = None,
-        **kwargs,
-    ):
+        params: dict[str, Any] | None = None,
+        requests_args: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        if params is None:
+            params = {}
         if requests_args is None:
             requests_args = {}
         session = self._session()
-        params |= kwargs
+        params.update(kwargs)
         res = await session.get(
             url="/sabnzbd/api",
             params={**self._default_params, **params},
             **requests_args,
         )
         response = res.json()
-        if response is None:
+        if response is None or not isinstance(response, dict):
             raise APIConnectionError("Failed to connect to API!")
-        return response
+        return cast(dict[str, Any], response)
 
-    async def close(self):
+    async def close(self) -> None:
         if self._http_session is not None:
             await self._http_session.aclose()
             self._http_session = None

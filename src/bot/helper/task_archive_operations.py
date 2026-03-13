@@ -3,25 +3,26 @@ Archive Operations Processor
 Handles extraction, compression, and file splitting operations
 """
 
-from aiofiles.os import path as aiopath, makedirs, remove
-from os import path as ospath, walk
+from os import path as ospath
+from os import walk
 from shutil import move
-from aioshutil import rmtree
+
+from aiofiles.os import makedirs, remove
 
 from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.files_utils import (
+    SevenZ,
+    get_base_name,
     get_path_size,
     is_archive,
     is_archive_split,
     is_first_archive_split,
-    get_base_name,
     split_file,
 )
-from bot.helper.ext_utils.media_utils import get_document_type, FFMpeg
-from bot.helper.ext_utils.files_utils import SevenZ
-from bot.helper.mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
+from bot.helper.ext_utils.media_utils import FFMpeg, get_document_type
 from bot.helper.mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
+from bot.helper.mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
 
 
 class ArchiveOperationsProcessor:
@@ -61,6 +62,40 @@ class ArchiveOperationsProcessor:
                     task_config.is_cancelled = True
 
     @staticmethod
+    async def _setup_extraction_status(task_config, sevenz, gid, task_dict, task_dict_lock):
+        """Setup extraction status in task dictionary"""
+        LOGGER.info(f"Extracting: {task_config.name}")
+        async with task_dict_lock:
+            task_dict[task_config.mid] = SevenZStatus(
+                task_config, sevenz, gid, "Extract"
+            )
+    
+    @staticmethod
+    async def _extract_file_at_path(task_config, sevenz, f_path, dirpath, pswd):
+        """Extract a single file and return extraction path and code"""
+        task_config.proceed_count += 1
+        t_path = get_base_name(f_path) if task_config.is_file else dirpath
+        if not task_config.is_file:
+            task_config.subname = ospath.basename(f_path)
+        code = await sevenz.extract(f_path, t_path, pswd)
+        return t_path, code
+    
+    @staticmethod
+    async def _process_directory_files(task_config, sevenz, dirpath, files, pswd):
+        """Process all extractable files in a directory"""
+        code = 0
+        t_path = dirpath
+        for file_ in files:
+            if task_config.is_cancelled:
+                return t_path, code, True
+            if ArchiveOperationsProcessor.should_extract_file(file_):
+                f_path = ospath.join(dirpath, file_)
+                t_path, code = await ArchiveOperationsProcessor._extract_file_at_path(
+                    task_config, sevenz, f_path, dirpath, pswd
+                )
+        return t_path, code, False
+    
+    @staticmethod
     async def proceed_extract(task_config, dl_path, gid, task_dict, task_dict_lock):
         """Extract archive files"""
         pswd = task_config.extract if isinstance(task_config.extract, str) else ""
@@ -75,30 +110,18 @@ class ArchiveOperationsProcessor:
 
         t_path = dl_path
         sevenz = SevenZ(task_config)
-        LOGGER.info(f"Extracting: {task_config.name}")
-        async with task_dict_lock:
-            task_dict[task_config.mid] = SevenZStatus(
-                task_config, sevenz, gid, "Extract"
-            )
+        await ArchiveOperationsProcessor._setup_extraction_status(
+            task_config, sevenz, gid, task_dict, task_dict_lock
+        )
 
         for dirpath, _, files in await sync_to_async(
             walk, task_config.up_dir or task_config.dir, topdown=False
         ):
-            code = 0
-            for file_ in files:
-                if task_config.is_cancelled:
-                    return False
-                if ArchiveOperationsProcessor.should_extract_file(file_):
-                    task_config.proceed_count += 1
-                    f_path = ospath.join(dirpath, file_)
-                    t_path = (
-                        get_base_name(f_path) if task_config.is_file else dirpath
-                    )
-                    if not task_config.is_file:
-                        task_config.subname = file_
-                    code = await sevenz.extract(f_path, t_path, pswd)
-            if task_config.is_cancelled:
-                return code
+            t_path, code, cancelled = await ArchiveOperationsProcessor._process_directory_files(
+                task_config, sevenz, dirpath, files, pswd
+            )
+            if cancelled:
+                return False
             if code == 0:
                 await ArchiveOperationsProcessor.cleanup_extracted_archives(
                     task_config, dirpath, files
@@ -151,6 +174,33 @@ class ArchiveOperationsProcessor:
         return files_to_split
 
     @staticmethod
+    def _calculate_split_size(task_config, f_size):
+        parts = -(-f_size // task_config.split_size)
+        if task_config.equal_splits:
+            split_size = (f_size // parts) + (f_size % parts)
+        else:
+            split_size = task_config.split_size
+        return parts, split_size
+
+    @staticmethod
+    async def _run_split_operation(task_config, ffmpeg, f_path, file_, parts, split_size):
+        if not task_config.as_doc and (await get_document_type(f_path))[0]:
+            task_config.progress = True
+            return await ffmpeg.split(f_path, file_, parts, split_size)
+
+        task_config.progress = False
+        return await split_file(f_path, split_size, task_config)
+
+    @staticmethod
+    async def _cleanup_original_after_split(task_config, f_path, f_size, res):
+        if not (res or f_size >= task_config.max_split_size):
+            return
+        try:
+            await remove(f_path)
+        except:
+            task_config.is_cancelled = True
+
+    @staticmethod
     async def proceed_split(task_config, dl_path, gid, task_dict, task_dict_lock):
         """Split large files"""
         task_config.files_to_proceed = (
@@ -175,26 +225,27 @@ class ArchiveOperationsProcessor:
                 task_config.subsize = f_size
                 task_config.subname = file_
 
-            parts = -(-f_size // task_config.split_size)
-            if task_config.equal_splits:
-                split_size = (f_size // parts) + (f_size % parts)
-            else:
-                split_size = task_config.split_size
-
-            if not task_config.as_doc and (await get_document_type(f_path))[0]:
-                task_config.progress = True
-                res = await ffmpeg.split(f_path, file_, parts, split_size)
-            else:
-                task_config.progress = False
-                res = await split_file(f_path, split_size, task_config)
+            parts, split_size = ArchiveOperationsProcessor._calculate_split_size(
+                task_config,
+                f_size,
+            )
+            res = await ArchiveOperationsProcessor._run_split_operation(
+                task_config,
+                ffmpeg,
+                f_path,
+                file_,
+                parts,
+                split_size,
+            )
 
             if task_config.is_cancelled:
                 return False
 
-            if res or f_size >= task_config.max_split_size:
-                try:
-                    await remove(f_path)
-                except:
-                    task_config.is_cancelled = True
+            await ArchiveOperationsProcessor._cleanup_original_after_split(
+                task_config,
+                f_path,
+                f_size,
+                res,
+            )
 
         return dl_path

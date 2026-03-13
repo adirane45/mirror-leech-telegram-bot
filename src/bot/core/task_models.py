@@ -11,10 +11,9 @@ Includes:
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
-
+from typing import Any, Dict, List, Optional
 
 # ============================================================================
 # ENUMS
@@ -71,7 +70,7 @@ class TaskResult:
     error: Optional[str] = None
     execution_time_ms: int = 0
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -101,7 +100,7 @@ class Task:
     timeout_seconds: int = 300
     result: Optional[TaskResult] = None
     progress: int = 0  # 0-100
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -139,7 +138,7 @@ class CoordinatorMetrics:
     active_tasks: int = 0
     node_utilization: Dict[str, float] = field(default_factory=dict)
     last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict"""
         return {
@@ -160,59 +159,52 @@ class CoordinatorMetrics:
 
 class TaskExecutor(ABC):
     """Abstract executor for tasks"""
-    
+
     @abstractmethod
     async def execute(self, task: Task) -> TaskResult:
         """Execute a task"""
-        pass
-    
+
     @abstractmethod
     async def supports(self, task_type: TaskType) -> bool:
         """Check if executor supports task type"""
-        pass
-    
+
     @abstractmethod
     async def get_utilization(self) -> float:
         """Get current utilization (0.0-1.0)"""
-        pass
 
 
 class TaskCoordinatorListener(ABC):
     """Abstract listener for task events"""
-    
+
     @abstractmethod
     async def on_task_queued(self, task: Task) -> None:
         """Called when task is queued"""
-        pass
-    
+
     @abstractmethod
     async def on_task_started(self, task: Task, node_id: str) -> None:
         """Called when task starts"""
-        pass
-    
+
     @abstractmethod
     async def on_task_completed(self, task: Task, result: TaskResult) -> None:
         """Called when task completes"""
-        pass
-    
+
     @abstractmethod
     async def on_task_failed(self, task: Task, error: str) -> None:
         """Called when task fails"""
-        pass
 
 
 class DefaultTaskExecutor(TaskExecutor):
     """Default task executor implementation"""
-    
+
     async def execute(self, task: Task) -> TaskResult:
         """Execute task"""
         import asyncio
-        
+
         start = datetime.now(UTC)
         try:
             # Simulate task execution
             await asyncio.sleep(0.01)
-            
+
             elapsed = int((datetime.now(UTC) - start).total_seconds() * 1000)
             return TaskResult(
                 task_id=task.task_id,
@@ -228,11 +220,11 @@ class DefaultTaskExecutor(TaskExecutor):
                 error=str(e),
                 execution_time_ms=elapsed
             )
-    
+
     async def supports(self, task_type: TaskType) -> bool:
         """Support all task types"""
         return True
-    
+
     async def get_utilization(self) -> float:
         """Get utilization"""
         return 0.3

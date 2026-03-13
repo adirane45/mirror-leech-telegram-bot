@@ -23,8 +23,7 @@ import asyncio
 import json
 import logging
 import os
-from typing import Optional, Dict, List
-from pathlib import Path
+from typing import Any, Dict, Optional
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 class MediaInfoExtractor:
     """
     Extract and format media file information
-    
+
     Features:
     - Video stream analysis (codec, resolution, fps, bitrate)
     - Audio stream analysis (codec, channels, sample rate)
@@ -40,34 +39,34 @@ class MediaInfoExtractor:
     - Container format information
     - Duration and file size
     - Thumbnail extraction
-    
+
     Usage:
         extractor = MediaInfoExtractor()
         info = await extractor.get_media_info("/path/to/video.mp4")
         formatted = extractor.format_info(info)
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         """Initialize media info extractor"""
         self.ffprobe_path = "ffprobe"
         self.ffmpeg_path = "ffmpeg"
         self._check_dependencies()
-    
-    def _check_dependencies(self):
+
+    def _check_dependencies(self) -> None:
         """Check if FFmpeg/FFprobe are available"""
         try:
             # Will be checked at runtime
             pass
         except Exception as e:
             LOGGER.warning(f"FFmpeg check warning: {e}")
-    
-    async def get_media_info(self, file_path: str) -> Optional[Dict]:
+
+    async def get_media_info(self, file_path: str) -> Optional[dict[str, Any]]:
         """
         Extract comprehensive media information
-        
+
         Args:
             file_path: Path to media file
-            
+
         Returns:
             Dictionary containing:
             - format: Container format info (name, duration, size, bitrate)
@@ -75,7 +74,7 @@ class MediaInfoExtractor:
             - audio_streams: List of audio stream details
             - subtitle_streams: List of subtitle tracks
             - metadata: Title, artist, album, etc.
-            
+
         Example:
             info = await extractor.get_media_info("movie.mkv")
             print(f"Duration: {info['format']['duration']}s")
@@ -85,7 +84,7 @@ class MediaInfoExtractor:
             if not await asyncio.to_thread(os.path.exists, file_path):
                 LOGGER.error(f"File not found: {file_path}")
                 return None
-            
+
             # Run ffprobe command
             cmd = [
                 self.ffprobe_path,
@@ -95,22 +94,22 @@ class MediaInfoExtractor:
                 '-show_streams',
                 file_path
             ]
-            
+
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            
+
             stdout, stderr = await process.communicate()
-            
+
             if process.returncode != 0:
                 LOGGER.error(f"FFprobe error: {stderr.decode()}")
                 return None
-            
+
             # Parse JSON output
             data = json.loads(stdout.decode())
-            
+
             # Process and organize information
             media_info = {
                 'format': self._parse_format(data.get('format', {})),
@@ -119,20 +118,20 @@ class MediaInfoExtractor:
                 'subtitle_streams': [],
                 'metadata': data.get('format', {}).get('tags', {})
             }
-            
+
             # Parse streams
             for stream in data.get('streams', []):
                 codec_type = stream.get('codec_type', '')
-                
+
                 if codec_type == 'video':
                     media_info['video_streams'].append(self._parse_video_stream(stream))
                 elif codec_type == 'audio':
                     media_info['audio_streams'].append(self._parse_audio_stream(stream))
                 elif codec_type == 'subtitle':
                     media_info['subtitle_streams'].append(self._parse_subtitle_stream(stream))
-            
+
             return media_info
-            
+
         except FileNotFoundError:
             LOGGER.error("FFprobe not found. Install FFmpeg package.")
             return None
@@ -142,8 +141,8 @@ class MediaInfoExtractor:
         except Exception as e:
             LOGGER.error(f"Media info extraction error: {e}")
             return None
-    
-    def _parse_format(self, format_data: dict) -> dict:
+
+    def _parse_format(self, format_data: dict[str, Any]) -> dict[str, Any]:
         """Parse container format information"""
         return {
             'filename': os.path.basename(format_data.get('filename', 'Unknown')),
@@ -154,14 +153,14 @@ class MediaInfoExtractor:
             'bitrate': int(format_data.get('bit_rate', 0)),
             'probe_score': format_data.get('probe_score', 0)
         }
-    
-    def _parse_video_stream(self, stream: dict) -> dict:
+
+    def _parse_video_stream(self, stream: dict[str, Any]) -> dict[str, Any]:
         """Parse video stream information"""
         width = stream.get('width', 0)
         height = stream.get('height', 0)
-        
+
         # Calculate FPS
-        fps = 0
+        fps: float = 0.0
         if 'r_frame_rate' in stream:
             try:
                 num, den = map(int, stream['r_frame_rate'].split('/'))
@@ -169,7 +168,7 @@ class MediaInfoExtractor:
             except (ValueError, ZeroDivisionError, AttributeError) as e:
                 LOGGER.debug(f"Could not parse frame rate {stream.get('r_frame_rate')}: {e}")
                 fps = 0
-        
+
         return {
             'index': stream.get('index', 0),
             'codec_name': stream.get('codec_name', 'Unknown'),
@@ -185,8 +184,8 @@ class MediaInfoExtractor:
             'color_space': stream.get('color_space', 'Unknown'),
             'duration': float(stream.get('duration', 0))
         }
-    
-    def _parse_audio_stream(self, stream: dict) -> dict:
+
+    def _parse_audio_stream(self, stream: dict[str, Any]) -> dict[str, Any]:
         """Parse audio stream information"""
         return {
             'index': stream.get('index', 0),
@@ -200,8 +199,8 @@ class MediaInfoExtractor:
             'title': stream.get('tags', {}).get('title', ''),
             'duration': float(stream.get('duration', 0))
         }
-    
-    def _parse_subtitle_stream(self, stream: dict) -> dict:
+
+    def _parse_subtitle_stream(self, stream: dict[str, Any]) -> dict[str, Any]:
         """Parse subtitle stream information"""
         return {
             'index': stream.get('index', 0),
@@ -210,18 +209,76 @@ class MediaInfoExtractor:
             'title': stream.get('tags', {}).get('title', ''),
             'forced': stream.get('disposition', {}).get('forced', 0) == 1
         }
-    
-    def format_info(self, media_info: Dict, detailed: bool = True) -> str:
+
+    def _append_file_info(self, lines: list[str], fmt: dict[str, Any]) -> None:
+        lines.append("📊 <b>Media Information</b>\n")
+        lines.append(f"📁 <b>File:</b> {fmt['filename']}")
+        lines.append(f"📦 <b>Format:</b> {fmt['format_name'].upper()}")
+        lines.append(f"⏱ <b>Duration:</b> {self._format_duration(fmt['duration'])}")
+        lines.append(f"💾 <b>Size:</b> {self._format_size(fmt['size'])}")
+        lines.append(f"📡 <b>Bitrate:</b> {self._format_bitrate(fmt['bitrate'])}\n")
+
+    def _append_video_streams(self, lines: list[str], videos: list[dict[str, Any]], detailed: bool) -> None:
+        if not videos:
+            return
+        lines.append("🎬 <b>Video Streams:</b>")
+        for i, video in enumerate(videos, 1):
+            lines.append(f"  <b>Stream {i}:</b>")
+            lines.append(f"    • Codec: {video['codec_name'].upper()} ({video['profile']})")
+            lines.append(f"    • Resolution: {video['resolution']} @ {video['fps']} FPS")
+            lines.append(f"    • Aspect Ratio: {video['aspect_ratio']}")
+            if video['bitrate'] > 0:
+                lines.append(f"    • Bitrate: {self._format_bitrate(video['bitrate'])}")
+            if detailed:
+                lines.append(f"    • Pixel Format: {video['pix_fmt']}")
+                lines.append(f"    • Color Space: {video['color_space']}")
+        lines.append("")
+
+    def _append_audio_streams(self, lines: list[str], audios: list[dict[str, Any]]) -> None:
+        if not audios:
+            return
+        lines.append("🔊 <b>Audio Streams:</b>")
+        for i, audio in enumerate(audios, 1):
+            title = f" - {audio['title']}" if audio['title'] else ""
+            lang = f" ({audio['language']})" if audio['language'] != 'Unknown' else ""
+            lines.append(f"  <b>Stream {i}{title}{lang}:</b>")
+            lines.append(f"    • Codec: {audio['codec_name'].upper()}")
+            lines.append(f"    • Channels: {audio['channels']} ({audio['channel_layout']})")
+            lines.append(f"    • Sample Rate: {audio['sample_rate']} Hz")
+            if audio['bitrate'] > 0:
+                lines.append(f"    • Bitrate: {self._format_bitrate(audio['bitrate'])}")
+        lines.append("")
+
+    def _append_subtitle_streams(self, lines: list[str], subtitles: list[dict[str, Any]]) -> None:
+        if not subtitles:
+            return
+        lines.append("💬 <b>Subtitle Streams:</b>")
+        for i, sub in enumerate(subtitles, 1):
+            title = f" - {sub['title']}" if sub['title'] else ""
+            lang = f" ({sub['language']})" if sub['language'] != 'Unknown' else ""
+            forced = " [FORCED]" if sub['forced'] else ""
+            lines.append(f"  {i}. {sub['codec_name'].upper()}{lang}{title}{forced}")
+        lines.append("")
+
+    def _append_metadata(self, lines: list[str], metadata: dict[str, Any], detailed: bool) -> None:
+        if not detailed or not metadata:
+            return
+        lines.append("ℹ️ <b>Metadata:</b>")
+        for key in ['title', 'artist', 'album', 'date', 'genre', 'comment']:
+            if key in metadata:
+                lines.append(f"  • {key.capitalize()}: {metadata[key]}")
+
+    def format_info(self, media_info: dict[str, Any], detailed: bool = True) -> str:
         """
         Format media info into readable text
-        
+
         Args:
             media_info: Dictionary from get_media_info()
             detailed: Include detailed stream information
-            
+
         Returns:
             Formatted string for display
-            
+
         Example:
             info = await extractor.get_media_info("video.mp4")
             text = extractor.format_info(info)
@@ -229,111 +286,61 @@ class MediaInfoExtractor:
         """
         if not media_info:
             return "❌ Unable to extract media information"
-        
-        lines = []
+
+        lines: list[str] = []
         fmt = media_info['format']
-        
-        # Header
-        lines.append("📊 <b>Media Information</b>\n")
-        
-        # File info
-        lines.append(f"📁 <b>File:</b> {fmt['filename']}")
-        lines.append(f"📦 <b>Format:</b> {fmt['format_name'].upper()}")
-        lines.append(f"⏱ <b>Duration:</b> {self._format_duration(fmt['duration'])}")
-        lines.append(f"💾 <b>Size:</b> {self._format_size(fmt['size'])}")
-        lines.append(f"📡 <b>Bitrate:</b> {self._format_bitrate(fmt['bitrate'])}\n")
-        
-        # Video streams
-        if media_info['video_streams']:
-            lines.append("🎬 <b>Video Streams:</b>")
-            for i, video in enumerate(media_info['video_streams'], 1):
-                lines.append(f"  <b>Stream {i}:</b>")
-                lines.append(f"    • Codec: {video['codec_name'].upper()} ({video['profile']})")
-                lines.append(f"    • Resolution: {video['resolution']} @ {video['fps']} FPS")
-                lines.append(f"    • Aspect Ratio: {video['aspect_ratio']}")
-                if video['bitrate'] > 0:
-                    lines.append(f"    • Bitrate: {self._format_bitrate(video['bitrate'])}")
-                if detailed:
-                    lines.append(f"    • Pixel Format: {video['pix_fmt']}")
-                    lines.append(f"    • Color Space: {video['color_space']}")
-            lines.append("")
-        
-        # Audio streams
-        if media_info['audio_streams']:
-            lines.append("🔊 <b>Audio Streams:</b>")
-            for i, audio in enumerate(media_info['audio_streams'], 1):
-                title = f" - {audio['title']}" if audio['title'] else ""
-                lang = f" ({audio['language']})" if audio['language'] != 'Unknown' else ""
-                lines.append(f"  <b>Stream {i}{title}{lang}:</b>")
-                lines.append(f"    • Codec: {audio['codec_name'].upper()}")
-                lines.append(f"    • Channels: {audio['channels']} ({audio['channel_layout']})")
-                lines.append(f"    • Sample Rate: {audio['sample_rate']} Hz")
-                if audio['bitrate'] > 0:
-                    lines.append(f"    • Bitrate: {self._format_bitrate(audio['bitrate'])}")
-            lines.append("")
-        
-        # Subtitles
-        if media_info['subtitle_streams']:
-            lines.append("💬 <b>Subtitle Streams:</b>")
-            for i, sub in enumerate(media_info['subtitle_streams'], 1):
-                title = f" - {sub['title']}" if sub['title'] else ""
-                lang = f" ({sub['language']})" if sub['language'] != 'Unknown' else ""
-                forced = " [FORCED]" if sub['forced'] else ""
-                lines.append(f"  {i}. {sub['codec_name'].upper()}{lang}{title}{forced}")
-            lines.append("")
-        
-        # Metadata
-        if detailed and media_info['metadata']:
-            meta = media_info['metadata']
-            lines.append("ℹ️ <b>Metadata:</b>")
-            for key in ['title', 'artist', 'album', 'date', 'genre', 'comment']:
-                if key in meta:
-                    lines.append(f"  • {key.capitalize()}: {meta[key]}")
-        
+
+        self._append_file_info(lines, fmt)
+        self._append_video_streams(lines, media_info['video_streams'], detailed)
+        self._append_audio_streams(lines, media_info['audio_streams'])
+        self._append_subtitle_streams(lines, media_info['subtitle_streams'])
+        self._append_metadata(lines, media_info['metadata'], detailed)
+
         return '\n'.join(lines)
-    
+
     def _format_duration(self, seconds: float) -> str:
         """Convert seconds to HH:MM:SS format"""
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
-        
+
         if hours > 0:
             return f"{hours:02d}:{minutes:02d}:{secs:02d}"
         else:
             return f"{minutes:02d}:{secs:02d}"
-    
+
     def _format_size(self, bytes: int) -> str:
         """Format bytes to human readable size"""
+        size = float(bytes)
         for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-            if bytes < 1024.0:
-                return f"{bytes:.2f} {unit}"
-            bytes /= 1024.0
-        return f"{bytes:.2f} PB"
-    
+            if size < 1024.0:
+                return f"{size:.2f} {unit}"
+            size /= 1024.0
+        return f"{size:.2f} PB"
+
     def _format_bitrate(self, bitrate: int) -> str:
         """Format bitrate to Kbps or Mbps"""
         if bitrate == 0:
             return "N/A"
-        
+
         kbps = bitrate / 1000
         if kbps >= 1000:
             return f"{kbps/1000:.2f} Mbps"
         else:
             return f"{kbps:.0f} Kbps"
-    
+
     async def extract_thumbnail(self, file_path: str, output_path: str, timestamp: str = "00:00:05") -> bool:
         """
         Extract thumbnail from video at specified timestamp
-        
+
         Args:
             file_path: Path to video file
             output_path: Path to save thumbnail
             timestamp: Time position (HH:MM:SS format)
-            
+
         Returns:
             True if successful
-            
+
         Example:
             success = await extractor.extract_thumbnail(
                 "video.mp4",
@@ -351,36 +358,36 @@ class MediaInfoExtractor:
                 '-y',
                 output_path
             ]
-            
+
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            
+
             await process.communicate()
-            
+
             output_exists = await asyncio.to_thread(os.path.exists, output_path)
             return process.returncode == 0 and output_exists
-            
+
         except Exception as e:
             LOGGER.error(f"Thumbnail extraction error: {e}")
             return False
-    
-    def get_quality_rating(self, media_info: Dict) -> str:
+
+    def get_quality_rating(self, media_info: dict[str, Any]) -> str:
         """
         Rate video quality based on technical specs
-        
+
         Returns:
             Quality rating string (Low/Medium/High/Excellent)
         """
         if not media_info or not media_info['video_streams']:
             return "Unknown"
-        
+
         video = media_info['video_streams'][0]
         height = video['height']
         bitrate = video['bitrate']
-        
+
         # Resolution-based rating
         if height >= 2160:  # 4K
             quality = "Excellent (4K)"
@@ -392,13 +399,13 @@ class MediaInfoExtractor:
             quality = "Low (480p)"
         else:
             quality = "Very Low"
-        
+
         # Adjust based on bitrate
         if bitrate > 0:
             expected_bitrate = height * video['width'] * video['fps'] * 0.1
             if bitrate < expected_bitrate * 0.5:
                 quality += " ⚠️ Low Bitrate"
-        
+
         return quality
 
 

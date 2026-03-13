@@ -10,9 +10,9 @@ Date: February 5, 2026
 import asyncio
 import importlib
 from abc import ABC, abstractmethod
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from typing import Dict, List, Optional, Callable, Any
-import json
+from typing import Any, Callable, Dict, List, Optional, TypeAlias
 
 from bot.core import LOGGER, Config
 
@@ -27,7 +27,7 @@ class PluginMetadata:
         author: str,
         description: str,
         plugin_type: str,
-    ):
+    ) -> None:
         self.name = name
         self.version = version
         self.author = author
@@ -40,31 +40,28 @@ class PluginMetadata:
 class BasePlugin(ABC):
     """Base class for all plugins"""
 
-    def __init__(self, metadata: PluginMetadata):
+    def __init__(self, metadata: PluginMetadata) -> None:
         self.metadata = metadata
         self.is_enabled = True
-        self.config = {}
+        self.config: Dict[str, Any] = {}
 
     @abstractmethod
     async def initialize(self) -> bool:
         """Initialize plugin
-        
+
         Returns:
             True if initialization successful
         """
-        pass
 
     @abstractmethod
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown plugin - cleanup resources"""
-        pass
 
     @abstractmethod
-    async def execute(self, *args, **kwargs) -> Any:
+    async def execute(self, *args: Any, **kwargs: Any) -> Any:
         """Execute plugin functionality"""
-        pass
 
-    def set_config(self, config: Dict[str, Any]):
+    def set_config(self, config: Dict[str, Any]) -> None:
         """Set plugin configuration"""
         self.config = config
 
@@ -72,11 +69,11 @@ class BasePlugin(ABC):
         """Get plugin configuration"""
         return self.config
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable plugin"""
         self.is_enabled = True
 
-    def disable(self):
+    def disable(self) -> None:
         """Disable plugin"""
         self.is_enabled = False
 
@@ -86,15 +83,15 @@ class BackupPlugin(BasePlugin):
 
     async def execute(self, source_path: str, backup_name: str) -> bool:
         """Execute backup
-        
+
         Args:
             source_path: Path to backup
             backup_name: Name for backup
-            
+
         Returns:
             True if backup successful
         """
-        pass
+        raise NotImplementedError
 
 
 class AlertPlugin(BasePlugin):
@@ -102,14 +99,14 @@ class AlertPlugin(BasePlugin):
 
     async def execute(self, alert_data: Dict[str, Any]) -> bool:
         """Execute alert notification
-        
+
         Args:
             alert_data: Alert information
-            
+
         Returns:
             True if alert sent successfully
         """
-        pass
+        raise NotImplementedError
 
 
 class MonitorPlugin(BasePlugin):
@@ -117,14 +114,17 @@ class MonitorPlugin(BasePlugin):
 
     async def execute(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
         """Execute monitoring
-        
+
         Args:
             metrics: System metrics
-            
+
         Returns:
             Monitoring results
         """
-        pass
+        raise NotImplementedError
+
+
+HookCallback: TypeAlias = Callable[..., Any]
 
 
 class PluginManager:
@@ -133,27 +133,27 @@ class PluginManager:
     Handles loading, enabling, disabling, and executing plugins
     """
 
-    _instance = None
+    _instance: Optional["PluginManager"] = None
     _plugins: Dict[str, BasePlugin] = {}
-    _plugin_registry: Dict[str, type] = {}
-    _hooks: Dict[str, List[Callable]] = {}
+    _plugin_registry: Dict[str, type[BasePlugin]] = {}
+    _hooks: Dict[str, List[HookCallback]] = {}
 
-    def __new__(cls):
+    def __new__(cls) -> "PluginManager":
         if cls._instance is None:
             cls._instance = super(PluginManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._plugins = {}
             self._plugin_registry = {}
             self._hooks = {}
             self._initialized = True
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable plugin manager"""
         enabled = getattr(Config, "ENABLE_PLUGIN_SYSTEM", False)
-        
+
         if enabled:
             self._load_plugins()
             LOGGER.info("✅ Plugin system enabled")
@@ -165,9 +165,9 @@ class PluginManager:
         """Check if plugin manager is enabled"""
         return getattr(Config, "ENABLE_PLUGIN_SYSTEM", False)
 
-    def register_plugin_type(self, plugin_type: str, plugin_class: type):
+    def register_plugin_type(self, plugin_type: str, plugin_class: type[BasePlugin]) -> None:
         """Register a plugin type
-        
+
         Args:
             plugin_type: Type identifier (e.g., 'backup', 'alert')
             plugin_class: Plugin class to register
@@ -177,23 +177,26 @@ class PluginManager:
 
     async def load_plugin(self, plugin_path: str) -> Optional[str]:
         """Load a plugin from file
-        
+
         Args:
             plugin_path: Path to plugin file or module
-            
+
         Returns:
             Plugin name if successful, None otherwise
         """
         try:
-            plugin_dir = Path(plugin_path).parent
+            Path(plugin_path).parent
             plugin_name = Path(plugin_path).stem
 
             # Import plugin module
-            spec = importlib.util.spec_from_file_location(
+            spec = spec_from_file_location(
                 plugin_name,
                 plugin_path
             )
-            module = importlib.util.module_from_spec(spec)
+            if spec is None or spec.loader is None:
+                LOGGER.error(f"Could not load plugin spec: {plugin_path}")
+                return None
+            module = module_from_spec(spec)
             spec.loader.exec_module(module)
 
             # Get plugin class (convention: class name = PluginName)
@@ -225,7 +228,7 @@ class PluginManager:
             LOGGER.error(f"Error loading plugin {plugin_path}: {e}")
             return None
 
-    def _load_plugins(self):
+    def _load_plugins(self) -> None:
         """Load plugins from plugins directory"""
         plugin_dir = Path(getattr(Config, "PLUGINS_DIR", "plugins"))
 
@@ -250,19 +253,19 @@ class PluginManager:
                         import asyncio
                         asyncio.run(self.load_plugin(str(plugin_file)))
                 except Exception as e:
-                    LOGGER.warning(f"Failed to load plugin {plugin_file}: {e}\")
+                    LOGGER.warning(f"Failed to load plugin {plugin_file}: {e}")
 
         except Exception as e:
             LOGGER.error(f"Error loading plugins: {e}")
 
-    async def execute_plugin(self, plugin_name: str, *args, **kwargs) -> Any:
+    async def execute_plugin(self, plugin_name: str, *args: Any, **kwargs: Any) -> Any:
         """Execute a plugin
-        
+
         Args:
             plugin_name: Name of plugin to execute
             *args: Arguments to pass to plugin
             **kwargs: Keyword arguments to pass to plugin
-            
+
         Returns:
             Plugin execution result
         """
@@ -329,9 +332,9 @@ class PluginManager:
 
     # ============ Hook System ============
 
-    def register_hook(self, hook_name: str, callback: Callable):
+    def register_hook(self, hook_name: str, callback: HookCallback) -> None:
         """Register a callback for a hook
-        
+
         Args:
             hook_name: Name of hook to register for
             callback: Function to call when hook fires
@@ -342,14 +345,14 @@ class PluginManager:
         self._hooks[hook_name].append(callback)
         LOGGER.debug(f"Hook registered: {hook_name}")
 
-    async def trigger_hook(self, hook_name: str, *args, **kwargs) -> List[Any]:
+    async def trigger_hook(self, hook_name: str, *args: Any, **kwargs: Any) -> List[Any]:
         """Trigger a hook - call all registered callbacks
-        
+
         Args:
             hook_name: Name of hook to trigger
             *args: Arguments to pass to callbacks
             **kwargs: Keyword arguments to pass to callbacks
-            
+
         Returns:
             List of results from all callbacks
         """
@@ -370,7 +373,7 @@ class PluginManager:
 
         return results
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown all plugins"""
         for plugin_name in list(self._plugins.keys()):
             await self.unload_plugin(plugin_name)

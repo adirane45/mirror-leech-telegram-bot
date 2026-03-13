@@ -11,13 +11,13 @@ Use Kubernetes/Docker Swarm for orchestration and Redis for distributed features
 """
 
 import logging
+from datetime import UTC, datetime
 from typing import Any, Dict, Optional
-from datetime import datetime, UTC
 
-from bot.core.health_monitor import HealthMonitor
-from bot.core.failover_manager import FailoverManager
-from bot.core.task_coordinator import TaskCoordinator
 from bot.core.api_gateway import ApiGateway
+from bot.core.failover_manager import FailoverManager
+from bot.core.health_monitor import HealthMonitor
+from bot.core.task_coordinator import TaskCoordinator
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,87 @@ async def initialize_enhanced_services(
     }
 
 
+async def _initialize_health_monitor(final_config, results) -> None:
+    if not final_config.get("ENABLE_HEALTH_MONITOR"):
+        return
+
+    try:
+        logger.info("  📊 Initializing Health Monitor...")
+        health_monitor = HealthMonitor.get_instance()
+        health_monitor.check_interval = final_config["HEALTH_CHECK_INTERVAL"]
+        await health_monitor.enable()
+        results["components"]["health_monitor"] = True
+        _phase5_status.components["health_monitor"] = True
+        logger.info("  ✅ Health Monitor: Active")
+    except Exception as e:
+        logger.error(f"  ❌ Health Monitor failed: {e}")
+        results["components"]["health_monitor"] = False
+        results["errors"].append(f"Health Monitor: {str(e)}")
+        results["success"] = False
+        _phase5_status.errors["health_monitor"] = str(e)
+
+
+async def _initialize_failover_manager(final_config, results) -> None:
+    if not final_config.get("ENABLE_FAILOVER_MANAGER"):
+        return
+
+    try:
+        logger.info("  🔄 Initializing Failover Manager...")
+        failover = FailoverManager.get_instance()
+        failover.max_retries = 3
+        await failover.start()
+        results["components"]["failover_manager"] = True
+        _phase5_status.components["failover_manager"] = True
+        logger.info("  ✅ Failover Manager: Active")
+    except Exception as e:
+        logger.error(f"  ❌ Failover Manager failed: {e}")
+        results["components"]["failover_manager"] = False
+        results["errors"].append(f"Failover Manager: {str(e)}")
+        _phase5_status.errors["failover_manager"] = str(e)
+        results["success"] = False
+
+
+async def _initialize_task_coordinator(final_config, results) -> None:
+    if not final_config.get("ENABLE_TASK_COORDINATOR"):
+        return
+
+    try:
+        logger.info("  📋 Initializing Task Coordinator...")
+        coordinator = TaskCoordinator.get_instance()
+        coordinator.max_parallel_tasks = final_config.get(
+            "TASK_COORDINATOR_MAX_PARALLEL", 10
+        )
+        await coordinator.start()
+        results["components"]["task_coordinator"] = True
+        _phase5_status.components["task_coordinator"] = True
+        logger.info("  ✅ Task Coordinator: Active")
+    except Exception as e:
+        logger.error(f"  ❌ Task Coordinator failed: {e}")
+        results["components"]["task_coordinator"] = False
+        results["errors"].append(f"Task Coordinator: {str(e)}")
+        _phase5_status.errors["task_coordinator"] = str(e)
+        results["success"] = False
+
+
+async def _initialize_api_gateway(final_config, results) -> None:
+    if not final_config.get("ENABLE_API_GATEWAY"):
+        return
+
+    try:
+        logger.info("  🌉 Initializing API Gateway...")
+        gateway = ApiGateway.get_instance()
+        await gateway.start()
+        results["components"]["api_gateway"] = True
+        _phase5_status.components["api_gateway"] = True
+        logger.info("  ✅ API Gateway: Active")
+    except Exception as e:
+        logger.error(f"  ❌ API Gateway failed: {e}")
+        results["components"]["api_gateway"] = False
+        results["errors"].append(f"API Gateway: {str(e)}")
+        _phase5_status.errors["api_gateway"] = str(e)
+        results["success"] = False
+
+
 async def initialize_phase5_services(
     config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
@@ -148,7 +229,6 @@ async def initialize_phase5_services(
     if config:
         final_config.update(config)
 
-    # Check master switch
     if not final_config.get("ENABLE_PHASE5", False):
         logger.info("🔧 Phase 5: Disabled (ENABLE_PHASE5=False)")
         return {
@@ -169,93 +249,11 @@ async def initialize_phase5_services(
         "errors": [],
     }
 
-    # ========================================
-    # TIER 1: Fault Detection & Recovery
-    # ========================================
+    await _initialize_health_monitor(final_config, results)
+    await _initialize_failover_manager(final_config, results)
+    await _initialize_task_coordinator(final_config, results)
+    await _initialize_api_gateway(final_config, results)
 
-    # 1. Health Monitor (Foundation)
-    if final_config.get("ENABLE_HEALTH_MONITOR"):
-        try:
-            logger.info("  📊 Initializing Health Monitor...")
-            health_monitor = HealthMonitor.get_instance()
-            health_monitor.check_interval = final_config["HEALTH_CHECK_INTERVAL"]
-            await health_monitor.enable()
-            results["components"]["health_monitor"] = True
-            _phase5_status.components["health_monitor"] = True
-            logger.info("  ✅ Health Monitor: Active")
-        except Exception as e:
-            logger.error(f"  ❌ Health Monitor failed: {e}")
-            results["components"]["health_monitor"] = False
-            results["errors"].append(f"Health Monitor: {str(e)}")
-            results["success"] = False
-            _phase5_status.errors["health_monitor"] = str(e)
-
-    # 2. Failover Manager
-    if final_config.get("ENABLE_FAILOVER_MANAGER"):
-        try:
-            logger.info("  🔄 Initializing Failover Manager...")
-            failover = FailoverManager.get_instance()
-            failover.max_retries = 3
-            await failover.start()
-
-            results["components"]["failover_manager"] = True
-            _phase5_status.components["failover_manager"] = True
-            logger.info("  ✅ Failover Manager: Active")
-        except Exception as e:
-            logger.error(f"  ❌ Failover Manager failed: {e}")
-            results["components"]["failover_manager"] = False
-            results["errors"].append(f"Failover Manager: {str(e)}")
-            _phase5_status.errors["failover_manager"] = str(e)
-            results["success"] = False
-
-    # ========================================
-    # TIER 2: State Consistency
-    # ========================================
-
-
-
-    # ========================================
-    # TIER 3: Orchestration & APIs
-    # ========================================
-
-    # 3. Task Coordinator
-    if final_config.get("ENABLE_TASK_COORDINATOR"):
-        try:
-            logger.info("  📋 Initializing Task Coordinator...")
-            coordinator = TaskCoordinator.get_instance()
-            coordinator.max_parallel_tasks = final_config.get(
-                "TASK_COORDINATOR_MAX_PARALLEL", 10
-            )
-            await coordinator.start()
-
-            results["components"]["task_coordinator"] = True
-            _phase5_status.components["task_coordinator"] = True
-            logger.info("  ✅ Task Coordinator: Active")
-        except Exception as e:
-            logger.error(f"  ❌ Task Coordinator failed: {e}")
-            results["components"]["task_coordinator"] = False
-            results["errors"].append(f"Task Coordinator: {str(e)}")
-            _phase5_status.errors["task_coordinator"] = str(e)
-            results["success"] = False
-
-    # 4. API Gateway
-    if final_config.get("ENABLE_API_GATEWAY"):
-        try:
-            logger.info("  🌉 Initializing API Gateway...")
-            gateway = ApiGateway.get_instance()
-            await gateway.start()
-
-            results["components"]["api_gateway"] = True
-            _phase5_status.components["api_gateway"] = True
-            logger.info("  ✅ API Gateway: Active")
-        except Exception as e:
-            logger.error(f"  ❌ API Gateway failed: {e}")
-            results["components"]["api_gateway"] = False
-            results["errors"].append(f"API Gateway: {str(e)}")
-            _phase5_status.errors["api_gateway"] = str(e)
-            results["success"] = False
-
-    # Final summary
     active_count = sum(1 for v in results["components"].values() if v)
     total_count = len(results["components"])
 
@@ -346,6 +344,68 @@ def get_phase5_status() -> Dict[str, Any]:
     return _phase5_status.to_dict()
 
 
+def _gather_health_monitor_status() -> Dict[str, Any]:
+    """Gather health monitor component status"""
+    try:
+        health_monitor = HealthMonitor.get_instance()
+        return {
+            "active": True,
+            "components": len(health_monitor.components),
+            "unhealthy": sum(
+                1
+                for c in health_monitor.components.values()
+                if c.status.value in ["unhealthy", "critical"]
+            ),
+        }
+    except Exception:
+        return {"active": False}
+
+def _gather_failover_status() -> Dict[str, Any]:
+    """Gather failover manager component status"""
+    try:
+        failover = FailoverManager.get_instance()
+        return {
+            "active": True,
+            "enabled": failover.enabled,
+            "recovery_operations": len(failover.active_recoveries),
+        }
+    except Exception:
+        return {"active": False}
+
+def _gather_task_coordinator_status() -> Dict[str, Any]:
+    """Gather task coordinator component status"""
+    try:
+        coordinator = TaskCoordinator.get_instance()
+        metrics = coordinator.get_metrics()
+        return {
+            "active": True,
+            "total_tasks": metrics.total_tasks,
+            "active_tasks": metrics.active_tasks,
+            "completed": metrics.completed_tasks,
+            "failed": metrics.failed_tasks,
+        }
+    except Exception:
+        return {"active": False}
+
+def _gather_api_gateway_status() -> Dict[str, Any]:
+    """Gather API gateway component status"""
+    try:
+        gateway = ApiGateway.get_instance()
+        metrics = gateway.get_metrics()
+        return {
+            "active": True,
+            "total_requests": metrics.total_requests,
+            "success_rate": (
+                metrics.successful_requests / metrics.total_requests * 100
+            )
+            if metrics.total_requests > 0
+            else 0,
+            "rate_limited": metrics.rate_limited_requests,
+            "circuit_breaker_open": metrics.circuit_breaker_open,
+        }
+    except Exception:
+        return {"active": False}
+
 async def get_phase5_detailed_status() -> Dict[str, Any]:
     """
     Get detailed status of all Phase 5 components
@@ -369,62 +429,16 @@ async def get_phase5_detailed_status() -> Dict[str, Any]:
 
     # Gather status from each active component
     if "health_monitor" in _phase5_status.components:
-        try:
-            health_monitor = HealthMonitor.get_instance()
-            detailed["components"]["health_monitor"] = {
-                "active": True,
-                "components": len(health_monitor.components),
-                "unhealthy": sum(
-                    1
-                    for c in health_monitor.components.values()
-                    if c.status.value in ["unhealthy", "critical"]
-                ),
-            }
-        except Exception:
-            detailed["components"]["health_monitor"] = {"active": False}
+        detailed["components"]["health_monitor"] = _gather_health_monitor_status()
 
     if "failover_manager" in _phase5_status.components:
-        try:
-            failover = FailoverManager.get_instance()
-            detailed["components"]["failover_manager"] = {
-                "active": True,
-                "enabled": failover.enabled,
-                "recovery_operations": len(failover.active_recoveries),
-            }
-        except Exception:
-            detailed["components"]["failover_manager"] = {"active": False}
+        detailed["components"]["failover_manager"] = _gather_failover_status()
 
     if "task_coordinator" in _phase5_status.components:
-        try:
-            coordinator = TaskCoordinator.get_instance()
-            metrics = coordinator.get_metrics()
-            detailed["components"]["task_coordinator"] = {
-                "active": True,
-                "total_tasks": metrics.total_tasks,
-                "active_tasks": metrics.active_tasks,
-                "completed": metrics.completed_tasks,
-                "failed": metrics.failed_tasks,
-            }
-        except Exception:
-            detailed["components"]["task_coordinator"] = {"active": False}
+        detailed["components"]["task_coordinator"] = _gather_task_coordinator_status()
 
     if "api_gateway" in _phase5_status.components:
-        try:
-            gateway = ApiGateway.get_instance()
-            metrics = gateway.get_metrics()
-            detailed["components"]["api_gateway"] = {
-                "active": True,
-                "total_requests": metrics.total_requests,
-                "success_rate": (
-                    metrics.successful_requests / metrics.total_requests * 100
-                )
-                if metrics.total_requests > 0
-                else 0,
-                "rate_limited": metrics.rate_limited_requests,
-                "circuit_breaker_open": metrics.circuit_breaker_open,
-            }
-        except Exception:
-            detailed["components"]["api_gateway"] = {"active": False}
+        detailed["components"]["api_gateway"] = _gather_api_gateway_status()
 
     return detailed
 
