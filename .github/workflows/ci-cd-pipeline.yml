@@ -37,7 +37,7 @@ jobs:
         pip-audit --desc --format json
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: security-reports
@@ -88,7 +88,7 @@ jobs:
       run: isort --check-only --diff bot/
 
     - name: Upload quality reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: quality-reports
@@ -169,7 +169,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload test reports
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-reports

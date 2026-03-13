@@ -76,14 +76,14 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-results-py${{ matrix.python-version }}
           path: junit.xml
 
       - name: Upload coverage artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-html-py${{ matrix.python-version }}
           path: htmlcov/
