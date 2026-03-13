@@ -1,4 +1,9 @@
-.PHONY: help install install-dev install-prod test lint format clean build up down restart logs
+.PHONY: help install install-dev install-prod test lint format type-check type-check-strict quality-gate ci-check ci-test precommit-full clean build up down restart logs
+
+PYTHON_BIN ?= ./venv/bin/python
+PYTEST_BIN ?= $(PYTHON_BIN) -m pytest
+MYPY_BIN ?= $(PYTHON_BIN) -m mypy
+STRICT_MYPY_TARGETS ?= config/ src/bot/core/alert_manager.py src/bot/core/alert_manager_models.py src/bot/core/lazy_imports.py src/bot/core/memory_mapped_files.py src/bot/core/smart_retry.py src/bot/core/anomaly src/bot/core/mmap src/bot/core/plugin_manager.py src/bot/core/logger_manager.py src/bot/core/config_manager.py src/bot/core/celery_app.py src/bot/core/backup_manager.py src/bot/core/priority_queue.py src/bot/core/archive_manager.py src/bot/core/health_monitor.py src/bot/core/command_health_monitor.py src/bot/core/command_alert_system.py src/bot/core/command_monitor_decorator.py src/bot/core/auto_recovery_handler.py src/bot/core/automation_system.py src/bot/core/recovery_manager.py src/bot/core/client_selector.py src/bot/core/thumbnail_manager.py src/bot/core/monitoring.py src/bot/core/performance_metrics_collector.py src/bot/core/bandwidth_limiter.py src/bot/core/metrics_server.py src/bot/core/logging_config.py src/bot/core/rate_limiter_models.py src/bot/core/batch_operations.py src/bot/core/enhanced_feedback_models.py src/bot/core/advanced_dashboard_html.py src/bot/core/api_gateway_models.py src/bot/core/batch_processor_models.py src/bot/core/cache_manager_models.py src/bot/core/celery_config.py src/bot/core/client_selector_models.py src/bot/core/connection_pool_manager_models.py src/bot/core/advanced_analytics.py src/bot/core/api_gateway_limiter.py src/bot/core/api_gateway_router.py src/bot/core/batch_processor.py src/bot/core/circuit_breaker.py src/bot/core/connection_pool_manager.py src/bot/core/task_models.py src/bot/core/performance_optimizer_models.py src/bot/core/query_optimizer_models.py src/bot/core/load_balancer_models.py src/bot/core/replication_models.py src/bot/core/rate_limiter.py src/bot/core/failover_models.py src/bot/core/cache_manager.py src/bot/core/caching.py src/bot/core/dashboard_html.py src/bot/core/debrid_manager.py src/bot/core/csrf_protection.py src/bot/core/drive_quota_bypass.py src/bot/core/cross_seed_farming.py src/bot/core/download_templates.py src/bot/core/blake3_hasher.py src/bot/core/api_gateway.py src/bot/core/health_models.py src/bot/core/index_generator.py src/bot/core/media_info.py src/bot/core/ml_anomaly_detection.py src/bot/core/recursive_extractor.py src/bot/core/salvage_mode.py src/bot/core/security_audit.py src/bot/core/gdrive_batch_optimizer.py src/bot/core/task_assignment_manager.py src/bot/core/task_execution_monitor.py src/bot/core/zero_copy_uploader.py src/bot/core/failover_cascade_detector.py src/bot/core/mfa_manager.py src/bot/core/mtproto_parallel_uploader.py src/bot/core/performance_scaling_engine.py src/bot/core/query_optimizer.py src/bot/core/replication_conflict_resolver.py src/bot/core/failover_recovery_executor.py src/bot/core/replication_sync_engine.py src/bot/core/task_categorizer.py src/bot/core/input_validator.py src/bot/core/link_bypassers.py src/bot/core/load_balancer.py src/bot/core/secrets_manager.py src/bot/core/security_headers.py src/bot/core/failover_manager.py src/bot/core/log_stream.py src/bot/core/smart_notifications.py src/bot/core/task_coordinator.py src/bot/core/replication_manager.py src/bot/core/secret_reader.py src/bot/core/web3_ipfs_storage.py src/bot/core/stream_proxy.py src/bot/core/web_dashboard.py src/bot/core/admin_auth.py src/bot/core/advanced_dashboard_websocket.py src/bot/core/memory_manager.py src/bot/core/advanced_cache.py src/bot/core/profiler.py src/bot/core/dashboard_manager.py src/bot/core/dashboard_routes.py src/bot/core/redis_manager.py src/bot/core/repositories/__init__.py src/bot/core/repositories/cache_repository.py src/bot/core/repositories/rate_limit_repository.py src/bot/core/repositories/session_repository.py src/bot/core/repositories/stats_repository.py src/bot/core/repositories/task_status_repository.py src/bot/core/databases.py src/bot/core/dlq_handler.py src/bot/core/edge_workers.py src/bot/core/load_tester.py src/bot/core/metadata_stripper.py src/bot/core/resilience.py src/bot/core/security.py src/bot/core/security_middleware.py src/bot/core/task_scheduler.py src/bot/core/file_cache_manager.py src/bot/core/handler_registry.py src/bot/core/handlers.py src/bot/core/core_handlers.py src/bot/core/enhanced_feedback.py src/bot/core/enhanced_stats.py src/bot/core/captcha_solver.py src/web/admin_auth.py src/web/admin_login.py src/bot/modules/history.py src/bot/modules/gd_delete.py src/bot/modules/shell.py
 
 help:
 	@echo "Mirror-Leech Telegram Bot - Development Commands"
@@ -11,6 +16,12 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  make lint                 Run linters (pylint, flake8, mypy)"
+	@echo "  make type-check           Run type safety checks (non-strict)"
+	@echo "  make type-check-strict    Run strict type checking on core modules"
+	@echo "  make quality-gate         Run enforceable type-quality checks"
+	@echo "  make ci-check             CI-ready enforceable quality sequence"
+	@echo "  make ci-test              Run full test suite (currently has known collection issues)"
+	@echo "  make precommit-full       Run full pre-commit hook suite (legacy backlog may fail)"
 	@echo "  make format               Format code with black and isort"
 	@echo "  make test                 Run test suite with coverage"
 	@echo "  make test-verbose         Run tests with verbose output"
@@ -54,7 +65,35 @@ lint:
 	@echo "Running flake8..."
 	flake8 src/ --max-line-length=120 --extend-ignore=E203,W503 || true
 	@echo "Running mypy..."
-	mypy src/ --ignore-missing-imports --no-error-summary || true
+	$(MYPY_BIN) src/ config/ --pretty --show-error-codes || true
+
+type-check:
+	@echo "Running type safety checks..."
+	$(MYPY_BIN) src/ config/ --pretty --show-error-codes
+	@echo "✓ Type checking complete"
+
+type-check-strict:
+	@echo "Checking strict modules..."
+	$(MYPY_BIN) --config-file pyproject.toml $(STRICT_MYPY_TARGETS) --pretty --show-error-codes
+	@echo "✓ Strict type checking passed"
+
+quality-gate:
+	@echo "Running local quality gate..."
+	$(MYPY_BIN) --config-file pyproject.toml $(STRICT_MYPY_TARGETS) --pretty --show-error-codes
+	@echo "✓ Local quality gate passed"
+
+ci-check:
+	@echo "Running CI quality sequence..."
+	$(MYPY_BIN) --config-file pyproject.toml $(STRICT_MYPY_TARGETS) --pretty --show-error-codes
+	@echo "✓ CI quality sequence passed"
+
+ci-test:
+	@echo "Running full test suite..."
+	$(PYTEST_BIN) tests/ -q
+
+precommit-full:
+	@echo "Running full pre-commit suite..."
+	$(PYTHON_BIN) -m pre_commit run --all-files
 
 format:
 	@echo "Formatting with black..."
@@ -63,10 +102,10 @@ format:
 	isort src/ tests/ --profile black
 
 test:
-	pytest tests/ -v --cov=src --cov-report=html --cov-report=term-missing
+	$(PYTEST_BIN) tests/ -v --cov=src --cov-report=html --cov-report=term-missing
 
 test-verbose:
-	pytest tests/ -vv --cov=src --cov-report=html --tb=short
+	$(PYTEST_BIN) tests/ -vv --cov=src --cov-report=html --tb=short
 
 # Docker targets
 build:

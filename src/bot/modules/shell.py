@@ -2,11 +2,11 @@ from io import BytesIO
 
 from .. import LOGGER
 from ..helper.ext_utils.bot_utils import cmd_exec, new_task
-from ..helper.telegram_helper.message_utils import send_message, send_file
+from ..helper.telegram_helper.message_utils import send_file, send_message
 
 
 @new_task
-async def run_shell(_, message):
+async def run_shell(_, message) -> None:
     cmd = message.text.split(maxsplit=1)
     if len(cmd) == 1:
         await send_message(message, "No command to execute was given.")

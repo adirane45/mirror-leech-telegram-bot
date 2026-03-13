@@ -1,10 +1,11 @@
 """Admin authentication and JWT token management"""
 import os
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from jwt import encode, decode, ExpiredSignatureError, InvalidTokenError
-from passlib.context import CryptContext
+from typing import Any, Dict, Optional, cast
+
 from fastapi import HTTPException, status
+from jwt import ExpiredSignatureError, InvalidTokenError, decode, encode
+from passlib.context import CryptContext
 
 # JWT Configuration
 SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "your-secret-key-change-in-production")
@@ -17,17 +18,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AdminAuth:
     """Handle admin authentication"""
-    
+
     @staticmethod
     def hash_password(password: str) -> str:
         """Hash password using bcrypt"""
-        return pwd_context.hash(password)
-    
+        return cast(str, pwd_context.hash(password))
+
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify password against hash"""
-        return pwd_context.verify(plain_password, hashed_password)
-    
+        return cast(bool, pwd_context.verify(plain_password, hashed_password))
+
     @staticmethod
     def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """Create JWT access token"""
@@ -36,11 +37,11 @@ class AdminAuth:
             expire = datetime.utcnow() + expires_delta
         else:
             expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-        
+
         to_encode.update({"exp": expire})
         encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
-    
+
     @staticmethod
     def verify_token(token: str) -> Dict[str, Any]:
         """Verify JWT token and return payload"""
@@ -65,7 +66,7 @@ _ADMIN_PASSWORD_PLAIN = os.getenv("ADMIN_PASSWORD", "admin123")
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
 
 # Store admin credentials (in production, use database)
-def get_admin_credentials():
+def get_admin_credentials() -> Dict[str, str]:
     """Get admin credentials with lazy password hashing"""
     global ADMIN_PASSWORD_HASH
     if not ADMIN_PASSWORD_HASH:

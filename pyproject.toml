@@ -22,8 +22,204 @@ profile = "black"
 line_length = 120
 
 [tool.mypy]
+# Type checking configuration - gradually improving type safety
 python_version = "3.11"
+
+# Core strict settings
+strict = false  # Not fully strict yet, but using selective strict settings
+check_untyped_defs = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Allow gradual typing
+disallow_untyped_defs = false  # Too aggressive for now, use per-file strategy
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+no_implicit_optional = true
+no_implicit_reexport = true
+
+# Performance & reporting
+warn_return_any = false  # Reduce noise initially
+warn_unreachable = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+
+# External library handling
+ignore_missing_imports = false
+[[tool.mypy.overrides]]
+module = [
+    "telegram",
+    "telegram.*",
+    "aria2p",
+    "qbittorrent",
+    "telegram_bot_pagination",
+    "dotenv",
+    "kombu",
+    "celery",
+    "celery.*",
+    "aiofiles",
+    "anytree",
+    "pydrive2",
+    "apscheduler",
+    "apscheduler.*",
+    "passlib",
+    "passlib.*",
+]
 ignore_missing_imports = true
+
+# Integration modules: relax strict checks for third-party wrappers
+[[tool.mypy.overrides]]
+module = [
+    "integrations.rclone.*",
+    "integrations.myjd.*",
+    "integrations.sabnzbdapi.*",
+]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = false
+
+# Progressive: Files to enforce strict typing
+# Start with green modules only, expand gradually
+[[tool.mypy.overrides]]
+module = [
+    "config",
+    "config.main_config",
+    "src.bot.core.alert_manager",
+    "src.bot.core.alert_manager_models",
+    "src.bot.core.lazy_imports",
+    "src.bot.core.memory_mapped_files",
+    "src.bot.core.smart_retry",
+    "src.bot.core.anomaly",
+    "src.bot.core.anomaly.*",
+    "src.bot.core.mmap",
+    "src.bot.core.mmap.*",
+    "src.bot.core.plugin_manager",
+    "src.bot.core.logger_manager",
+    "src.bot.core.config_manager",
+    "src.bot.core.celery_app",
+    "src.bot.core.backup_manager",
+    "src.bot.core.priority_queue",
+    "src.bot.core.archive_manager",
+    "src.bot.core.health_monitor",
+    "src.bot.core.command_health_monitor",
+    "src.bot.core.command_alert_system",
+    "src.bot.core.command_monitor_decorator",
+    "src.bot.core.auto_recovery_handler",
+    "src.bot.core.automation_system",
+    "src.bot.core.recovery_manager",
+    "src.bot.core.client_selector",
+    "src.bot.core.thumbnail_manager",
+    "src.bot.core.monitoring",
+    "src.bot.core.performance_metrics_collector",
+    "src.bot.core.bandwidth_limiter",
+    "src.bot.core.metrics_server",
+    "src.bot.core.logging_config",
+    "src.bot.core.rate_limiter_models",
+    "src.bot.core.batch_operations",
+    "src.bot.core.enhanced_feedback_models",
+    "src.bot.core.advanced_dashboard_html",
+    "src.bot.core.api_gateway_models",
+    "src.bot.core.batch_processor_models",
+    "src.bot.core.cache_manager_models",
+    "src.bot.core.celery_config",
+    "src.bot.core.client_selector_models",
+    "src.bot.core.connection_pool_manager_models",
+    "src.bot.core.advanced_analytics",
+    "src.bot.core.api_gateway_limiter",
+    "src.bot.core.api_gateway_router",
+    "src.bot.core.batch_processor",
+    "src.bot.core.circuit_breaker",
+    "src.bot.core.connection_pool_manager",
+    "src.bot.core.task_models",
+    "src.bot.core.performance_optimizer_models",
+    "src.bot.core.query_optimizer_models",
+    "src.bot.core.load_balancer_models",
+    "src.bot.core.replication_models",
+    "src.bot.core.rate_limiter",
+    "src.bot.core.failover_models",
+    "src.bot.core.cache_manager",
+    "src.bot.core.caching",
+    "src.bot.core.dashboard_html",
+    "src.bot.core.debrid_manager",
+    "src.bot.core.csrf_protection",
+    "src.bot.core.drive_quota_bypass",
+    "src.bot.core.cross_seed_farming",
+    "src.bot.core.download_templates",
+    "src.bot.core.blake3_hasher",
+    "src.bot.core.api_gateway",
+    "src.bot.core.health_models",
+    "src.bot.core.index_generator",
+    "src.bot.core.media_info",
+    "src.bot.core.ml_anomaly_detection",
+    "src.bot.core.recursive_extractor",
+    "src.bot.core.salvage_mode",
+    "src.bot.core.security_audit",
+    "src.bot.core.gdrive_batch_optimizer",
+    "src.bot.core.task_assignment_manager",
+    "src.bot.core.task_execution_monitor",
+    "src.bot.core.zero_copy_uploader",
+    "src.bot.core.failover_cascade_detector",
+    "src.bot.core.mfa_manager",
+    "src.bot.core.mtproto_parallel_uploader",
+    "src.bot.core.performance_scaling_engine",
+    "src.bot.core.query_optimizer",
+    "src.bot.core.replication_conflict_resolver",
+    "src.bot.core.failover_recovery_executor",
+    "src.bot.core.replication_sync_engine",
+    "src.bot.core.task_categorizer",
+    "src.bot.core.input_validator",
+    "src.bot.core.link_bypassers",
+    "src.bot.core.load_balancer",
+    "src.bot.core.secrets_manager",
+    "src.bot.core.security_headers",
+    "src.bot.core.failover_manager",
+    "src.bot.core.log_stream",
+    "src.bot.core.smart_notifications",
+    "src.bot.core.task_coordinator",
+    "src.bot.core.replication_manager",
+    "src.bot.core.secret_reader",
+    "src.bot.core.web3_ipfs_storage",
+    "src.bot.core.stream_proxy",
+    "src.bot.core.web_dashboard",
+    "src.bot.core.admin_auth",
+    "src.bot.core.advanced_dashboard_websocket",
+    "src.bot.core.memory_manager",
+    "src.bot.core.advanced_cache",
+    "src.bot.core.profiler",
+    "src.bot.core.dashboard_manager",
+    "src.bot.core.dashboard_routes",
+    "src.bot.core.redis_manager",
+    "src.bot.core.repositories",
+    "src.bot.core.repositories.cache_repository",
+    "src.bot.core.repositories.rate_limit_repository",
+    "src.bot.core.repositories.session_repository",
+    "src.bot.core.repositories.stats_repository",
+    "src.bot.core.repositories.task_status_repository",
+    "src.bot.core.databases",
+    "src.bot.core.dlq_handler",
+    "src.bot.core.edge_workers",
+    "src.bot.core.load_tester",
+    "src.bot.core.metadata_stripper",
+    "src.bot.core.resilience",
+    "src.bot.core.security",
+    "src.bot.core.security_middleware",
+    "src.bot.core.task_scheduler",
+    "src.bot.core.file_cache_manager",
+    "src.bot.core.handler_registry",
+    "src.bot.core.handlers",
+    "src.bot.core.core_handlers",
+    "src.bot.core.enhanced_feedback",
+    "src.bot.core.enhanced_stats",
+    "src.bot.core.captcha_solver",
+    "src.web.admin_auth",
+    "src.web.admin_login",
+    "src.bot.modules.history",
+    "src.bot.modules.gd_delete",
+    "src.bot.modules.shell",
+]
+strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

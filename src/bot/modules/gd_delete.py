@@ -1,12 +1,12 @@
 from .. import LOGGER
-from ..helper.ext_utils.bot_utils import sync_to_async, new_task
+from ..helper.ext_utils.bot_utils import new_task, sync_to_async
 from ..helper.ext_utils.links_utils import is_gdrive_link
 from ..helper.mirror_leech_utils.gdrive_utils.delete import GoogleDriveDelete
 from ..helper.telegram_helper.message_utils import auto_delete_message, send_message
 
 
 @new_task
-async def delete_file(_, message):
+async def delete_file(_, message) -> None:
     args = message.text.split()
     user = message.from_user or message.sender_chat
     if len(args) > 1:
@@ -24,6 +24,3 @@ async def delete_file(_, message):
         )
     reply_message = await send_message(message, msg)
     await auto_delete_message(message, reply_message)
-
-
-
