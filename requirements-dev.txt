@@ -44,7 +44,7 @@ locust==2.20.0
 
 # Code Analysis
 radon==6.0.1
-vulture==2.11
+vulture==2.15
 mccabe==0.7.0
 
 # Documentation
